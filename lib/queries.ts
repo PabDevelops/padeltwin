@@ -2,6 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "./supabase";
 import { isEloProvisional } from "../constants/elo";
 import type {
+  AchievementWithProfile,
+  CoachLead,
+  CoachLeadWithProfiles,
+  League,
+  LeagueMemberWithProfile,
   Match,
   MatchResult,
   MatchResultWithProfiles,
@@ -52,7 +57,36 @@ export function useUpdateProfile() {
   });
 }
 
-export function useMatches(filters: { zone?: string; level?: PlayerLevel }) {
+export type MatchDateRange = "today" | "week" | "weekend";
+
+// Bounds are computed from "now" (not the start of today) so a filter never
+// surfaces a match that has already kicked off.
+export function getDateRangeBounds(range: MatchDateRange, now = new Date()): { from: Date; to: Date } {
+  if (range === "today") {
+    const to = new Date(now);
+    to.setHours(23, 59, 59, 999);
+    return { from: now, to };
+  }
+
+  if (range === "week") {
+    const to = new Date(now);
+    to.setDate(to.getDate() + 7);
+    return { from: now, to };
+  }
+
+  // weekend: through the end of the next (or current) Saturday/Sunday.
+  const day = now.getDay(); // 0 = Sunday, 6 = Saturday
+  const daysUntilSaturday = day === 0 ? -1 : 6 - day;
+  const saturday = new Date(now);
+  saturday.setDate(saturday.getDate() + daysUntilSaturday);
+  saturday.setHours(0, 0, 0, 0);
+  const sunday = new Date(saturday);
+  sunday.setDate(sunday.getDate() + 1);
+  sunday.setHours(23, 59, 59, 999);
+  return { from: now, to: sunday };
+}
+
+export function useMatches(filters: { zone?: string; level?: PlayerLevel; dateRange?: MatchDateRange }) {
   return useQuery({
     queryKey: ["matches", filters],
     queryFn: async () => {
@@ -65,6 +99,10 @@ export function useMatches(filters: { zone?: string; level?: PlayerLevel }) {
 
       if (filters.zone) query = query.ilike("location", `%${filters.zone}%`);
       if (filters.level) query = query.eq("level", filters.level);
+      if (filters.dateRange) {
+        const { from, to } = getDateRangeBounds(filters.dateRange);
+        query = query.gte("date_time", from.toISOString()).lte("date_time", to.toISOString());
+      }
 
       const { data, error } = await query;
       if (error) throw error;
@@ -219,6 +257,31 @@ export function useRespondPartnerRequest() {
   });
 }
 
+export function useHiddenChats(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["hiddenChats", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("chat_hides").select("request_id").eq("profile_id", userId);
+      if (error) throw error;
+      return new Set((data ?? []).map((row) => row.request_id as string));
+    },
+    enabled: !!userId,
+  });
+}
+
+export function useHideChat() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ requestId, profileId }: { requestId: string; profileId: string }) => {
+      const { error } = await supabase.from("chat_hides").insert({ request_id: requestId, profile_id: profileId });
+      if (error && error.code !== "23505") throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["hiddenChats"] });
+    },
+  });
+}
+
 const RESULT_PROFILES_SELECT =
   "*, team_a_player1_profile:profiles!match_results_team_a_player1_fkey(*), team_a_player2_profile:profiles!match_results_team_a_player2_fkey(*), team_b_player1_profile:profiles!match_results_team_b_player1_fkey(*), team_b_player2_profile:profiles!match_results_team_b_player2_fkey(*)";
 
@@ -353,6 +416,357 @@ export function useLeaderboard(zone: string | null | undefined) {
       const { data, error } = await query;
       if (error) throw error;
       return data as Profile[];
+    },
+  });
+}
+
+// System-generated activity feed (milestones awarded by the DB trigger in
+// 0008_achievements.sql) — no user-authored posts, so it's never empty and
+// needs no moderation. Scoped to players the current user follows (see
+// 0009_follows.sql), not by zone — an empty following list means an empty feed.
+export function useActivityFeed(userId: string | undefined, limit = 20) {
+  return useQuery({
+    queryKey: ["activityFeed", userId, limit],
+    queryFn: async () => {
+      const { data: following, error: followError } = await supabase
+        .from("follows")
+        .select("followed_id")
+        .eq("follower_id", userId);
+      if (followError) throw followError;
+
+      const followedIds = (following ?? []).map((f) => f.followed_id);
+      if (followedIds.length === 0) return [];
+
+      const { data, error } = await supabase
+        .from("achievements")
+        .select("*, profiles(*)")
+        .in("profile_id", followedIds)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (error) throw error;
+      return data as unknown as AchievementWithProfile[];
+    },
+    enabled: !!userId,
+  });
+}
+
+// Set of profile ids the current user follows — cheap to spread across any
+// screen that needs to render a Follow/Following button state.
+export function useFollowing(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["following", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("follows").select("followed_id").eq("follower_id", userId);
+      if (error) throw error;
+      return new Set((data ?? []).map((f) => f.followed_id as string));
+    },
+    enabled: !!userId,
+  });
+}
+
+// Full profiles of who the current user follows — for a "Following" list/tab,
+// as opposed to useFollowing()'s id-only Set used for button state.
+export function useFollowedProfiles(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["followedProfiles", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("follows")
+        .select("profiles!follows_followed_id_fkey(*)")
+        .eq("follower_id", userId);
+      if (error) throw error;
+      return (data ?? []).map((f: any) => f.profiles as Profile);
+    },
+    enabled: !!userId,
+  });
+}
+
+export function useFollowPlayer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ followerId, followedId }: { followerId: string; followedId: string }) => {
+      const { error } = await supabase.from("follows").insert({ follower_id: followerId, followed_id: followedId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["following"] });
+      queryClient.invalidateQueries({ queryKey: ["activityFeed"] });
+    },
+  });
+}
+
+export function useUnfollowPlayer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ followerId, followedId }: { followerId: string; followedId: string }) => {
+      const { error } = await supabase
+        .from("follows")
+        .delete()
+        .eq("follower_id", followerId)
+        .eq("followed_id", followedId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["following"] });
+      queryClient.invalidateQueries({ queryKey: ["activityFeed"] });
+    },
+  });
+}
+
+export function useMyAchievements(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["myAchievements", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("achievements")
+        .select("*")
+        .eq("profile_id", userId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as unknown as AchievementWithProfile[];
+    },
+    enabled: !!userId,
+  });
+}
+
+// ---- Private leagues ----
+
+export function useMyLeagues(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["myLeagues", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("league_members")
+        .select("leagues(*)")
+        .eq("profile_id", userId);
+      if (error) throw error;
+      return (data ?? []).map((row: any) => row.leagues as League);
+    },
+    enabled: !!userId,
+  });
+}
+
+export function useLeagueMembers(leagueId: string | undefined) {
+  return useQuery({
+    queryKey: ["leagueMembers", leagueId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("league_members")
+        .select("*, profiles(*)")
+        .eq("league_id", leagueId);
+      if (error) throw error;
+      const rows = data as unknown as LeagueMemberWithProfile[];
+      return rows
+        .filter((r) => r.profiles)
+        .sort((a, b) => (b.profiles!.elo ?? 1200) - (a.profiles!.elo ?? 1200));
+    },
+    enabled: !!leagueId,
+  });
+}
+
+export function useLeague(leagueId: string | undefined) {
+  return useQuery({
+    queryKey: ["league", leagueId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("leagues").select("*").eq("id", leagueId!).single();
+      if (error) throw error;
+      return data as League;
+    },
+    enabled: !!leagueId,
+  });
+}
+
+export function useCreateLeague() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ name, createdBy }: { name: string; createdBy: string }) => {
+      const { data, error } = await supabase
+        .from("leagues")
+        .insert({ name, created_by: createdBy })
+        .select()
+        .single();
+      if (error) throw error;
+      return data as League;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myLeagues"] });
+    },
+  });
+}
+
+export function useJoinLeagueByCode() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ inviteCode, profileId }: { inviteCode: string; profileId: string }) => {
+      const { data: league, error: findError } = await supabase
+        .from("leagues")
+        .select("*")
+        .eq("invite_code", inviteCode.toUpperCase().trim())
+        .single();
+      if (findError || !league) throw new Error("No league found with that code.");
+      const { error } = await supabase
+        .from("league_members")
+        .insert({ league_id: league.id, profile_id: profileId });
+      if (error && error.code !== "23505") throw error;
+      return league as League;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myLeagues"] });
+      queryClient.invalidateQueries({ queryKey: ["leagueMembers"] });
+    },
+  });
+}
+
+export function useLeaveLeague() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ leagueId, profileId }: { leagueId: string; profileId: string }) => {
+      const { error } = await supabase
+        .from("league_members")
+        .delete()
+        .eq("league_id", leagueId)
+        .eq("profile_id", profileId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myLeagues"] });
+      queryClient.invalidateQueries({ queryKey: ["leagueMembers"] });
+    },
+  });
+}
+
+export function useRemoveLeagueMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ leagueId, profileId }: { leagueId: string; profileId: string }) => {
+      const { error } = await supabase
+        .from("league_members")
+        .delete()
+        .eq("league_id", leagueId)
+        .eq("profile_id", profileId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leagueMembers"] });
+    },
+  });
+}
+
+export function useDeleteLeague() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (leagueId: string) => {
+      const { error } = await supabase.from("leagues").delete().eq("id", leagueId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myLeagues"] });
+    },
+  });
+}
+
+// ---- Coach marketplace ----
+
+export function useCoaches(zone?: string | null) {
+  return useQuery({
+    queryKey: ["coaches", zone],
+    queryFn: async () => {
+      let query = supabase.from("profiles").select("*").eq("coach_status", "approved");
+      if (zone) query = query.ilike("zone", zone);
+      const { data, error } = await query.order("coach_featured", { ascending: false }).order("full_name");
+      if (error) throw error;
+      return data as Profile[];
+    },
+  });
+}
+
+export function useApplyToCoach() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      bio,
+      hourlyRate,
+      yearsExperience,
+      specialties,
+    }: {
+      id: string;
+      bio: string;
+      hourlyRate: number | null;
+      yearsExperience: number | null;
+      specialties: string;
+    }) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          coach_status: "pending",
+          coach_bio: bio,
+          coach_hourly_rate: hourlyRate,
+          coach_years_experience: yearsExperience,
+          coach_specialties: specialties,
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["profile", id] });
+      queryClient.invalidateQueries({ queryKey: ["coaches"] });
+    },
+  });
+}
+
+export function useStopCoaching() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("profiles").update({ coach_status: "none" }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ["profile", id] });
+      queryClient.invalidateQueries({ queryKey: ["coaches"] });
+    },
+  });
+}
+
+export function useSendCoachLead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ coachId, requesterId, message }: { coachId: string; requesterId: string; message: string }) => {
+      const { error } = await supabase.from("coach_leads").insert({ coach_id: coachId, requester_id: requesterId, message });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["coachLeads"] });
+    },
+  });
+}
+
+export function useMyCoachLeads(coachId: string | undefined) {
+  return useQuery({
+    queryKey: ["coachLeads", coachId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("coach_leads")
+        .select("*, requester:profiles!coach_leads_requester_id_fkey(*)")
+        .eq("coach_id", coachId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as unknown as CoachLeadWithProfiles[];
+    },
+    enabled: !!coachId,
+  });
+}
+
+export function useUpdateLeadStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ leadId, status }: { leadId: string; status: CoachLead["status"] }) => {
+      const { error } = await supabase.from("coach_leads").update({ status }).eq("id", leadId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["coachLeads"] });
     },
   });
 }

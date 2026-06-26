@@ -7,6 +7,8 @@ import { useEffect } from 'react';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '@/constants/theme';
+import { useSession } from '@/lib/useSession';
+import { usePushNotifications } from '@/lib/usePushNotifications';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -52,6 +54,8 @@ export default function RootLayout() {
 
 function RootNavigator() {
   const insets = useSafeAreaInsets();
+  const { session } = useSession();
+  usePushNotifications(session?.user.id);
   return (
     <Stack
       screenOptions={{
@@ -71,6 +75,23 @@ function RootNavigator() {
       <Stack.Screen
         name="chat/[requestId]"
         options={{ title: 'Chat Room', contentStyle: { paddingBottom: insets.bottom } }}
+      />
+      <Stack.Screen name="player/[id]" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="league/[id]"
+        options={{ title: 'League', contentStyle: { paddingBottom: insets.bottom } }}
+      />
+      <Stack.Screen
+        name="leagues/index"
+        options={{ title: 'My Leagues', contentStyle: { paddingBottom: insets.bottom } }}
+      />
+      <Stack.Screen
+        name="coaches/index"
+        options={{ title: 'Coaches', contentStyle: { paddingBottom: insets.bottom } }}
+      />
+      <Stack.Screen
+        name="coach/[id]"
+        options={{ title: 'Coach', contentStyle: { paddingBottom: insets.bottom } }}
       />
       <Stack.Screen name="+not-found" />
     </Stack>

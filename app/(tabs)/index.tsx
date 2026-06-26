@@ -2,11 +2,17 @@ import { useState, useRef, useEffect } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View, Animated, Easing, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useMatches, useJoinMatch } from '@/lib/queries';
+import { useMatches, useJoinMatch, MatchDateRange } from '@/lib/queries';
 import { useSession } from '@/lib/useSession';
 import type { MatchWithPlayers, PlayerLevel } from '@/types/database';
 import { theme, cardRadius, chipRadius } from '@/constants/theme';
 import { LEVELS, LEVEL_LABELS } from '@/constants/levels';
+
+const DATE_RANGE_OPTIONS: { value: MatchDateRange; label: string }[] = [
+  { value: 'today', label: 'TODAY' },
+  { value: 'weekend', label: 'WEEKEND' },
+  { value: 'week', label: 'THIS WEEK' },
+];
 
 export default function MatchSearchScreen() {
   const router = useRouter();
@@ -14,8 +20,9 @@ export default function MatchSearchScreen() {
   const userId = session?.user.id;
   const [zone, setZone] = useState('');
   const [level, setLevel] = useState<PlayerLevel | undefined>(undefined);
+  const [dateRange, setDateRange] = useState<MatchDateRange | undefined>(undefined);
   const [focusedInput, setFocusedInput] = useState(false);
-  const { data: matches, isLoading, refetch, isRefetching } = useMatches({ zone, level });
+  const { data: matches, isLoading, refetch, isRefetching } = useMatches({ zone, level, dateRange });
   const joinMatch = useJoinMatch();
   const [joinError, setJoinError] = useState<string | null>(null);
 
@@ -376,6 +383,35 @@ export default function MatchSearchScreen() {
             </View>
           </View>
 
+          <View style={styles.filterSection}>
+            <Text style={styles.filterLabel}>WHEN</Text>
+            <View style={styles.levelRow}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.levelChip,
+                  !dateRange && styles.levelChipActive,
+                  pressed && { scale: 0.96 } as any
+                ]}
+                onPress={() => setDateRange(undefined)}>
+                <Text style={[styles.levelChipText, !dateRange && styles.levelChipTextActive]}>ANY TIME</Text>
+              </Pressable>
+              {DATE_RANGE_OPTIONS.map((o) => (
+                <Pressable
+                  key={o.value}
+                  style={({ pressed }) => [
+                    styles.levelChip,
+                    dateRange === o.value && styles.levelChipActive,
+                    pressed && { scale: 0.96 } as any
+                  ]}
+                  onPress={() => setDateRange(o.value)}>
+                  <Text style={[styles.levelChipText, dateRange === o.value && styles.levelChipTextActive]}>
+                    {o.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
           {/* List content */}
           {isLoading ? (
             <ActivityIndicator style={{ marginTop: 32 }} color={theme.primary} size="large" />
@@ -392,6 +428,10 @@ export default function MatchSearchScreen() {
                 <View style={styles.emptyContainer}>
                   <Text style={styles.empty}>NO COURTS FOUND</Text>
                   <Text style={styles.emptySub}>No matches found matching your filters. Set up your own match to start.</Text>
+                  <Pressable style={styles.emptyCreateButton} onPress={() => router.push('/create-match')}>
+                    <Ionicons name="add-circle" size={14} color="#FFF" />
+                    <Text style={styles.emptyCreateButtonText}>CREATE MATCH</Text>
+                  </Pressable>
                 </View>
               }
             />
@@ -734,6 +774,17 @@ const styles = StyleSheet.create({
   emptyContainer: { alignItems: 'center', marginTop: 40, paddingHorizontal: 20 },
   empty: { textAlign: 'center', color: theme.text, fontSize: 14, fontWeight: '900', letterSpacing: 0.5 },
   emptySub: { textAlign: 'center', color: theme.textMuted, fontSize: 11, marginTop: 6, fontWeight: '700', lineHeight: 18 },
+  emptyCreateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: theme.primary,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 16,
+  },
+  emptyCreateButtonText: { color: '#FFF', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
 
   // Radar View Styles
   radarContainer: {

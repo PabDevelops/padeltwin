@@ -14,7 +14,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   process.exit(1);
 }
 
-const ZONES = ['Madrid Centro', 'Madrid Norte', 'Barcelona', 'Valencia', 'Sevilla'];
+const ZONES = ['Edinburgh', 'Glasgow', 'London', 'Manchester', 'Bristol'];
 const LEVELS = ['iniciacion', 'intermedio', 'avanzado'];
 
 const NAMES = [

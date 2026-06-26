@@ -20,7 +20,33 @@ export interface Profile {
   apparel_brand: string | null;
   looking_for_partner: boolean;
   onboarding_completed: boolean;
+  push_token: string | null;
+  is_pro: boolean;
+  is_coach: boolean;
+  coach_status: CoachStatus;
+  coach_bio: string | null;
+  coach_hourly_rate: number | null;
+  coach_years_experience: number | null;
+  coach_specialties: string | null;
+  coach_featured: boolean;
   created_at: string;
+}
+
+export type CoachStatus = "none" | "pending" | "approved" | "rejected";
+
+export type CoachLeadStatus = "pending" | "contacted" | "closed";
+
+export interface CoachLead {
+  id: string;
+  coach_id: string;
+  requester_id: string;
+  message: string;
+  status: CoachLeadStatus;
+  created_at: string;
+}
+
+export interface CoachLeadWithProfiles extends CoachLead {
+  requester: Profile | null;
 }
 
 export interface Match {
@@ -94,6 +120,54 @@ export interface MatchResultWithProfiles extends MatchResult {
   team_a_player2_profile: Profile | null;
   team_b_player1_profile: Profile | null;
   team_b_player2_profile: Profile | null;
+}
+
+export type AchievementType =
+  | "first_match"
+  | "matches_5"
+  | "matches_10"
+  | "matches_25"
+  | "first_win"
+  | "wins_5"
+  | "wins_10"
+  | "wins_25"
+  | "elo_1300"
+  | "elo_1400"
+  | "elo_1500";
+
+export interface Achievement {
+  id: string;
+  profile_id: string;
+  type: AchievementType;
+  created_at: string;
+}
+
+export interface AchievementWithProfile extends Achievement {
+  profiles: Profile | null;
+}
+
+export interface Follow {
+  follower_id: string;
+  followed_id: string;
+  created_at: string;
+}
+
+export interface League {
+  id: string;
+  name: string;
+  created_by: string;
+  invite_code: string;
+  created_at: string;
+}
+
+export interface LeagueMember {
+  league_id: string;
+  profile_id: string;
+  joined_at: string;
+}
+
+export interface LeagueMemberWithProfile extends LeagueMember {
+  profiles: Profile | null;
 }
 
 export interface Database {

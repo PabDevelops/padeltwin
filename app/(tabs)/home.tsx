@@ -1,12 +1,15 @@
 import { useEffect, useRef } from 'react';
-import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSession } from '@/lib/useSession';
-import { useProfile, useMyStats, useRecentResults, useLeaderboard, useMyUpcomingMatches, usePartnerRequests } from '@/lib/queries';
+import { useProfile, useMyStats, useRecentResults, useLeaderboard, useMyUpcomingMatches, usePartnerRequests, useActivityFeed, useMyLeagues } from '@/lib/queries';
+import { ACHIEVEMENT_LABELS, ACHIEVEMENT_ICONS } from '@/constants/achievements';
 import type { MatchResultWithProfiles } from '@/types/database';
 import { theme, cardRadius } from '@/constants/theme';
 import { ELO_PROVISIONAL_MATCHES } from '@/constants/elo';
+import { ProBadge } from '@/components/ProBadge';
+import { CoachBadge } from '@/components/CoachBadge';
 
 function didWin(result: MatchResultWithProfiles, userId: string) {
   const inTeamA = result.team_a_player1 === userId || result.team_a_player2 === userId;
@@ -21,6 +24,19 @@ function opponents(result: MatchResultWithProfiles, userId: string) {
   return rivals.map((p) => p?.full_name ?? 'Player').join(' / ');
 }
 
+function formatRelativeTime(dateString: string) {
+  const now = new Date();
+  const past = new Date(dateString);
+  const diffMs = now.getTime() - past.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const { session } = useSession();
@@ -31,6 +47,8 @@ export default function HomeScreen() {
   const { data: leaderboard, isLoading: leaderboardLoading } = useLeaderboard(profile?.zone);
   const { data: upcomingMatches, isLoading: upcomingLoading } = useMyUpcomingMatches(userId);
   const { data: partnerRequests } = usePartnerRequests(userId);
+  const { data: activityFeed, isLoading: feedLoading } = useActivityFeed(userId, 5);
+  const { data: myLeagues, isLoading: leaguesLoading } = useMyLeagues(userId);
   const pendingRequestsCount = (partnerRequests ?? []).filter((r) => r.status === 'pending' && r.to_id === userId).length;
 
   const animatedHeights = useRef(Array.from({ length: 8 }).map(() => new Animated.Value(8))).current;
@@ -497,6 +515,117 @@ export default function HomeScreen() {
         <Text style={styles.empty}>No recorded match results found in your zone.</Text>
       )}
 
+      <Text style={styles.sectionTitle}>ACTIVITY FEED</Text>
+      {feedLoading ? (
+        <ActivityIndicator color={theme.primary} style={{ marginTop: 12 }} />
+      ) : activityFeed && activityFeed.length > 0 ? (
+        <View style={styles.feedContainer}>
+          {activityFeed.map((item) => {
+            const iconName = ACHIEVEMENT_ICONS[item.type] || 'trophy';
+            const labelText = ACHIEVEMENT_LABELS[item.type] || 'New Achievement';
+            const playerName = item.profiles?.full_name ?? 'Player';
+            
+            return (
+              <View key={item.id} style={styles.feedRow}>
+                <View style={styles.feedAvatar}>
+                  {item.profiles?.avatar_url ? (
+                    <Image source={{ uri: item.profiles.avatar_url }} style={styles.feedAvatarImg} />
+                  ) : (
+                    <View style={styles.feedAvatarPlaceholder}>
+                      <Text style={styles.feedAvatarText}>
+                        {playerName.slice(0, 1).toUpperCase()}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <View style={styles.feedInfo}>
+                  <Text style={styles.feedText} numberOfLines={1}>
+                    <Text style={styles.feedPlayerName}>{playerName.toUpperCase()}</Text>
+                    <Text style={styles.feedLabelSeparator}> • </Text>
+                    <Text style={styles.feedAchievementText}>{labelText}</Text>
+                  </Text>
+                  <Text style={styles.feedTime}>{formatRelativeTime(item.created_at)}</Text>
+                </View>
+                <View style={styles.feedIconContainer}>
+                  <Ionicons name={iconName as any} size={14} color={theme.primary} />
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      ) : (
+        <View style={styles.emptyFeedContainer}>
+          <Ionicons name="people-outline" size={32} color={theme.textMuted} style={{ marginBottom: 8 }} />
+          <Text style={styles.emptyFeedTitle}>FOLLOW OTHER ATHLETES</Text>
+          <Text style={styles.emptyFeedSubtitle}>
+            Follow other padel players to see their live achievements and match milestones in your home feed.
+          </Text>
+          <Pressable 
+            style={({ pressed }) => [
+              styles.emptyFeedButton,
+              pressed && { opacity: 0.8 }
+            ]}
+            onPress={() => router.push('/partners')}
+          >
+            <Text style={styles.emptyFeedButtonText}>FIND PLAYERS</Text>
+          </Pressable>
+        </View>
+      )}
+
+      <View style={styles.leaguesSectionHeader}>
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>MY LEAGUES</Text>
+        <Pressable onPress={() => router.push('/leagues' as any)}>
+          <Text style={styles.leaguesSeeAll}>SEE ALL</Text>
+        </Pressable>
+      </View>
+      {leaguesLoading ? (
+        <ActivityIndicator color={theme.primary} style={{ marginTop: 12 }} />
+      ) : myLeagues && myLeagues.length > 0 ? (
+        myLeagues.map((league) => (
+          <Pressable
+            key={league.id}
+            style={({ pressed }) => [styles.leagueCard, pressed && { opacity: 0.9 }]}
+            onPress={() => router.push(`/league/${league.id}` as any)}
+          >
+            <View style={styles.leagueCardIcon}>
+              <Ionicons name="trophy" size={18} color={theme.primary} />
+            </View>
+            <Text style={styles.leagueCardName} numberOfLines={1}>
+              {league.name.toUpperCase()}
+            </Text>
+            <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+          </Pressable>
+        ))
+      ) : (
+        <Pressable
+          style={({ pressed }) => [styles.emptyFeedContainer, pressed && { opacity: 0.9 }]}
+          onPress={() => router.push('/leagues' as any)}
+        >
+          <Ionicons name="trophy-outline" size={32} color={theme.textMuted} style={{ marginBottom: 8 }} />
+          <Text style={styles.emptyFeedTitle}>START A PRIVATE LEAGUE</Text>
+          <Text style={styles.emptyFeedSubtitle}>
+            Create a league with your friends and compete on your own private leaderboard.
+          </Text>
+          <View style={styles.emptyFeedButton}>
+            <Text style={styles.emptyFeedButtonText}>CREATE OR JOIN</Text>
+          </View>
+        </Pressable>
+      )}
+
+      <Pressable
+        style={({ pressed }) => [styles.coachBanner, pressed && { opacity: 0.9 }]}
+        onPress={() => router.push('/coaches' as any)}
+      >
+        <View style={styles.coachBannerIcon}>
+          <Ionicons name="school" size={20} color={theme.accent} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.coachBannerTitle}>FIND A PADEL COACH</Text>
+          <Text style={styles.coachBannerSubtitle}>Book a lesson with a coach near you</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+      </Pressable>
+
       <Text style={styles.sectionTitle}>LEADERBOARD {profile?.zone ? `• ${profile.zone.toUpperCase()}` : ''}</Text>
       {leaderboardLoading ? (
         <ActivityIndicator color={theme.primary} style={{ marginTop: 12 }} />
@@ -515,6 +644,8 @@ export default function HomeScreen() {
                 <Text style={styles.leaderboardName} numberOfLines={1}>
                   {(p.full_name ?? 'Player').toUpperCase()}
                 </Text>
+                {p.is_pro && <ProBadge size="sm" />}
+                {p.coach_status === 'approved' && <CoachBadge size="sm" />}
                 <Text style={styles.leaderboardElo}>{p.elo} <Text style={{ fontSize: 9, color: theme.textMuted }}>ELO</Text></Text>
               </View>
             );
@@ -564,6 +695,49 @@ const styles = StyleSheet.create({
   gridBadge: { marginTop: 8, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   gridBadgeText: { fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
   sectionTitle: { fontSize: 11, fontWeight: '900', marginTop: 14, color: theme.primary, letterSpacing: 1.5 },
+  leaguesSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 },
+  leaguesSeeAll: { fontSize: 10, fontWeight: '800', color: theme.secondary, letterSpacing: 0.5 },
+  leagueCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: theme.card,
+    borderRadius: cardRadius,
+    borderWidth: 1,
+    borderColor: theme.border,
+    padding: 14,
+    marginTop: 8,
+  },
+  leagueCardIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 92, 0, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  leagueCardName: { flex: 1, color: theme.text, fontWeight: '800', fontSize: 13, letterSpacing: 0.2 },
+  coachBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: theme.card,
+    borderRadius: cardRadius,
+    borderWidth: 1,
+    borderColor: theme.border,
+    padding: 14,
+    marginTop: 16,
+  },
+  coachBannerIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 92, 0, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coachBannerTitle: { color: theme.text, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
+  coachBannerSubtitle: { color: theme.textMuted, fontSize: 11, marginTop: 2 },
   resultCard: { 
     backgroundColor: theme.card, 
     borderRadius: cardRadius, 
@@ -759,6 +933,120 @@ const styles = StyleSheet.create({
   partnerAlertActionText: {
     color: theme.secondary,
     fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  feedContainer: {
+    backgroundColor: theme.card,
+    borderRadius: cardRadius,
+    borderWidth: 1,
+    borderColor: theme.border,
+    paddingVertical: 4,
+    marginBottom: 20,
+  },
+  feedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E1E28',
+  },
+  feedAvatar: {
+    marginRight: 12,
+  },
+  feedAvatarImg: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  feedAvatarPlaceholder: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#1E1E28',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+  feedAvatarText: {
+    color: theme.text,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  feedInfo: {
+    flex: 1,
+    marginRight: 8,
+  },
+  feedText: {
+    fontSize: 12,
+    color: theme.textMuted,
+  },
+  feedPlayerName: {
+    color: theme.text,
+    fontWeight: '900',
+  },
+  feedLabelSeparator: {
+    color: theme.borderActive,
+    fontWeight: '900',
+  },
+  feedAchievementText: {
+    color: theme.text,
+    fontWeight: '700',
+  },
+  feedTime: {
+    fontSize: 10,
+    color: theme.textMuted,
+    marginTop: 2,
+    fontWeight: '600',
+  },
+  feedIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 92, 0, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 92, 0, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyFeedContainer: {
+    backgroundColor: theme.card,
+    borderRadius: cardRadius,
+    borderWidth: 1,
+    borderColor: theme.border,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  emptyFeedTitle: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: theme.text,
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  emptyFeedSubtitle: {
+    fontSize: 10,
+    color: theme.textMuted,
+    textAlign: 'center',
+    lineHeight: 15,
+    marginBottom: 14,
+    paddingHorizontal: 10,
+  },
+  emptyFeedButton: {
+    backgroundColor: 'rgba(255, 92, 0, 0.1)',
+    borderWidth: 1,
+    borderColor: theme.primary,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  emptyFeedButtonText: {
+    color: theme.primary,
+    fontSize: 10,
     fontWeight: '900',
     letterSpacing: 0.5,
   },
