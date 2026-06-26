@@ -23,11 +23,23 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "PadelTwin uses your location to show players and matches near you."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "PadelTwin uses your photo library to set your profile picture."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
