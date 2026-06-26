@@ -255,7 +255,7 @@ export default function HomeScreen() {
   return (
     <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.container}>
       <View style={styles.headerContainer}>
-        <Text style={styles.welcomeTag}>ATHLETE TELEMETRY</Text>
+        <Text style={styles.welcomeTag}>PADEL PERFORMANCE TRACKER</Text>
         <Text style={styles.title}>HI{profile?.full_name ? `, ${profile.full_name.split(' ')[0].toUpperCase()}` : ''} 👋</Text>
       </View>
 
@@ -293,9 +293,9 @@ export default function HomeScreen() {
           onPress={() => router.push(`/match/${nextMatch.id}`)}
         >
           <View style={styles.nextMatchHeader}>
-            <Text style={styles.nextMatchTag}>⚡ ACTIVE DEPLOYMENT</Text>
+            <Text style={styles.nextMatchTag}>⚡ NEXT MATCH</Text>
             <View style={[styles.gridBadge, { backgroundColor: 'rgba(255, 92, 0, 0.15)', marginTop: 0 }]}>
-              <Text style={[styles.gridBadgeText, { color: theme.primary }]}>LIVE TARGET</Text>
+              <Text style={[styles.gridBadgeText, { color: theme.primary }]}>CONFIRMED</Text>
             </View>
           </View>
           <Text style={styles.nextMatchLocation}>{nextMatch.location}</Text>
@@ -307,14 +307,14 @@ export default function HomeScreen() {
               WIN PROBABILITY: <Text style={{ color: '#fff', fontWeight: '900' }}>{winProb}%</Text>
             </Text>
             <Text style={styles.nextMatchRosterText}>
-              ROSTER: <Text style={{ color: '#fff', fontWeight: '900' }}>{(nextMatch.match_players?.length ?? 0)}/{(nextMatch.max_players ?? 4)} ENLISTED</Text>
+              PLAYERS: <Text style={{ color: '#fff', fontWeight: '900' }}>{(nextMatch.match_players?.length ?? 0)}/{(nextMatch.max_players ?? 4)} SIGNED UP</Text>
             </Text>
           </View>
         </Pressable>
       ) : (
         <View style={styles.nextMatchCardEmpty}>
-          <Text style={styles.nextMatchTagEmpty}>NO ACTIVE DEPLOYMENTS</Text>
-          <Text style={styles.nextMatchTextEmpty}>All systems green. Roster clear. Scan the match feed to join a game or deploy a new match request.</Text>
+          <Text style={styles.nextMatchTagEmpty}>NO UPCOMING MATCHES</Text>
+          <Text style={styles.nextMatchTextEmpty}>Your court schedule is clear. Check the match feed to join an active game or set up a new match request.</Text>
           <View style={styles.emptyCardActions}>
             <Pressable 
               style={[styles.emptyCardButton, { backgroundColor: theme.primary }]} 
@@ -366,7 +366,7 @@ export default function HomeScreen() {
             <Text style={styles.eloHuge}>{profile?.elo ?? '1200'}</Text>
           )}
           <Text style={styles.eloLabel}>
-            {isCalibrating ? `CALIBRATION PHASE • ${playedCount}/${ELO_PROVISIONAL_MATCHES} MATCHES` : 'ATHLETE ELO RATING'}
+            {isCalibrating ? `CALIBRATING ELO • ${playedCount}/${ELO_PROVISIONAL_MATCHES} MATCHES` : 'PADEL ELO RATING'}
           </Text>
         </View>
         <View style={styles.chartSimulation}>
@@ -441,7 +441,7 @@ export default function HomeScreen() {
                 }
               ]}
             >
-              {streakType === 'W' ? '📈 WINNING' : '📉 ADJUSTING'}
+              {streakType === 'W' ? '📈 WINNING STREAK' : '📉 ADJUSTING'}
             </Text>
           </View>
         </View>
@@ -459,7 +459,7 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>RECENT MATCH TICKERS</Text>
+      <Text style={styles.sectionTitle}>RECENT MATCHES</Text>
       {resultsLoading ? (
         <ActivityIndicator color={theme.primary} style={{ marginTop: 12 }} />
       ) : recentResults && recentResults.length > 0 ? (
