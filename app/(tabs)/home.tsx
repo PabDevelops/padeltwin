@@ -6,6 +6,7 @@ import { useSession } from '@/lib/useSession';
 import { useProfile, useMyStats, useRecentResults, useLeaderboard, useMyUpcomingMatches, usePartnerRequests } from '@/lib/queries';
 import type { MatchResultWithProfiles } from '@/types/database';
 import { theme, cardRadius } from '@/constants/theme';
+import { ELO_PROVISIONAL_MATCHES } from '@/constants/elo';
 
 function didWin(result: MatchResultWithProfiles, userId: string) {
   const inTeamA = result.team_a_player1 === userId || result.team_a_player2 === userId;
@@ -121,7 +122,7 @@ export default function HomeScreen() {
   // Dynamic Badges configuration
   // 1. Total Matches Badge
   const playedCount = stats?.played ?? 0;
-  const isCalibrating = playedCount < 5;
+  const isCalibrating = playedCount < ELO_PROVISIONAL_MATCHES;
 
   useEffect(() => {
     if (!isCalibrating) return;
@@ -171,7 +172,7 @@ export default function HomeScreen() {
   let matchesBadgeText = '💤 INACTIVE';
   let matchesBadgeColor = 'rgba(110, 112, 126, 0.1)';
   let matchesBadgeTextColor = theme.textMuted;
-  if (playedCount > 0 && playedCount < 5) {
+  if (playedCount > 0 && playedCount < ELO_PROVISIONAL_MATCHES) {
     matchesBadgeText = '🌱 STARTING';
     matchesBadgeColor = 'rgba(46, 157, 255, 0.1)';
     matchesBadgeTextColor = theme.secondary;
@@ -247,8 +248,11 @@ export default function HomeScreen() {
       if (ratio >= 0.95) rankLabel = "TOP 5%";
       else if (ratio >= 0.90) rankLabel = "TOP 10%";
       else if (ratio >= 0.80) rankLabel = "TOP 15%";
-      else if (ratio >= 0.70) rankLabel = "TOP 25%";
-      return (
+      else rankLabel = "TOP 50%";
+    }
+  }
+
+  return (
     <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.welcomeTag}>ATHLETE TELEMETRY</Text>
@@ -328,8 +332,6 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         </View>
-      )} new match request.</Text>
-        </View>
       )}
 
       {/* Main ELO Performance Widget */}
@@ -364,7 +366,7 @@ export default function HomeScreen() {
             <Text style={styles.eloHuge}>{profile?.elo ?? '1200'}</Text>
           )}
           <Text style={styles.eloLabel}>
-            {isCalibrating ? `CALIBRATION PHASE • ${playedCount}/5 MATCHES` : 'ATHLETE ELO RATING'}
+            {isCalibrating ? `CALIBRATION PHASE • ${playedCount}/${ELO_PROVISIONAL_MATCHES} MATCHES` : 'ATHLETE ELO RATING'}
           </Text>
         </View>
         <View style={styles.chartSimulation}>
@@ -704,5 +706,60 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: theme.primary,
     letterSpacing: 1.2,
+  },
+  emptyCardActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 14,
+    width: '100%',
+  },
+  emptyCardButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 38,
+    borderRadius: 10,
+  },
+  emptyCardButtonText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  partnerAlertBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(46, 157, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(46, 157, 255, 0.25)',
+    borderRadius: cardRadius,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
+  partnerAlertLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  partnerAlertText: {
+    color: theme.secondary,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  partnerAlertRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  partnerAlertActionText: {
+    color: theme.secondary,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
 });
