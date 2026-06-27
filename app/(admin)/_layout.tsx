@@ -48,6 +48,9 @@ export default function AdminLayout() {
       <Stack.Screen name="chats" options={{ title: 'Chat Moderation' }} />
       <Stack.Screen name="tournaments/index" options={{ title: 'Tournaments' }} />
       <Stack.Screen name="tournaments/[id]" options={{ title: 'Tournament' }} />
+      <Stack.Screen name="leagues" options={{ title: 'Leagues' }} />
+      <Stack.Screen name="collusion" options={{ title: 'Collusion Watch' }} />
+      <Stack.Screen name="broadcast" options={{ title: 'Broadcast' }} />
     </Stack>
   );
 }

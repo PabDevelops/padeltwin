@@ -1387,3 +1387,126 @@ export function useAdminRecordTournamentResult() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["adminTournamentMatches"] }),
   });
 }
+
+export interface AdminDashboardStats {
+  total_players: number;
+  total_confirmed_matches: number;
+  average_elo: number;
+  signups_last_7_days: number;
+  pending_coach_applications: number;
+  open_reports: number;
+  active_tournaments: number;
+}
+
+export function useAdminDashboardStats() {
+  return useQuery({
+    queryKey: ["adminDashboardStats"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_dashboard_stats");
+      if (error) throw error;
+      return (data as AdminDashboardStats[])[0];
+    },
+  });
+}
+
+export interface AdminCollusionCandidate {
+  profile_id: string;
+  full_name: string | null;
+  total_matches: number;
+  distinct_opponents: number;
+  top_opponent_id: string;
+  top_opponent_name: string | null;
+  top_opponent_matches: number;
+  repeat_ratio: number;
+  elo_gain_last_10: number;
+}
+
+export function useAdminCollusionCandidates(repeatRatioThreshold = 0.6, minMatches = 5) {
+  return useQuery({
+    queryKey: ["adminCollusionCandidates", repeatRatioThreshold, minMatches],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_collusion_candidates", {
+        p_repeat_ratio_threshold: repeatRatioThreshold,
+        p_min_matches: minMatches,
+      });
+      if (error) throw error;
+      return data as AdminCollusionCandidate[];
+    },
+  });
+}
+
+export interface AdminLeague {
+  id: string;
+  name: string;
+  invite_code: string;
+  created_by: string;
+  creator_name: string | null;
+  member_count: number;
+  created_at: string;
+}
+
+export function useAdminLeagues() {
+  return useQuery({
+    queryKey: ["adminLeagues"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_list_leagues");
+      if (error) throw error;
+      return data as AdminLeague[];
+    },
+  });
+}
+
+export interface AdminLeagueMember {
+  profile_id: string;
+  full_name: string | null;
+  elo: number;
+  joined_at: string;
+}
+
+export function useAdminLeagueMembers(leagueId: string | undefined) {
+  return useQuery({
+    queryKey: ["adminLeagueMembers", leagueId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_league_members", { p_league_id: leagueId });
+      if (error) throw error;
+      return data as AdminLeagueMember[];
+    },
+    enabled: !!leagueId,
+  });
+}
+
+export function useAdminDeleteLeague() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (leagueId: string) => {
+      const { error } = await supabase.rpc("admin_delete_league", { p_league_id: leagueId });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["adminLeagues"] }),
+  });
+}
+
+export function useAdminBroadcastPush() {
+  return useMutation({
+    mutationFn: async ({
+      segment,
+      title,
+      body,
+      zone,
+    }: {
+      segment: "all" | "coaches" | "pro";
+      title: string;
+      body: string;
+      zone?: string;
+    }) => {
+      const { data, error } = await supabase.rpc("admin_broadcast_push", {
+        p_segment: segment,
+        p_title: title,
+        p_body: body,
+        p_zone: zone ?? null,
+      });
+      if (error) throw error;
+      return data as number;
+    },
+  });
+}
