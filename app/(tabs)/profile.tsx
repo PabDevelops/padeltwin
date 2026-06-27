@@ -4,7 +4,9 @@ import {
   Alert,
   Image,
   ImageBackground,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -200,7 +202,10 @@ export default function ProfileScreen() {
   const initials = (fullName || 'Player').slice(0, 2).toUpperCase();
 
   return (
-    <ScrollView style={styles.container} bounces={false} showsVerticalScrollIndicator={false}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView style={styles.container} bounces={false} showsVerticalScrollIndicator={false}>
       {/* CURVED PHOTO COVER */}
       <View style={styles.headerWrapper}>
         <View style={styles.bannerContainer}>
@@ -729,7 +734,9 @@ export default function ProfileScreen() {
       </View>
 
       <Modal visible={coachModalVisible} transparent animationType="fade" onRequestClose={() => setCoachModalVisible(false)}>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}>
           <ScrollView style={styles.modalCard} contentContainerStyle={{ gap: 10 }}>
             <Text style={styles.modalTitle}>COACH APPLICATION</Text>
             <Text style={styles.label}>BIO</Text>
@@ -780,9 +787,10 @@ export default function ProfileScreen() {
               </Pressable>
             </View>
           </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

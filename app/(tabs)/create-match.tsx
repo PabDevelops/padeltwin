@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCreateMatch, usePartnerRequests } from '@/lib/queries';
 import { useSession } from '@/lib/useSession';
@@ -68,7 +68,10 @@ export default function CreateMatchScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.tagline}>HOST A MATCH</Text>
         <Text style={styles.title}>Create match</Text>
@@ -236,7 +239,8 @@ export default function CreateMatchScreen() {
           <Text style={styles.buttonText}>Publish Match</Text>
         )}
       </Pressable>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

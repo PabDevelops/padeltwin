@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSession } from '@/lib/useSession';
@@ -97,7 +97,9 @@ export default function CoachDetailScreen() {
       )}
 
       <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>MESSAGE {coach.full_name?.toUpperCase() ?? 'COACH'}</Text>
             <TextInput
@@ -123,7 +125,7 @@ export default function CoachDetailScreen() {
               </Pressable>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </ScrollView>
   );

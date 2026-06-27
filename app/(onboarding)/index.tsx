@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -105,7 +107,10 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.tagline}>CREATE ATHLETE PROFILE</Text>
         <Text style={styles.title}>Tell us about you</Text>
@@ -297,7 +302,8 @@ export default function OnboardingScreen() {
           <Text style={styles.buttonText}>Save Profile & Finish</Text>
         )}
       </Pressable>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

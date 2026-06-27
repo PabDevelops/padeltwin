@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { theme, buttonRadius } from '@/constants/theme';
@@ -32,69 +32,73 @@ export default function RegisterScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.tagline}>JOIN THE CLUB</Text>
-        <Text style={styles.title}>Register</Text>
-        <Text style={styles.subtitle}>Create your profile to start matchmaking</Text>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={styles.container}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.tagline}>JOIN THE CLUB</Text>
+          <Text style={styles.title}>Register</Text>
+          <Text style={styles.subtitle}>Create your profile to start matchmaking</Text>
+        </View>
+
+        <View style={styles.form}>
+          <Text style={styles.label}>FULL NAME</Text>
+          <TextInput
+            style={[styles.input, focusedInput === 'name' && styles.inputFocused]}
+            placeholder="e.g. John Doe"
+            placeholderTextColor={theme.textMuted}
+            value={fullName}
+            onChangeText={setFullName}
+            onFocus={() => setFocusedInput('name')}
+            onBlur={() => setFocusedInput(null)}
+          />
+
+          <Text style={styles.label}>EMAIL ADDRESS</Text>
+          <TextInput
+            style={[styles.input, focusedInput === 'email' && styles.inputFocused]}
+            placeholder="Enter your email"
+            placeholderTextColor={theme.textMuted}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+            onFocus={() => setFocusedInput('email')}
+            onBlur={() => setFocusedInput(null)}
+          />
+
+          <Text style={styles.label}>PASSWORD</Text>
+          <TextInput
+            style={[styles.input, focusedInput === 'password' && styles.inputFocused]}
+            placeholder="Create password"
+            placeholderTextColor={theme.textMuted}
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+            onFocus={() => setFocusedInput('password')}
+            onBlur={() => setFocusedInput(null)}
+          />
+
+          {error && <Text style={styles.error}>{error}</Text>}
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              pressed && styles.buttonPressed,
+              loading && styles.buttonDisabled,
+            ]}
+            onPress={handleRegister}
+            disabled={loading}
+          >
+            {loading ? <ActivityIndicator color={theme.onAccent} /> : <Text style={styles.buttonText}>Sign up</Text>}
+          </Pressable>
+        </View>
+
+        <Link href="/(auth)/login" style={styles.link}>
+          Already have an account? <Text style={styles.linkHighlight}>Log in</Text>
+        </Link>
       </View>
-
-      <View style={styles.form}>
-        <Text style={styles.label}>FULL NAME</Text>
-        <TextInput
-          style={[styles.input, focusedInput === 'name' && styles.inputFocused]}
-          placeholder="e.g. John Doe"
-          placeholderTextColor={theme.textMuted}
-          value={fullName}
-          onChangeText={setFullName}
-          onFocus={() => setFocusedInput('name')}
-          onBlur={() => setFocusedInput(null)}
-        />
-
-        <Text style={styles.label}>EMAIL ADDRESS</Text>
-        <TextInput
-          style={[styles.input, focusedInput === 'email' && styles.inputFocused]}
-          placeholder="Enter your email"
-          placeholderTextColor={theme.textMuted}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-          onFocus={() => setFocusedInput('email')}
-          onBlur={() => setFocusedInput(null)}
-        />
-
-        <Text style={styles.label}>PASSWORD</Text>
-        <TextInput
-          style={[styles.input, focusedInput === 'password' && styles.inputFocused]}
-          placeholder="Create password"
-          placeholderTextColor={theme.textMuted}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-          onFocus={() => setFocusedInput('password')}
-          onBlur={() => setFocusedInput(null)}
-        />
-
-        {error && <Text style={styles.error}>{error}</Text>}
-
-        <Pressable
-          style={({ pressed }) => [
-            styles.button,
-            pressed && styles.buttonPressed,
-            loading && styles.buttonDisabled,
-          ]}
-          onPress={handleRegister}
-          disabled={loading}
-        >
-          {loading ? <ActivityIndicator color={theme.onAccent} /> : <Text style={styles.buttonText}>Sign up</Text>}
-        </Pressable>
-      </View>
-
-      <Link href="/(auth)/login" style={styles.link}>
-        Already have an account? <Text style={styles.linkHighlight}>Log in</Text>
-      </Link>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
