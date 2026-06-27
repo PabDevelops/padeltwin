@@ -3,13 +3,14 @@ import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Tex
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSession } from '@/lib/useSession';
-import { useMyLeagues, useCreateLeague, useJoinLeagueByCode } from '@/lib/queries';
+import { useMyLeagues, useCreateLeague, useJoinLeagueByCode, useProfile } from '@/lib/queries';
 import { theme, buttonRadius, cardRadius } from '@/constants/theme';
 
 export default function LeaguesScreen() {
   const router = useRouter();
   const { session } = useSession();
   const userId = session?.user.id;
+  const { data: profile } = useProfile(userId);
   const { data: leagues, isLoading } = useMyLeagues(userId);
   const createLeague = useCreateLeague();
   const joinLeague = useJoinLeagueByCode();
@@ -53,9 +54,18 @@ export default function LeaguesScreen() {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.actionsRow}>
-          <Pressable style={({ pressed }) => [styles.actionButton, pressed && { opacity: 0.9 }]} onPress={() => setCreateModalVisible(true)}>
-            <Ionicons name="add-circle" size={18} color="#fff" />
-            <Text style={styles.actionButtonText}>CREATE LEAGUE</Text>
+          <Pressable
+            style={({ pressed }) => [styles.actionButton, pressed && { opacity: 0.9 }]}
+            onPress={() => {
+              if (!profile?.is_pro) {
+                Alert.alert('Pro feature', 'Creating a league is a Pro perk. Upgrade to Pro to start your own league.');
+                return;
+              }
+              setCreateModalVisible(true);
+            }}
+          >
+            <Ionicons name={profile?.is_pro ? 'add-circle' : 'lock-closed'} size={18} color="#fff" />
+            <Text style={styles.actionButtonText}>{profile?.is_pro ? 'CREATE LEAGUE' : 'CREATE LEAGUE (PRO)'}</Text>
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.actionButtonOutline, pressed && { opacity: 0.9 }]}
