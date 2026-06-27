@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Animated,
   Image,
   ImageBackground,
   Modal,
@@ -96,7 +95,6 @@ export default function ProfileScreen() {
   const [coachExperience, setCoachExperience] = useState('');
   const [coachSpecialties, setCoachSpecialties] = useState('');
   const isCalibrating = isEloProvisional(stats?.played ?? 0);
-  const miniAnimatedHeights = useRef(Array.from({ length: 4 }).map(() => new Animated.Value(4))).current;
 
   const recordItems: { icon: keyof typeof Ionicons.glyphMap; value: string; label: string }[] = [];
   if (records?.longestWinStreak) {
@@ -109,20 +107,6 @@ export default function ProfileScreen() {
     recordItems.push({ icon: 'flash', value: `+${records.bestEloGain.delta} ELO`, label: 'Best ELO gain' });
   }
 
-  useEffect(() => {
-    if (!isCalibrating) return;
-    const animations = miniAnimatedHeights.map((anim, index) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(index * 80),
-          Animated.timing(anim, { toValue: 28, duration: 400, useNativeDriver: false }),
-          Animated.timing(anim, { toValue: 4, duration: 400, useNativeDriver: false }),
-        ])
-      )
-    );
-    Animated.parallel(animations).start();
-    return () => miniAnimatedHeights.forEach((anim) => anim.stopAnimation());
-  }, [isCalibrating]);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
@@ -285,57 +269,6 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* NAME */}
-        <View style={styles.nameRow}>
-          <Text style={styles.playerName}>{profile.full_name ?? 'Player'}</Text>
-          {profile.is_pro && <ProBadge />}
-          {profile.coach_status === 'approved' && <CoachBadge />}
-        </View>
-
-        {profile.zone ? <Text style={styles.locationSub}>📍 {profile.zone.toUpperCase()}</Text> : null}
-
-        {/* STATS */}
-        <View style={styles.statsCardContainer}>
-          {statsLoading ? (
-            <ActivityIndicator color={theme.accent} />
-          ) : (
-            <>
-              <View style={styles.statColumn}>
-                {isCalibrating ? (
-                  <>
-                    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 22 }}>
-                      {miniAnimatedHeights.map((anim, index) => (
-                        <Animated.View
-                          key={index}
-                          style={{ width: 4, height: anim, backgroundColor: theme.accent, borderRadius: 2 }}
-                        />
-                      ))}
-                    </View>
-                    <Text style={styles.statSubLabel}>
-                      Calibrating • {stats?.played ?? 0}/{ELO_PROVISIONAL_MATCHES}
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    <Text style={styles.statHugeText}>{profile.elo}</Text>
-                    <Text style={styles.statSubLabel}>ELO Rating</Text>
-                  </>
-                )}
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statColumn}>
-                <Text style={styles.statHugeText}>{stats?.played ?? 0}</Text>
-                <Text style={styles.statSubLabel}>Matches Played</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statColumn}>
-                <Text style={styles.statHugeText}>{stats?.winRate ?? 0}%</Text>
-                <Text style={styles.statSubLabel}>Win Rate</Text>
-              </View>
-            </>
-          )}
-        </View>
-
         {/* SOCIAL */}
         <View style={styles.socialStatsRow}>
           <Pressable
@@ -352,6 +285,41 @@ export default function ProfileScreen() {
             <Text style={styles.socialStatValue}>{followingCount ?? 0}</Text>
             <Text style={styles.socialStatLabel}>Following</Text>
           </Pressable>
+        </View>
+
+        {/* NAME */}
+        <View style={styles.nameRow}>
+          <Text style={styles.playerName}>{profile.full_name ?? 'Player'}</Text>
+          {profile.is_pro && <ProBadge />}
+          {profile.coach_status === 'approved' && <CoachBadge />}
+        </View>
+
+        {profile.zone ? <Text style={styles.locationSub}>📍 {profile.zone.toUpperCase()}</Text> : null}
+
+        {/* STATS */}
+        <View style={styles.statsCardContainer}>
+          {statsLoading ? (
+            <ActivityIndicator color={theme.accent} />
+          ) : (
+            <>
+              <View style={styles.statColumn}>
+                <Text style={styles.statHugeText}>{profile.elo}</Text>
+                <Text style={styles.statSubLabel}>
+                  {isCalibrating ? `Provisional • ${stats?.played ?? 0}/${ELO_PROVISIONAL_MATCHES}` : 'ELO Rating'}
+                </Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statColumn}>
+                <Text style={styles.statHugeText}>{stats?.played ?? 0}</Text>
+                <Text style={styles.statSubLabel}>Matches Played</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statColumn}>
+                <Text style={styles.statHugeText}>{stats?.winRate ?? 0}%</Text>
+                <Text style={styles.statSubLabel}>Win Rate</Text>
+              </View>
+            </>
+          )}
         </View>
 
         {/* RECORDS */}
