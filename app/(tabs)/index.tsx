@@ -429,7 +429,7 @@ export default function MatchSearchScreen() {
                   <Text style={styles.empty}>NO COURTS FOUND</Text>
                   <Text style={styles.emptySub}>No matches found matching your filters. Set up your own match to start.</Text>
                   <Pressable style={styles.emptyCreateButton} onPress={() => router.push('/create-match')}>
-                    <Ionicons name="add-circle" size={14} color="#FFF" />
+                    <Ionicons name="add-circle" size={14} color={theme.onAccent} />
                     <Text style={styles.emptyCreateButtonText}>CREATE MATCH</Text>
                   </Pressable>
                 </View>
@@ -451,7 +451,7 @@ export default function MatchSearchScreen() {
               </Text>
               {joinError && <Text style={styles.joinErrorText}>{joinError}</Text>}
               <Pressable style={styles.radarButton} onPress={startQueue}>
-                <Ionicons name="navigate" size={16} color="#FFF" />
+                <Ionicons name="navigate" size={16} color={theme.onAccent} />
                 <Text style={styles.radarButtonText}>FIND A MATCH</Text>
               </Pressable>
             </View>
@@ -784,7 +784,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 16,
   },
-  emptyCreateButtonText: { color: '#FFF', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
+  emptyCreateButtonText: { color: theme.onAccent, fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
 
   // Radar View Styles
   radarContainer: {
@@ -893,7 +893,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   radarButtonText: {
-    color: '#FFF',
+    color: theme.onAccent,
     fontSize: 12,
     fontWeight: '900',
     letterSpacing: 0.5,

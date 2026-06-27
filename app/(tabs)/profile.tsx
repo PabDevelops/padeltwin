@@ -245,9 +245,9 @@ export default function ProfileScreen() {
             disabled={updateProfile.isPending}
           >
             {updateProfile.isPending ? (
-              <ActivityIndicator size="small" color="#FFF" />
+              <ActivityIndicator size="small" color={theme.onAccent} />
             ) : (
-              <Ionicons name="checkmark" size={26} color="#FFF" />
+              <Ionicons name="checkmark" size={26} color={theme.onAccent} />
             )}
           </Pressable>
 
@@ -532,7 +532,7 @@ export default function ProfileScreen() {
           disabled={updateProfile.isPending}
         >
           {updateProfile.isPending ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={theme.onAccent} />
           ) : (
             <Text style={styles.buttonText}>Save Changes</Text>
           )}
@@ -776,7 +776,7 @@ export default function ProfileScreen() {
                 onPress={handleBecomeCoach}
                 disabled={!coachBio.trim() || applyToCoach.isPending}
               >
-                {applyToCoach.isPending ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalConfirmText}>SUBMIT</Text>}
+                {applyToCoach.isPending ? <ActivityIndicator color={theme.onAccent} /> : <Text style={styles.modalConfirmText}>SUBMIT</Text>}
               </Pressable>
             </View>
           </ScrollView>
@@ -943,7 +943,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   chipText: { color: theme.textMuted, fontWeight: '700', fontSize: 13 },
-  chipTextActive: { color: '#fff', fontWeight: '800' },
+  chipTextActive: { color: theme.onAccent, fontWeight: '800' },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   button: {
     backgroundColor: theme.primary,
@@ -958,7 +958,7 @@ const styles = StyleSheet.create({
   },
   buttonPressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
   buttonDisabled: { opacity: 0.5 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  buttonText: { color: theme.onAccent, fontSize: 16, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
   partnersSection: { gap: 8 },
   requestCard: { borderRadius: cardRadius, padding: 16, backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border },
   partnerRequestCard: {
@@ -1011,7 +1011,7 @@ const styles = StyleSheet.create({
   modalCancelBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: buttonRadius, borderWidth: 1, borderColor: theme.border },
   modalCancelText: { color: theme.textMuted, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
   modalConfirmBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: buttonRadius, backgroundColor: theme.accent },
-  modalConfirmText: { color: '#fff', fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
+  modalConfirmText: { color: theme.onAccent, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
   leadCard: { borderRadius: 12, borderWidth: 1, borderColor: theme.border, backgroundColor: '#191922', padding: 12, marginTop: 10 },
   leadStatus: { fontSize: 9, fontWeight: '900', color: theme.textMuted, letterSpacing: 0.5 },
   leadStatusPending: { color: theme.accent },

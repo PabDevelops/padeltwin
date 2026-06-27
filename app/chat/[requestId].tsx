@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.border,
   },
-  bubbleTextMine: { color: '#FFFFFF', fontSize: 14, fontWeight: '700', lineHeight: 18, letterSpacing: 0.2 },
+  bubbleTextMine: { color: theme.onAccent, fontSize: 14, fontWeight: '700', lineHeight: 18, letterSpacing: 0.2 },
   bubbleTextOther: { color: theme.text, fontSize: 14, fontWeight: '700', lineHeight: 18, letterSpacing: 0.2 },
   empty: { textAlign: 'center', color: theme.textMuted, marginTop: 40, fontSize: 11, fontWeight: '900', letterSpacing: 1.5, textTransform: 'uppercase' },
   inputRow: { 

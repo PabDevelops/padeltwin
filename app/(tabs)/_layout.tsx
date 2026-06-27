@@ -49,7 +49,7 @@ function CustomTabBar({ state, descriptors, navigation, bottomInset }: any) {
                     pressed && { opacity: 0.95, transform: [{ scale: 0.96 }] },
                   ]}
                 >
-                  <Ionicons name="add" size={28} color="#FFF" />
+                  <Ionicons name="add" size={28} color={theme.onAccent} />
                 </Pressable>
               </View>
             );

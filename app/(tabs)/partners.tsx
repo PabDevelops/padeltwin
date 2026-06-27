@@ -452,10 +452,10 @@ export default function PartnersScreen() {
                     disabled={sendRequest.isPending}
                   >
                     {sendRequest.isPending ? (
-                      <ActivityIndicator size="small" color="#FFF" />
+                      <ActivityIndicator size="small" color={theme.onAccent} />
                     ) : (
                       <>
-                        <Ionicons name="people" size={14} color="#FFF" />
+                        <Ionicons name="people" size={14} color={theme.onAccent} />
                         <Text style={styles.winnerButtonText}>SEND REQUEST</Text>
                       </>
                     )}
@@ -1057,7 +1057,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   winnerButtonText: {
-    color: '#FFF',
+    color: theme.onAccent,
     fontSize: 11,
     fontWeight: '900',
     letterSpacing: 0.5,
@@ -1212,7 +1212,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   emptyFollowedBtnText: {
-    color: '#FFF',
+    color: theme.onAccent,
     fontSize: 11,
     fontWeight: '900',
     letterSpacing: 0.5,

@@ -232,7 +232,7 @@ export default function MatchDetailScreen() {
                 onPress={handleConfirmResult}
                 disabled={confirmResult.isPending || disputeResult.isPending}
               >
-                {confirmResult.isPending ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Confirm Result</Text>}
+                {confirmResult.isPending ? <ActivityIndicator color={theme.onAccent} /> : <Text style={[styles.buttonText, { color: theme.onAccent }]}>Confirm Result</Text>}
               </Pressable>
               <Pressable
                 style={({ pressed }) => [styles.button, styles.leaveButton, { flex: 1 }, pressed && { opacity: 0.9 }]}
@@ -276,9 +276,9 @@ export default function MatchDetailScreen() {
               disabled={isFull || joinMatch.isPending}
             >
               {joinMatch.isPending ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={isFull ? '#fff' : theme.onAccent} />
               ) : (
-                <Text style={styles.buttonText}>{isFull ? 'Match Roster Full' : 'Join Match Roster'}</Text>
+                <Text style={[styles.buttonText, { color: isFull ? '#fff' : theme.onAccent }]}>{isFull ? 'Match Roster Full' : 'Join Match Roster'}</Text>
               )}
             </Pressable>
           )}
@@ -380,13 +380,13 @@ export default function MatchDetailScreen() {
               pressed && styles.buttonPressed,
               recordResult.isPending && styles.buttonDisabled
             ]} 
-            onPress={handleSubmitResult} 
+            onPress={handleSubmitResult}
             disabled={recordResult.isPending}
           >
             {recordResult.isPending ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={theme.onAccent} />
             ) : (
-              <Text style={styles.buttonText}>Save Results</Text>
+              <Text style={[styles.buttonText, { color: theme.onAccent }]}>Save Results</Text>
             )}
           </Pressable>
         </View>
@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
   playerChip: { borderWidth: 1, borderColor: theme.border, borderRadius: 16, paddingVertical: 8, paddingHorizontal: 16, backgroundColor: theme.card },
   playerChipActive: { backgroundColor: theme.primary, borderColor: theme.primary },
   playerChipText: { color: theme.textMuted, fontWeight: '800', fontSize: 11 },
-  playerChipTextActive: { color: '#fff', fontWeight: '900' },
+  playerChipTextActive: { color: theme.onAccent, fontWeight: '900' },
   setRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 },
   setLabel: { width: 50, fontSize: 10, fontWeight: '900', color: theme.textMuted, textTransform: 'uppercase' },
   setInput: { borderWidth: 1, borderColor: theme.border, borderRadius: 8, padding: 10, width: 60, textAlign: 'center', backgroundColor: '#22242E', color: theme.text, fontSize: 14, fontWeight: '900' },

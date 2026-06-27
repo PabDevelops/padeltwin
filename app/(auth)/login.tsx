@@ -64,7 +64,7 @@ export default function LoginScreen() {
           onPress={handleLogin}
           disabled={loading}
         >
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Log in</Text>}
+          {loading ? <ActivityIndicator color={theme.onAccent} /> : <Text style={styles.buttonText}>Log in</Text>}
         </Pressable>
       </View>
 
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.5,
   },
-  buttonText: { color: '#fff', fontSize: 14, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.8 },
+  buttonText: { color: theme.onAccent, fontSize: 14, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.8 },
   error: { color: theme.danger, fontWeight: '700', fontSize: 12, textAlign: 'center', textTransform: 'uppercase' },
   link: { textAlign: 'center', marginTop: 28, color: theme.textMuted, fontSize: 13, fontWeight: '700' },
   linkHighlight: { color: theme.primary, fontWeight: '900' },

@@ -64,7 +64,7 @@ export default function LeaguesScreen() {
               setCreateModalVisible(true);
             }}
           >
-            <Ionicons name={profile?.is_pro ? 'add-circle' : 'lock-closed'} size={18} color="#fff" />
+            <Ionicons name={profile?.is_pro ? 'add-circle' : 'lock-closed'} size={18} color={theme.onAccent} />
             <Text style={styles.actionButtonText}>{profile?.is_pro ? 'CREATE LEAGUE' : 'CREATE LEAGUE (PRO)'}</Text>
           </Pressable>
           <Pressable
@@ -122,7 +122,7 @@ export default function LeaguesScreen() {
                 onPress={handleCreate}
                 disabled={!leagueName.trim() || createLeague.isPending}
               >
-                {createLeague.isPending ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalConfirmText}>CREATE</Text>}
+                {createLeague.isPending ? <ActivityIndicator color={theme.onAccent} /> : <Text style={styles.modalConfirmText}>CREATE</Text>}
               </Pressable>
             </View>
           </View>
@@ -152,7 +152,7 @@ export default function LeaguesScreen() {
                 onPress={handleJoin}
                 disabled={!inviteCode.trim() || joinLeague.isPending}
               >
-                {joinLeague.isPending ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalConfirmText}>JOIN</Text>}
+                {joinLeague.isPending ? <ActivityIndicator color={theme.onAccent} /> : <Text style={styles.modalConfirmText}>JOIN</Text>}
               </Pressable>
             </View>
           </View>
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     borderRadius: buttonRadius,
     paddingVertical: 14,
   },
-  actionButtonText: { color: '#fff', fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
+  actionButtonText: { color: theme.onAccent, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
   actionButtonOutline: {
     flex: 1,
     flexDirection: 'row',
@@ -228,5 +228,5 @@ const styles = StyleSheet.create({
   modalCancelBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: buttonRadius, borderWidth: 1, borderColor: theme.border },
   modalCancelText: { color: theme.textMuted, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
   modalConfirmBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: buttonRadius, backgroundColor: theme.accent },
-  modalConfirmText: { color: '#fff', fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
+  modalConfirmText: { color: theme.onAccent, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
 });

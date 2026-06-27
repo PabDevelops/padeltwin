@@ -18,6 +18,6 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   badgeSm: { paddingHorizontal: 5, paddingVertical: 1.5, marginLeft: 4 },
-  text: { color: '#fff', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
+  text: { color: theme.onAccent, fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
   textSm: { fontSize: 8 },
 });

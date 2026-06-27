@@ -91,7 +91,7 @@ export default function CoachDetailScreen() {
 
       {id !== userId && (
         <Pressable style={({ pressed }) => [styles.contactButton, pressed && { opacity: 0.9 }]} onPress={() => setModalVisible(true)}>
-          <Ionicons name="paper-plane" size={16} color="#fff" />
+          <Ionicons name="paper-plane" size={16} color={theme.onAccent} />
           <Text style={styles.contactButtonText}>REQUEST A LESSON</Text>
         </Pressable>
       )}
@@ -119,7 +119,7 @@ export default function CoachDetailScreen() {
                 onPress={handleSend}
                 disabled={!message.trim() || sendLead.isPending}
               >
-                {sendLead.isPending ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalConfirmText}>SEND</Text>}
+                {sendLead.isPending ? <ActivityIndicator color={theme.onAccent} /> : <Text style={styles.modalConfirmText}>SEND</Text>}
               </Pressable>
             </View>
           </View>
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     marginTop: 8,
   },
-  contactButtonText: { color: '#fff', fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
+  contactButtonText: { color: theme.onAccent, fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalCard: { width: '100%', backgroundColor: theme.card, borderRadius: 20, padding: 20, borderWidth: 1, borderColor: theme.border },
   modalTitle: { color: theme.text, fontWeight: '900', fontSize: 12, letterSpacing: 1, marginBottom: 14 },
@@ -191,5 +191,5 @@ const styles = StyleSheet.create({
   modalCancelBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: buttonRadius, borderWidth: 1, borderColor: theme.border },
   modalCancelText: { color: theme.textMuted, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
   modalConfirmBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: buttonRadius, backgroundColor: theme.accent },
-  modalConfirmText: { color: '#fff', fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
+  modalConfirmText: { color: theme.onAccent, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
 });

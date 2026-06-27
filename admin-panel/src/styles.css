@@ -4,7 +4,9 @@
   --border: #2a2a2a;
   --text: #ffffff;
   --text-muted: #9a9a9a;
-  --accent: #ff7a1a;
+  --accent: #c6ff33;
+  --on-accent: #0d0d0d;
+  --secondary: #7d39eb;
   --danger: #ff3b30;
 }
 
@@ -82,7 +84,7 @@ textarea::placeholder {
 
 .nav-item.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .main {
@@ -159,6 +161,7 @@ textarea::placeholder {
 
 .btn-accent {
   background: var(--accent);
+  color: var(--on-accent);
 }
 
 .btn-danger {
@@ -189,7 +192,7 @@ textarea::placeholder {
 .chip.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .label {

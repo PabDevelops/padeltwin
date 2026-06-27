@@ -292,7 +292,7 @@ export default function OnboardingScreen() {
         disabled={updateProfile.isPending}
       >
         {updateProfile.isPending ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={theme.onAccent} />
         ) : (
           <Text style={styles.buttonText}>Save Profile & Finish</Text>
         )}
@@ -387,5 +387,5 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.5,
   },
-  buttonText: { color: '#fff', fontSize: 14, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.8 },
+  buttonText: { color: theme.onAccent, fontSize: 14, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.8 },
 });

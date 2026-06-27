@@ -107,5 +107,5 @@ const styles = StyleSheet.create({
   emptyTitle: { color: theme.text, fontWeight: '800', fontSize: 15, marginBottom: 4 },
   emptySubtitle: { color: theme.textMuted, fontSize: 12, textAlign: 'center', lineHeight: 17, marginBottom: 16 },
   emptyButton: { backgroundColor: theme.accent, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 12 },
-  emptyButtonText: { color: '#fff', fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
+  emptyButtonText: { color: theme.onAccent, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
 });

@@ -381,7 +381,7 @@ export default function HomeScreen() {
               style={[styles.emptyCardButton, { backgroundColor: theme.primary }]} 
               onPress={() => router.push('/')}
             >
-              <Ionicons name="search" size={13} color="#FFF" />
+              <Ionicons name="search" size={13} color={theme.onAccent} />
               <Text style={styles.emptyCardButtonText}>FIND A MATCH</Text>
             </Pressable>
             <Pressable 
@@ -1031,7 +1031,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   emptyCardButtonText: {
-    color: '#FFF',
+    color: theme.onAccent,
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 0.5,

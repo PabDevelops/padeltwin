@@ -231,7 +231,7 @@ export default function CreateMatchScreen() {
         disabled={createMatch.isPending}
       >
         {createMatch.isPending ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={theme.onAccent} />
         ) : (
           <Text style={styles.buttonText}>Publish Match</Text>
         )}
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   chipText: { color: theme.textMuted, fontWeight: '700', fontSize: 13 },
-  chipTextActive: { color: '#fff', fontWeight: '800' },
+  chipTextActive: { color: theme.onAccent, fontWeight: '800' },
   partnerContainer: { marginTop: 14, borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 14 },
   button: { 
     backgroundColor: theme.primary, 
@@ -303,6 +303,6 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.5,
   },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  buttonText: { color: theme.onAccent, fontSize: 16, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
   error: { color: theme.danger, fontWeight: '600', fontSize: 14, textAlign: 'center', marginTop: 8 },
 });
