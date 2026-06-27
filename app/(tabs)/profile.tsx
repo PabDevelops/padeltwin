@@ -33,6 +33,9 @@ import {
   useFollowerCount,
   useFollowingCount,
   usePersonalRecords,
+  useBlockedProfiles,
+  useUnblockUser,
+  useDeleteAccount,
 } from '@/lib/queries';
 import { ACHIEVEMENT_LABELS, ACHIEVEMENT_ICONS } from '@/constants/achievements';
 import { supabase } from '@/lib/supabase';
@@ -85,6 +88,9 @@ export default function ProfileScreen() {
   const respondRequest = useRespondPartnerRequest();
   const { data: hiddenChats } = useHiddenChats(userId);
   const hideChat = useHideChat();
+  const { data: blockedProfiles } = useBlockedProfiles(userId);
+  const unblockUser = useUnblockUser();
+  const deleteAccount = useDeleteAccount();
   const applyToCoach = useApplyToCoach();
   const stopCoaching = useStopCoaching();
   const { data: leads, isLoading: leadsLoading } = useMyCoachLeads(profile?.coach_status === 'approved' ? userId : undefined);
@@ -672,6 +678,54 @@ export default function ProfileScreen() {
             ))}
           </View>
         )}
+
+        <View style={styles.section}>
+          <Text style={styles.sectionHeader}>PRIVACY & SAFETY</Text>
+
+          <Pressable onPress={() => router.push('/privacy' as any)}>
+            <Text style={[styles.label, { color: theme.accent, marginTop: 0 }]}>PRIVACY POLICY →</Text>
+          </Pressable>
+
+          {blockedProfiles && blockedProfiles.length > 0 && (
+            <>
+              <Text style={[styles.label, { marginTop: 16 }]}>BLOCKED PLAYERS</Text>
+              {blockedProfiles.map((b) => (
+                <View key={b.id} style={[styles.leadCard, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+                  <Text style={styles.requestName}>{b.full_name ?? 'Player'}</Text>
+                  <Pressable
+                    onPress={() => userId && unblockUser.mutate({ blockerId: userId, blockedId: b.id })}
+                  >
+                    <Text style={{ color: theme.accent, fontWeight: '800', fontSize: 11 }}>UNBLOCK</Text>
+                  </Pressable>
+                </View>
+              ))}
+            </>
+          )}
+
+          <Pressable
+            style={{ marginTop: 16 }}
+            onPress={() =>
+              Alert.alert(
+                'Delete account?',
+                "This permanently deletes your profile, matches, messages, and stats. This can't be undone.",
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Delete my account',
+                    style: 'destructive',
+                    onPress: () =>
+                      deleteAccount.mutate(undefined, {
+                        onSuccess: () => supabase.auth.signOut(),
+                        onError: (err: any) => Alert.alert('Could not delete account', err.message ?? 'Try again.'),
+                      }),
+                  },
+                ]
+              )
+            }
+          >
+            <Text style={{ color: theme.danger, fontWeight: '800', fontSize: 11, letterSpacing: 0.5 }}>DELETE MY ACCOUNT</Text>
+          </Pressable>
+        </View>
       </View>
 
       <Modal visible={coachModalVisible} transparent animationType="fade" onRequestClose={() => setCoachModalVisible(false)}>

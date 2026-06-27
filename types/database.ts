@@ -159,6 +159,26 @@ export interface Follow {
   created_at: string;
 }
 
+export interface BlockedUser {
+  blocker_id: string;
+  blocked_id: string;
+  created_at: string;
+}
+
+export type ReportTargetType = "profile" | "match" | "match_result";
+export type ReportStatus = "open" | "reviewed" | "dismissed";
+
+export interface Report {
+  id: string;
+  reporter_id: string;
+  target_type: ReportTargetType;
+  target_id: string;
+  reason: string;
+  details: string | null;
+  status: ReportStatus;
+  created_at: string;
+}
+
 export type VibItemType = "achievement" | "match_result";
 
 export interface Vib {

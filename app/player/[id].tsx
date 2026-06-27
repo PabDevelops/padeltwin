@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   ImageBackground,
@@ -27,6 +28,10 @@ import {
   useFollowerCount,
   useFollowingCount,
   usePersonalRecords,
+  useBlockedUsers,
+  useBlockUser,
+  useUnblockUser,
+  useReportContent,
 } from '@/lib/queries';
 import { ACHIEVEMENT_LABELS, ACHIEVEMENT_ICONS } from '@/constants/achievements';
 import { LEVEL_LABELS } from '@/constants/levels';
@@ -86,10 +91,54 @@ export default function PlayerProfileScreen() {
   const { data: followingCount } = useFollowingCount(id);
   const { data: records } = usePersonalRecords(id);
 
+  const { data: blockedUsers } = useBlockedUsers(currentUserId);
+
   // Mutations
   const followPlayer = useFollowPlayer();
   const unfollowPlayer = useUnfollowPlayer();
   const sendRequest = useSendPartnerRequest();
+  const blockUser = useBlockUser();
+  const unblockUser = useUnblockUser();
+  const reportContent = useReportContent();
+
+  function handleMorePress() {
+    if (!currentUserId || !id) return;
+    const isBlocked = blockedUsers?.has(id);
+    const options: { text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }[] = [
+      {
+        text: isBlocked ? 'Unblock' : 'Block',
+        style: 'destructive',
+        onPress: () => {
+          if (isBlocked) {
+            unblockUser.mutate({ blockerId: currentUserId, blockedId: id });
+          } else {
+            Alert.alert('Block this player?', "You won't see each other in discovery anymore.", [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Block', style: 'destructive', onPress: () => blockUser.mutate({ blockerId: currentUserId, blockedId: id }) },
+            ]);
+          }
+        },
+      },
+      {
+        text: 'Report',
+        onPress: () => {
+          Alert.alert('Report this player', 'What is the issue?', [
+            { text: 'Cancel', style: 'cancel' },
+            ...['Inappropriate profile', 'Harassment', 'Fake account', 'Other'].map((reason) => ({
+              text: reason,
+              onPress: () =>
+                reportContent.mutate(
+                  { reporterId: currentUserId, targetType: 'profile', targetId: id, reason },
+                  { onSuccess: () => Alert.alert('Reported', "Thanks — we'll review it.") }
+                ),
+            })),
+          ]);
+        },
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ];
+    Alert.alert('More options', undefined, options as any);
+  }
 
   const isCalibrating = isEloProvisional(stats?.played ?? 0);
 
@@ -215,7 +264,9 @@ export default function PlayerProfileScreen() {
                 <Ionicons name="settings-sharp" size={18} color="#FFF" />
               </Pressable>
             ) : (
-              <View style={{ width: 44 }} />
+              <Pressable style={styles.navIconBtn} onPress={handleMorePress}>
+                <Ionicons name="ellipsis-horizontal" size={18} color="#FFF" />
+              </Pressable>
             )}
           </View>
         </View>

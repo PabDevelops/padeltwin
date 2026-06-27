@@ -97,6 +97,10 @@ function RootNavigator() {
         name="social/[id]"
         options={{ title: 'Players', contentStyle: { paddingBottom: insets.bottom } }}
       />
+      <Stack.Screen
+        name="privacy"
+        options={{ title: 'Privacy Policy', contentStyle: { paddingBottom: insets.bottom } }}
+      />
       <Stack.Screen name="+not-found" />
     </Stack>
   );

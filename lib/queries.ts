@@ -8,6 +8,7 @@ import type {
   EloHistoryEntry,
   League,
   LeagueMemberWithProfile,
+  ReportTargetType,
   Match,
   MatchResult,
   MatchResultWithProfiles,
@@ -210,9 +211,94 @@ export function useCompatiblePlayers(currentUserId: string | undefined, profile:
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as Profile[];
+
+      const { data: blocks } = await supabase
+        .from("blocked_users")
+        .select("blocked_id")
+        .eq("blocker_id", currentUserId);
+      const blockedIds = new Set((blocks ?? []).map((b) => b.blocked_id as string));
+
+      return (data as Profile[]).filter((p) => !blockedIds.has(p.id));
     },
     enabled: !!currentUserId && !!profile,
+  });
+}
+
+// ---- Safety: blocking, reporting, account deletion ----
+
+export function useBlockedUsers(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["blockedUsers", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("blocked_users").select("blocked_id").eq("blocker_id", userId);
+      if (error) throw error;
+      return new Set((data ?? []).map((row) => row.blocked_id as string));
+    },
+    enabled: !!userId,
+  });
+}
+
+export function useBlockUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ blockerId, blockedId }: { blockerId: string; blockedId: string }) => {
+      const { error } = await supabase.from("blocked_users").insert({ blocker_id: blockerId, blocked_id: blockedId });
+      if (error && error.code !== "23505") throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blockedUsers"] });
+      queryClient.invalidateQueries({ queryKey: ["compatiblePlayers"] });
+    },
+  });
+}
+
+export function useUnblockUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ blockerId, blockedId }: { blockerId: string; blockedId: string }) => {
+      const { error } = await supabase
+        .from("blocked_users")
+        .delete()
+        .eq("blocker_id", blockerId)
+        .eq("blocked_id", blockedId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blockedUsers"] });
+      queryClient.invalidateQueries({ queryKey: ["compatiblePlayers"] });
+    },
+  });
+}
+
+export function useReportContent() {
+  return useMutation({
+    mutationFn: async ({
+      reporterId,
+      targetType,
+      targetId,
+      reason,
+      details,
+    }: {
+      reporterId: string;
+      targetType: ReportTargetType;
+      targetId: string;
+      reason: string;
+      details?: string;
+    }) => {
+      const { error } = await supabase
+        .from("reports")
+        .insert({ reporter_id: reporterId, target_type: targetType, target_id: targetId, reason, details: details ?? null });
+      if (error) throw error;
+    },
+  });
+}
+
+export function useDeleteAccount() {
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc("delete_my_account");
+      if (error) throw error;
+    },
   });
 }
 
@@ -729,6 +815,21 @@ export function useFollowedProfiles(userId: string | undefined) {
         .eq("follower_id", userId);
       if (error) throw error;
       return (data ?? []).map((f: any) => f.profiles as Profile);
+    },
+    enabled: !!userId,
+  });
+}
+
+export function useBlockedProfiles(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["blockedProfiles", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("blocked_users")
+        .select("profiles!blocked_users_blocked_id_fkey(*)")
+        .eq("blocker_id", userId);
+      if (error) throw error;
+      return (data ?? []).map((b: any) => b.profiles as Profile);
     },
     enabled: !!userId,
   });
