@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '@/constants/theme';
 import { useSession } from '@/lib/useSession';
 import { useProfile } from '@/lib/queries';
+import { supabase } from '@/lib/supabase';
 
 function CustomTabBar({ state, descriptors, navigation, bottomInset }: any) {
   return (
@@ -100,6 +101,10 @@ export default function TabLayout() {
 
   if (loading || (session && profileLoading)) return null;
   if (!session) return <Redirect href="/(auth)/login" />;
+  if (profile?.is_banned) {
+    supabase.auth.signOut();
+    return null;
+  }
   if (!profile?.onboarding_completed) return <Redirect href={'/(onboarding)' as any} />;
 
   return (

@@ -3,6 +3,9 @@ import { supabase } from "./supabase";
 import { isEloProvisional } from "../constants/elo";
 import type {
   AchievementWithProfile,
+  AdminAchievement,
+  AdminMessage,
+  AdminReport,
   CoachLead,
   CoachLeadWithProfiles,
   EloHistoryEntry,
@@ -20,6 +23,10 @@ import type {
   RequestStatus,
   SetScore,
   Team,
+  Tournament,
+  TournamentFormat,
+  TournamentMatch,
+  TournamentParticipantWithProfiles,
   VibItemType,
 } from "../types/database";
 
@@ -1122,5 +1129,261 @@ export function useUpdateLeadStatus() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coachLeads"] });
     },
+  });
+}
+
+// ---- Admin panel ----
+
+export function useIsAdmin(profile: Profile | undefined) {
+  return !!profile?.is_admin;
+}
+
+export function useAdminPendingCoaches() {
+  return useQuery({
+    queryKey: ["adminPendingCoaches"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_list_pending_coaches");
+      if (error) throw error;
+      return data as Profile[];
+    },
+  });
+}
+
+export function useAdminSetCoachStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ profileId, status }: { profileId: string; status: string }) => {
+      const { error } = await supabase.rpc("admin_set_coach_status", { p_profile_id: profileId, p_status: status });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["adminPendingCoaches"] }),
+  });
+}
+
+export function useAdminReports(status: string | null = "open") {
+  return useQuery({
+    queryKey: ["adminReports", status],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_list_reports", { p_status: status });
+      if (error) throw error;
+      return data as AdminReport[];
+    },
+  });
+}
+
+export function useAdminResolveReport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ reportId, status }: { reportId: string; status: string }) => {
+      const { error } = await supabase.rpc("admin_resolve_report", { p_report_id: reportId, p_status: status });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["adminReports"] }),
+  });
+}
+
+export function useAdminSearchProfiles(query: string) {
+  return useQuery({
+    queryKey: ["adminSearchProfiles", query],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_search_profiles", { p_query: query });
+      if (error) throw error;
+      return data as Profile[];
+    },
+    enabled: query.trim().length > 0,
+  });
+}
+
+export function useAdminSetBanned() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ profileId, banned, reason }: { profileId: string; banned: boolean; reason?: string }) => {
+      const { error } = await supabase.rpc("admin_set_banned", { p_profile_id: profileId, p_banned: banned, p_reason: reason ?? null });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["adminSearchProfiles"] }),
+  });
+}
+
+export function useAdminSetPro() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ profileId, isPro }: { profileId: string; isPro: boolean }) => {
+      const { error } = await supabase.rpc("admin_set_pro", { p_profile_id: profileId, p_is_pro: isPro });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["adminSearchProfiles"] }),
+  });
+}
+
+export function useAdminRecentAchievements(limit = 50) {
+  return useQuery({
+    queryKey: ["adminRecentAchievements", limit],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_recent_achievements", { p_limit: limit });
+      if (error) throw error;
+      return data as AdminAchievement[];
+    },
+  });
+}
+
+export function useAdminDeleteAchievement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (achievementId: string) => {
+      const { error } = await supabase.rpc("admin_delete_achievement", { p_achievement_id: achievementId });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["adminRecentAchievements"] }),
+  });
+}
+
+export function useAdminSearchMessages(query: string) {
+  return useQuery({
+    queryKey: ["adminSearchMessages", query],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_search_messages", { p_query: query });
+      if (error) throw error;
+      return data as AdminMessage[];
+    },
+    enabled: query.trim().length > 0,
+  });
+}
+
+export function useAdminDeleteMessage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (messageId: string) => {
+      const { error } = await supabase.rpc("admin_delete_message", { p_message_id: messageId });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["adminSearchMessages"] }),
+  });
+}
+
+export function useAdminTournaments() {
+  return useQuery({
+    queryKey: ["adminTournaments"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("tournaments").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as Tournament[];
+    },
+  });
+}
+
+export function useAdminCreateTournament() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ name, format, zone, startsAt }: { name: string; format: TournamentFormat; zone?: string; startsAt?: string }) => {
+      const { error } = await supabase.rpc("admin_create_tournament", {
+        p_name: name,
+        p_format: format,
+        p_zone: zone ?? null,
+        p_starts_at: startsAt ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["adminTournaments"] }),
+  });
+}
+
+export function useAdminTournamentParticipants(tournamentId: string | undefined) {
+  return useQuery({
+    queryKey: ["adminTournamentParticipants", tournamentId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tournament_participants")
+        .select("*, profile:profiles!tournament_participants_profile_id_fkey(*), partner:profiles!tournament_participants_partner_id_fkey(*)")
+        .eq("tournament_id", tournamentId)
+        .order("seed", { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return data as unknown as TournamentParticipantWithProfiles[];
+    },
+    enabled: !!tournamentId,
+  });
+}
+
+export function useAdminAddTournamentParticipant() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      tournamentId,
+      profileId,
+      partnerId,
+      seed,
+    }: {
+      tournamentId: string;
+      profileId: string;
+      partnerId?: string;
+      seed?: number;
+    }) => {
+      const { error } = await supabase.rpc("admin_add_tournament_participant", {
+        p_tournament_id: tournamentId,
+        p_profile_id: profileId,
+        p_partner_id: partnerId ?? null,
+        p_seed: seed ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["adminTournamentParticipants"] }),
+  });
+}
+
+export function useAdminRemoveTournamentParticipant() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (participantId: string) => {
+      const { error } = await supabase.rpc("admin_remove_tournament_participant", { p_participant_id: participantId });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["adminTournamentParticipants"] }),
+  });
+}
+
+export function useAdminGenerateBracket() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ tournamentId, format }: { tournamentId: string; format: TournamentFormat }) => {
+      const fn = format === "bracket" ? "admin_generate_bracket" : "admin_generate_round_robin";
+      const { error } = await supabase.rpc(fn, { p_tournament_id: tournamentId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminTournaments"] });
+      queryClient.invalidateQueries({ queryKey: ["adminTournamentMatches"] });
+    },
+  });
+}
+
+export function useAdminTournamentMatches(tournamentId: string | undefined) {
+  return useQuery({
+    queryKey: ["adminTournamentMatches", tournamentId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tournament_matches")
+        .select("*")
+        .eq("tournament_id", tournamentId)
+        .order("round", { ascending: true })
+        .order("position", { ascending: true });
+      if (error) throw error;
+      return data as TournamentMatch[];
+    },
+    enabled: !!tournamentId,
+  });
+}
+
+export function useAdminRecordTournamentResult() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ matchId, sets, winnerEntrantId }: { matchId: string; sets: SetScore[]; winnerEntrantId: string }) => {
+      const { error } = await supabase.rpc("admin_record_tournament_result", {
+        p_match_id: matchId,
+        p_sets: sets,
+        p_winner_entrant_id: winnerEntrantId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["adminTournamentMatches"] }),
   });
 }

@@ -22,6 +22,9 @@ export interface Profile {
   onboarding_completed: boolean;
   push_token: string | null;
   is_pro: boolean;
+  is_admin: boolean;
+  is_banned: boolean;
+  banned_reason: string | null;
   is_coach: boolean;
   coach_status: CoachStatus;
   coach_bio: string | null;
@@ -214,6 +217,80 @@ export interface LeagueMember {
 
 export interface LeagueMemberWithProfile extends LeagueMember {
   profiles: Profile | null;
+}
+
+// ---- Admin panel ----
+
+export interface AdminReport {
+  id: string;
+  reporter_id: string;
+  reporter_name: string | null;
+  target_type: ReportTargetType;
+  target_id: string;
+  reason: string;
+  details: string | null;
+  status: ReportStatus;
+  created_at: string;
+}
+
+export interface AdminMessage {
+  id: string;
+  request_id: string;
+  sender_id: string;
+  sender_name: string | null;
+  body: string;
+  created_at: string;
+}
+
+export interface AdminAchievement {
+  id: string;
+  profile_id: string;
+  full_name: string | null;
+  type: AchievementType;
+  created_at: string;
+}
+
+export type TournamentFormat = "round_robin" | "bracket";
+export type TournamentStatus = "draft" | "active" | "completed";
+
+export interface Tournament {
+  id: string;
+  name: string;
+  format: TournamentFormat;
+  status: TournamentStatus;
+  zone: string | null;
+  starts_at: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+export interface TournamentParticipant {
+  id: string;
+  tournament_id: string;
+  profile_id: string;
+  partner_id: string | null;
+  seed: number | null;
+  created_at: string;
+}
+
+export interface TournamentParticipantWithProfiles extends TournamentParticipant {
+  profile: Profile | null;
+  partner: Profile | null;
+}
+
+export type TournamentMatchStatus = "pending" | "completed" | "bye";
+
+export interface TournamentMatch {
+  id: string;
+  tournament_id: string;
+  round: number;
+  position: number;
+  entrant_a_id: string | null;
+  entrant_b_id: string | null;
+  sets: SetScore[] | null;
+  winner_entrant_id: string | null;
+  status: TournamentMatchStatus;
+  created_at: string;
 }
 
 export interface Database {
