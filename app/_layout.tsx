@@ -101,6 +101,18 @@ function RootNavigator() {
         name="privacy"
         options={{ title: 'Privacy Policy', contentStyle: { paddingBottom: insets.bottom } }}
       />
+      <Stack.Screen
+        name="club-leaderboard"
+        options={{ title: 'King of the Court', contentStyle: { paddingBottom: insets.bottom } }}
+      />
+      <Stack.Screen
+        name="tournaments/index"
+        options={{ title: 'Tournaments', contentStyle: { paddingBottom: insets.bottom } }}
+      />
+      <Stack.Screen
+        name="tournaments/[id]"
+        options={{ title: 'Tournament', contentStyle: { paddingBottom: insets.bottom } }}
+      />
       <Stack.Screen name="+not-found" />
     </Stack>
   );

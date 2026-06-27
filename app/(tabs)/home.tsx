@@ -706,6 +706,20 @@ export default function HomeScreen() {
         </>
       )}
 
+      {profile?.club && (
+        <Pressable style={styles.clubBanner} onPress={() => router.push('/club-leaderboard' as any)}>
+          <Ionicons name="trophy" size={18} color={theme.accent} />
+          <Text style={styles.clubBannerText}>KING OF THE COURT — {profile.club.toUpperCase()}</Text>
+          <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+        </Pressable>
+      )}
+
+      <Pressable style={styles.clubBanner} onPress={() => router.push('/tournaments' as any)}>
+        <Ionicons name="medal" size={18} color={theme.secondary} />
+        <Text style={styles.clubBannerText}>TOURNAMENTS</Text>
+        <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+      </Pressable>
+
       <View style={styles.leaguesSectionHeader}>
         <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>MY LEAGUES</Text>
         <Pressable onPress={() => router.push('/leagues' as any)}>
@@ -792,6 +806,17 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   scrollContainer: { flex: 1, backgroundColor: theme.background },
+  clubBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: theme.card,
+    borderRadius: cardRadius,
+    borderWidth: 1,
+    borderColor: theme.border,
+    padding: 14,
+  },
+  clubBannerText: { flex: 1, color: theme.text, fontWeight: '800', fontSize: 11, letterSpacing: 0.4 },
   container: { padding: 20, gap: 16, paddingBottom: 32 },
   headerContainer: { marginBottom: 4, marginTop: 12 },
   welcomeTag: { fontSize: 10, fontWeight: '900', color: theme.primary, letterSpacing: 2, marginBottom: 4 },

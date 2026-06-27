@@ -20,6 +20,9 @@ import type {
   RequestStatus,
   SetScore,
   Team,
+  Tournament,
+  TournamentMatch,
+  TournamentParticipantWithProfiles,
   VibItemType,
 } from "../types/database";
 
@@ -612,6 +615,28 @@ export function useLeaderboard(zone: string | null | undefined) {
   });
 }
 
+// "King of the Court": same eligibility bar as the zone leaderboard
+// (leaderboard_profiles already requires >=5 confirmed matches), just
+// scoped to players who entered the same club name on their profile
+// instead of zone. Exact-ish match (no wildcards) since club is a short
+// label, not a free-text search field.
+export function useClubLeaderboard(club: string | null | undefined) {
+  return useQuery({
+    queryKey: ["clubLeaderboard", club],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .rpc("leaderboard_profiles")
+        .select("*")
+        .ilike("club", club!)
+        .order("elo", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data as Profile[];
+    },
+    enabled: !!club,
+  });
+}
+
 // Activity feed combining two sources scoped to players the current user
 // follows (see 0009_follows.sql): system-generated achievement milestones
 // (0008_achievements.sql) and confirmed match results (0018's pending/
@@ -1122,5 +1147,69 @@ export function useUpdateLeadStatus() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coachLeads"] });
     },
+  });
+}
+
+// ---- Tournaments (read-only for players -- created/managed by admins only) ----
+
+export function useTournaments(zone: string | null | undefined) {
+  return useQuery({
+    queryKey: ["tournaments", zone],
+    queryFn: async () => {
+      let query = supabase
+        .from("tournaments")
+        .select("*")
+        .neq("status", "draft")
+        .order("starts_at", { ascending: true, nullsFirst: false });
+      if (zone) query = query.or(`zone.ilike.%${zone}%,zone.is.null`);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as Tournament[];
+    },
+  });
+}
+
+export function useTournament(tournamentId: string | undefined) {
+  return useQuery({
+    queryKey: ["tournament", tournamentId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("tournaments").select("*").eq("id", tournamentId!).single();
+      if (error) throw error;
+      return data as Tournament;
+    },
+    enabled: !!tournamentId,
+  });
+}
+
+export function useTournamentParticipants(tournamentId: string | undefined) {
+  return useQuery({
+    queryKey: ["tournamentParticipants", tournamentId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tournament_participants")
+        .select("*, profile:profiles!tournament_participants_profile_id_fkey(*), partner:profiles!tournament_participants_partner_id_fkey(*)")
+        .eq("tournament_id", tournamentId)
+        .order("seed", { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return data as unknown as TournamentParticipantWithProfiles[];
+    },
+    enabled: !!tournamentId,
+  });
+}
+
+export function useTournamentMatches(tournamentId: string | undefined) {
+  return useQuery({
+    queryKey: ["tournamentMatches", tournamentId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tournament_matches")
+        .select("*")
+        .eq("tournament_id", tournamentId)
+        .order("round", { ascending: true })
+        .order("position", { ascending: true });
+      if (error) throw error;
+      return data as TournamentMatch[];
+    },
+    enabled: !!tournamentId,
   });
 }

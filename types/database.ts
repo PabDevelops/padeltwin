@@ -219,6 +219,49 @@ export interface LeagueMemberWithProfile extends LeagueMember {
   profiles: Profile | null;
 }
 
+export type TournamentFormat = "round_robin" | "bracket";
+export type TournamentStatus = "draft" | "active" | "completed";
+
+export interface Tournament {
+  id: string;
+  name: string;
+  format: TournamentFormat;
+  status: TournamentStatus;
+  zone: string | null;
+  starts_at: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+export interface TournamentParticipant {
+  id: string;
+  tournament_id: string;
+  profile_id: string;
+  partner_id: string | null;
+  seed: number | null;
+  created_at: string;
+}
+
+export interface TournamentParticipantWithProfiles extends TournamentParticipant {
+  profile: Profile | null;
+  partner: Profile | null;
+}
+
+export type TournamentMatchStatus = "pending" | "completed" | "bye";
+
+export interface TournamentMatch {
+  id: string;
+  tournament_id: string;
+  round: number;
+  position: number;
+  entrant_a_id: string | null;
+  entrant_b_id: string | null;
+  sets: SetScore[] | null;
+  winner_entrant_id: string | null;
+  status: TournamentMatchStatus;
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {

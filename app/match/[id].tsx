@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import * as Sharing from 'expo-sharing';
+import { captureRef } from 'react-native-view-shot';
 import { useMatch, useJoinMatch, useLeaveMatch, useMatchResult, useRecordMatchResult, useConfirmMatchResult, useDisputeMatchResult } from '@/lib/queries';
 import { useSession } from '@/lib/useSession';
+import { MatchShareCard } from '@/components/MatchShareCard';
 import type { MatchPlayer, PlayerLevel, Profile, SetScore, Team } from '@/types/database';
 import { theme, buttonRadius, cardRadius } from '@/constants/theme';
 import { LEVEL_LABELS } from '@/constants/levels';
@@ -18,6 +21,22 @@ export default function MatchDetailScreen() {
   const recordResult = useRecordMatchResult();
   const confirmResult = useConfirmMatchResult();
   const disputeResult = useDisputeMatchResult();
+
+  const shareCardRef = useRef<View>(null);
+  const [sharing, setSharing] = useState(false);
+
+  async function handleShareResult() {
+    if (!shareCardRef.current) return;
+    setSharing(true);
+    try {
+      const uri = await captureRef(shareCardRef, { format: 'png', quality: 1 });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { mimeType: 'image/png' });
+      }
+    } finally {
+      setSharing(false);
+    }
+  }
 
   const [showResultForm, setShowResultForm] = useState(false);
   const [teamA, setTeamA] = useState<string[]>([]);
@@ -126,6 +145,7 @@ export default function MatchDetailScreen() {
   }
 
   return (
+    <>
     <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.tagline}>MATCH DETAILS</Text>
@@ -224,6 +244,16 @@ export default function MatchDetailScreen() {
               <Text style={styles.statusDisputed}>⚠️ DISPUTED — UNDER REVIEW</Text>
             )}
           </View>
+
+          {existingResult.status === 'confirmed' && (
+            <Pressable
+              style={({ pressed }) => [styles.shareButton, pressed && { opacity: 0.9 }]}
+              onPress={handleShareResult}
+              disabled={sharing}
+            >
+              {sharing ? <ActivityIndicator color={theme.text} /> : <Text style={styles.shareButtonText}>📤 Share Result</Text>}
+            </Pressable>
+          )}
 
           {canConfirmOrDispute && (
             <View style={styles.confirmRow}>
@@ -392,12 +422,29 @@ export default function MatchDetailScreen() {
         </View>
       )}
     </ScrollView>
+    {existingResult && (
+      <View style={styles.offscreenCard} pointerEvents="none">
+        <MatchShareCard ref={shareCardRef} result={existingResult} />
+      </View>
+    )}
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background },
   scrollContainer: { flex: 1, backgroundColor: theme.background },
+  offscreenCard: { position: 'absolute', top: -9999, left: -9999 },
+  shareButton: {
+    marginTop: 12,
+    backgroundColor: theme.card,
+    borderWidth: 1,
+    borderColor: theme.border,
+    borderRadius: buttonRadius,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  shareButtonText: { color: theme.text, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
   container: { padding: 20, gap: 16, paddingBottom: 32 },
   headerContainer: { marginTop: 12, marginBottom: 4 },
   tagline: { fontSize: 10, fontWeight: '900', color: theme.primary, letterSpacing: 2, marginBottom: 4 },
