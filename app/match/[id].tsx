@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { useMatch, useJoinMatch, useLeaveMatch, useMatchResult, useRecordMatchResult } from '@/lib/queries';
+import { useMatch, useJoinMatch, useLeaveMatch, useMatchResult, useRecordMatchResult, useConfirmMatchResult, useDisputeMatchResult } from '@/lib/queries';
 import { useSession } from '@/lib/useSession';
 import type { MatchPlayer, PlayerLevel, Profile, SetScore, Team } from '@/types/database';
 import { theme, buttonRadius, cardRadius } from '@/constants/theme';
@@ -16,6 +16,8 @@ export default function MatchDetailScreen() {
   const joinMatch = useJoinMatch();
   const leaveMatch = useLeaveMatch();
   const recordResult = useRecordMatchResult();
+  const confirmResult = useConfirmMatchResult();
+  const disputeResult = useDisputeMatchResult();
 
   const [showResultForm, setShowResultForm] = useState(false);
   const [teamA, setTeamA] = useState<string[]>([]);
@@ -37,6 +39,20 @@ export default function MatchDetailScreen() {
   const matchId = match.id;
   const isPast = new Date(match.date_time).getTime() < Date.now();
   const canRecordResult = isPast && players.length === 4 && !existingResult && isJoined;
+
+  const recorderInTeamA =
+    !!existingResult &&
+    (existingResult.recorded_by === existingResult.team_a_player1 ||
+      existingResult.recorded_by === existingResult.team_a_player2);
+  const userInTeamA =
+    !!existingResult &&
+    (userId === existingResult.team_a_player1 || userId === existingResult.team_a_player2);
+  const canConfirmOrDispute =
+    !!existingResult &&
+    existingResult.status === 'pending' &&
+    existingResult.recorded_by !== userId &&
+    !!userId &&
+    userInTeamA !== recorderInTeamA;
 
   function handleJoin() {
     if (!userId) return;
@@ -97,6 +113,16 @@ export default function MatchDetailScreen() {
         onError: (err: any) => setResultError(err.message ?? 'Could not record the result'),
       }
     );
+  }
+
+  function handleConfirmResult() {
+    if (!userId || !existingResult) return;
+    confirmResult.mutate({ resultId: existingResult.id, matchId, userId });
+  }
+
+  function handleDisputeResult() {
+    if (!userId || !existingResult) return;
+    disputeResult.mutate({ resultId: existingResult.id, matchId, userId });
   }
 
   return (
@@ -191,7 +217,32 @@ export default function MatchDetailScreen() {
           </View>
           <View style={styles.scoreboardFooter}>
             <Text style={styles.winnerTag}>🏆 WINNER: TEAM {existingResult.winner.toUpperCase()}</Text>
+            {existingResult.status === 'pending' && (
+              <Text style={styles.statusPending}>⏳ AWAITING CONFIRMATION FROM THE OTHER TEAM</Text>
+            )}
+            {existingResult.status === 'disputed' && (
+              <Text style={styles.statusDisputed}>⚠️ DISPUTED — UNDER REVIEW</Text>
+            )}
           </View>
+
+          {canConfirmOrDispute && (
+            <View style={styles.confirmRow}>
+              <Pressable
+                style={({ pressed }) => [styles.button, styles.joinButton, { flex: 1 }, pressed && { opacity: 0.9 }]}
+                onPress={handleConfirmResult}
+                disabled={confirmResult.isPending || disputeResult.isPending}
+              >
+                {confirmResult.isPending ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Confirm Result</Text>}
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.button, styles.leaveButton, { flex: 1 }, pressed && { opacity: 0.9 }]}
+                onPress={handleDisputeResult}
+                disabled={confirmResult.isPending || disputeResult.isPending}
+              >
+                {disputeResult.isPending ? <ActivityIndicator color={theme.danger} /> : <Text style={[styles.buttonText, { color: theme.danger }]}>Dispute</Text>}
+              </Pressable>
+            </View>
+          )}
         </View>
       )}
 
@@ -393,6 +444,9 @@ const styles = StyleSheet.create({
   setTextWinner: { color: theme.primary },
   scoreboardFooter: { marginTop: 12, alignItems: 'center' },
   winnerTag: { fontSize: 10, fontWeight: '900', color: theme.primary, letterSpacing: 0.5, textTransform: 'uppercase' },
+  statusPending: { fontSize: 10, fontWeight: '900', color: theme.textMuted, letterSpacing: 0.5, textTransform: 'uppercase', marginTop: 6 },
+  statusDisputed: { fontSize: 10, fontWeight: '900', color: theme.danger, letterSpacing: 0.5, textTransform: 'uppercase', marginTop: 6 },
+  confirmRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
   cancelledContainer: { backgroundColor: 'rgba(255, 59, 48, 0.1)', borderWidth: 1, borderColor: theme.danger, borderRadius: cardRadius, padding: 14, alignItems: 'center' },
   cancelled: { color: theme.danger, fontWeight: '900', fontSize: 12, letterSpacing: 0.5, textTransform: 'uppercase' },
   actionsContainer: { gap: 12, marginTop: 4 },

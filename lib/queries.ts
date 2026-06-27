@@ -341,6 +341,47 @@ export function useRecordMatchResult() {
   });
 }
 
+function useUpdateMatchResultStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { resultId: string; matchId: string; patch: Record<string, unknown> }) => {
+      const { error } = await supabase.from("match_results").update(vars.patch).eq("id", vars.resultId);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["matchResult", variables.matchId] });
+      queryClient.invalidateQueries({ queryKey: ["myStats"] });
+      queryClient.invalidateQueries({ queryKey: ["recentResults"] });
+      queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+}
+
+export function useConfirmMatchResult() {
+  const update = useUpdateMatchResultStatus();
+  return {
+    ...update,
+    mutate: (vars: { resultId: string; matchId: string; userId: string }, options?: Parameters<typeof update.mutate>[1]) =>
+      update.mutate(
+        { resultId: vars.resultId, matchId: vars.matchId, patch: { status: "confirmed", confirmed_by: vars.userId, confirmed_at: new Date().toISOString() } },
+        options
+      ),
+  };
+}
+
+export function useDisputeMatchResult() {
+  const update = useUpdateMatchResultStatus();
+  return {
+    ...update,
+    mutate: (vars: { resultId: string; matchId: string; userId: string }, options?: Parameters<typeof update.mutate>[1]) =>
+      update.mutate(
+        { resultId: vars.resultId, matchId: vars.matchId, patch: { status: "disputed", disputed_by: vars.userId, disputed_at: new Date().toISOString() } },
+        options
+      ),
+  };
+}
+
 export function useMyStats(userId: string | undefined) {
   return useQuery({
     queryKey: ["myStats", userId],
@@ -348,6 +389,7 @@ export function useMyStats(userId: string | undefined) {
       const { data, error } = await supabase
         .from("match_results")
         .select("*")
+        .eq("status", "confirmed")
         .or(
           `team_a_player1.eq.${userId},team_a_player2.eq.${userId},team_b_player1.eq.${userId},team_b_player2.eq.${userId}`
         );

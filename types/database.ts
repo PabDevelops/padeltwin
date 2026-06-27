@@ -97,6 +97,8 @@ export interface Message {
 
 export type Team = "a" | "b";
 
+export type ResultStatus = "pending" | "confirmed" | "disputed";
+
 export interface SetScore {
   a: number;
   b: number;
@@ -112,6 +114,11 @@ export interface MatchResult {
   sets: SetScore[];
   winner: Team;
   recorded_by: string;
+  status: ResultStatus;
+  confirmed_by: string | null;
+  confirmed_at: string | null;
+  disputed_by: string | null;
+  disputed_at: string | null;
   created_at: string;
 }
 
