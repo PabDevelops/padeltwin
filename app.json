@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "PadelTwin",
-    "slug": "PadelTwin",
+    "name": "PadelScrim",
+    "slug": "PadelScrim",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -14,10 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.padeltwin.app"
+      "bundleIdentifier": "com.padelscrim.app"
     },
     "android": {
-      "package": "com.padeltwin.app",
+      "package": "com.padelscrim.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -41,20 +41,20 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "PadelTwin uses your location to show players and matches near you."
+          "locationWhenInUsePermission": "PadelScrim uses your location to show players and matches near you."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "PadelTwin uses your photo library to set your profile picture."
+          "photosPermission": "PadelScrim uses your photo library to set your profile picture."
         }
       ],
       [
         "expo-notifications",
         {
           "icon": "./assets/images/icon.png",
-          "color": "#FF7A1A"
+          "color": "#C6FF33"
         }
       ]
     ],

@@ -20,7 +20,7 @@ export default function Login() {
     <div className="login-screen">
       <form className="login-card" onSubmit={handleSubmit}>
         <h1>🛠 GOD MODE</h1>
-        <p className="subtitle">PadelTwin admin panel</p>
+        <p className="subtitle">PadelScrim admin panel</p>
         <label className="label">EMAIL</label>
         <input
           className="full-width"

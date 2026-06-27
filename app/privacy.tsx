@@ -16,7 +16,7 @@ export default function PrivacyScreen() {
       <Text style={styles.updated}>Last updated: {new Date().toLocaleDateString('en-GB')}</Text>
 
       <Section title="Who we are">
-        PadelTwin is a padel matchmaking, ranking, and social app. This policy explains what data we
+        PadelScrim is a padel matchmaking, ranking, and social app. This policy explains what data we
         collect, why, and how you can control or delete it.
       </Section>
 

@@ -22,7 +22,7 @@ export default function LeagueDetailScreen() {
 
   async function handleShareCode() {
     if (!league) return;
-    await Share.share({ message: `Join my padel league "${league.name}" on PadelTwin! Invite code: ${league.invite_code}` });
+    await Share.share({ message: `Join my padel league "${league.name}" on PadelScrim! Invite code: ${league.invite_code}` });
   }
 
   function handleLeave() {

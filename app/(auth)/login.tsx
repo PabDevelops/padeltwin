@@ -23,7 +23,7 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.tagline}>MATCH • CONNECT • PLAY</Text>
-        <Text style={styles.title}>PadelTwin</Text>
+        <Text style={styles.title}>PadelScrim</Text>
         <Text style={styles.subtitle}>Enter your details to access the court</Text>
       </View>
 
