@@ -556,7 +556,7 @@ export default function HomeScreen() {
       ) : (
         <View style={styles.emptyFeedContainer}>
           <Ionicons name="people-outline" size={32} color={theme.textMuted} style={{ marginBottom: 8 }} />
-          <Text style={styles.emptyFeedTitle}>FOLLOW OTHER ATHLETES</Text>
+          <Text style={styles.emptyFeedTitle}>FOLLOW OTHER PLAYERS</Text>
           <Text style={styles.emptyFeedSubtitle}>
             Follow other padel players to see their live achievements and match milestones in your home feed.
           </Text>
