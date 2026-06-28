@@ -306,9 +306,14 @@ export default function MatchSearchScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.tagline}>LIVE MATCHMAKING</Text>
-        <Text style={styles.title}>MATCH FEED</Text>
+      <View style={[styles.headerContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }]}>
+        <View>
+          <Text style={styles.tagline}>LIVE MATCHMAKING</Text>
+          <Text style={styles.title}>MATCH FEED</Text>
+        </View>
+        <Pressable style={styles.createMatchFab} onPress={() => router.push('/create-match')}>
+          <Ionicons name="add" size={22} color={theme.onAccent} />
+        </Pressable>
       </View>
 
       {/* Tab Switcher */}
@@ -610,6 +615,14 @@ export default function MatchSearchScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: theme.background },
   headerContainer: { marginBottom: 14, marginTop: 12 },
+  createMatchFab: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   tagline: { fontSize: 10, fontWeight: '900', color: theme.primary, letterSpacing: 2, marginBottom: 4 },
   title: { fontSize: 28, fontWeight: '900', color: theme.text, letterSpacing: -0.5 },
   

@@ -12,9 +12,6 @@ import { supabase } from '@/lib/supabase';
 function CustomTabBar({ state, descriptors, navigation, bottomInset }: any) {
   const router = useRouter();
 
-  const fabRoute = state.routes.find((r: any) => r.name === 'create-match');
-  const fabIndex = state.routes.findIndex((r: any) => r.name === 'create-match');
-
   function renderRouteButton(route: any) {
     const index = state.routes.findIndex((r: any) => r.key === route.key);
     const isFocused = state.index === index;
@@ -45,9 +42,8 @@ function CustomTabBar({ state, descriptors, navigation, bottomInset }: any) {
     return (
       <Pressable key={route.key} onPress={onPress} style={styles.tabButton}>
         <View style={[styles.iconWrapper, isFocused && styles.activeIconWrapper]}>
-          <Ionicons name={iconName as any} size={18} color={isFocused ? '#FFF' : '#6E707E'} />
+          <Ionicons name={iconName as any} size={22} color={isFocused ? theme.accent : '#6E707E'} />
         </View>
-        {isFocused && <View style={styles.activeIndicator} />}
       </Pressable>
     );
   }
@@ -59,13 +55,8 @@ function CustomTabBar({ state, descriptors, navigation, bottomInset }: any) {
 
   return (
     <View style={[styles.tabBarContainer, { paddingBottom: bottomInset }]}>
-      {/* Curved/Dipped background shape */}
-      <View style={styles.backgroundContainer}>
-        {/* Solid background bar */}
-        <View style={styles.solidBg} />
-        {/* Circular cutout mask matching screen background color */}
-        <View style={styles.circularMask} />
-      </View>
+      {/* Solid background bar */}
+      <View style={styles.solidBg} />
 
       {/* Tab Buttons */}
       <View style={styles.buttonsContainer}>
@@ -80,30 +71,9 @@ function CustomTabBar({ state, descriptors, navigation, bottomInset }: any) {
           </View>
         </Pressable>
 
-        <View style={styles.centerButtonWrapper}>
-          <Pressable
-            onPress={() => {
-              const event = navigation.emit({
-                type: 'tabPress',
-                target: fabRoute.key,
-                canPreventDefault: true,
-              });
-              if (state.index !== fabIndex && !event.defaultPrevented) {
-                navigation.navigate(fabRoute.name);
-              }
-            }}
-            style={({ pressed }) => [
-              styles.centerButton,
-              pressed && { opacity: 0.95, transform: [{ scale: 0.96 }] },
-            ]}
-          >
-            <Ionicons name="add" size={26} color={theme.onAccent} />
-          </Pressable>
-        </View>
-
         <Pressable style={styles.tabButton} onPress={() => router.push('/club-leaderboard' as any)}>
           <View style={styles.iconWrapper}>
-            <MaterialCommunityIcons name="crown" size={18} color="#FFD700" />
+            <MaterialCommunityIcons name="crown" size={22} color="#FFD700" />
           </View>
         </Pressable>
 
@@ -158,14 +128,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     elevation: 12,
   },
-  backgroundContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 68,
-  },
   solidBg: {
     position: 'absolute',
     top: 0,
@@ -175,16 +137,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E1E28', // matching card background color
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-  },
-  circularMask: {
-    position: 'absolute',
-    top: -24,
-    left: '50%',
-    marginLeft: -36,
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: theme.background, // Match screen background '#0B0C10'
   },
   buttonsContainer: {
     flexDirection: 'row',
@@ -200,57 +152,25 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   iconWrapper: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   activeIconWrapper: {
-    backgroundColor: '#15161E', // highlighted container for active icon
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  activeIndicator: {
-    position: 'absolute',
-    bottom: 4,
-    width: 14,
-    height: 3,
-    backgroundColor: theme.primary, // Orange indicator line at the bottom
-    borderRadius: 1.5,
+    borderColor: theme.accent,
   },
   leagueTabBadge: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 1.5,
     borderColor: '#6E707E',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  leagueTabBadgeText: { color: '#6E707E', fontWeight: '900', fontSize: 10 },
-  centerButtonWrapper: {
-    width: 64,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-  },
-  centerButton: {
-    position: 'absolute',
-    top: -14, // Centered perfectly in the circular mask (sharing center coordinate y=12)
-    width: 48,
-    height: 48,
-    borderRadius: 24, // Perfect circle!
-    backgroundColor: theme.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: theme.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25, // softer opacity
-    shadowRadius: 12, // more blur/diffusion
-    elevation: 4,
-  },
+  leagueTabBadgeText: { color: '#6E707E', fontWeight: '900', fontSize: 11 },
 });
