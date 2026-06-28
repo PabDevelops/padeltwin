@@ -11,7 +11,6 @@ import {
   useMyUpcomingMatches,
   usePartnerRequests,
   useActivityFeed,
-  useMyLeagues,
   useFollowing,
   useFollowPlayer,
   useCompatiblePlayers,
@@ -71,7 +70,6 @@ export default function HomeScreen() {
   const { data: upcomingMatches, isLoading: upcomingLoading } = useMyUpcomingMatches(userId);
   const { data: partnerRequests } = usePartnerRequests(userId);
   const { data: activityFeed, isLoading: feedLoading } = useActivityFeed(userId, 5);
-  const { data: myLeagues, isLoading: leaguesLoading } = useMyLeagues(userId);
   const { data: following } = useFollowing(userId);
   const { data: compatiblePlayers } = useCompatiblePlayers(userId, profile);
   const { data: followedLeaderboard } = useFollowedLeaderboard(userId);
@@ -427,7 +425,7 @@ export default function HomeScreen() {
             <Text style={styles.eloHuge}>{profile?.elo ?? '1200'}</Text>
           )}
           <Text style={styles.eloLabel}>
-            {isCalibrating ? `CALIBRATING ELO • ${playedCount}/${ELO_PROVISIONAL_MATCHES} MATCHES` : 'PADEL ELO RATING'}
+            {isCalibrating ? `CALIBRATING PS SCORE • ${playedCount}/${ELO_PROVISIONAL_MATCHES} MATCHES` : 'PS SCORE'}
           </Text>
         </View>
         <View style={styles.chartSimulation}>
@@ -643,7 +641,7 @@ export default function HomeScreen() {
                   )}
                 </Pressable>
                 <Text style={styles.suggestedName} numberOfLines={1}>{(p.full_name ?? 'Player').toUpperCase()}</Text>
-                <Text style={styles.suggestedMeta}>{p.elo} ELO</Text>
+                <Text style={styles.suggestedMeta}>{p.elo} PS</Text>
                 <Pressable
                   style={({ pressed }) => [styles.suggestedFollowButton, pressed && { opacity: 0.8 }]}
                   onPress={() => handleQuickFollow(p.id)}
@@ -698,7 +696,7 @@ export default function HomeScreen() {
                   </Text>
                   {p.is_pro && <ProBadge size="sm" />}
                   {p.coach_status === 'approved' && <CoachBadge size="sm" />}
-                  <Text style={styles.leaderboardElo}>{p.elo} <Text style={{ fontSize: 9, color: theme.textMuted }}>ELO</Text></Text>
+                  <Text style={styles.leaderboardElo}>{p.elo} <Text style={{ fontSize: 9, color: theme.textMuted }}>PS</Text></Text>
                 </View>
               );
             })}
@@ -714,45 +712,30 @@ export default function HomeScreen() {
         </Pressable>
       )}
 
+      <Pressable style={styles.clubBanner} onPress={() => router.push('/pairs' as any)}>
+        <Ionicons name="people" size={18} color={theme.secondary} />
+        <Text style={styles.clubBannerText}>MY PAIRS</Text>
+        <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+      </Pressable>
+
       <View style={styles.leaguesSectionHeader}>
-        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>MY LEAGUES</Text>
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>LEAGUES</Text>
         <Pressable onPress={() => router.push('/leagues' as any)}>
           <Text style={styles.leaguesSeeAll}>SEE ALL</Text>
         </Pressable>
       </View>
-      {leaguesLoading ? (
-        <ActivityIndicator color={theme.primary} style={{ marginTop: 12 }} />
-      ) : myLeagues && myLeagues.length > 0 ? (
-        myLeagues.map((league) => (
-          <Pressable
-            key={league.id}
-            style={({ pressed }) => [styles.leagueCard, pressed && { opacity: 0.9 }]}
-            onPress={() => router.push(`/league/${league.id}` as any)}
-          >
-            <View style={styles.leagueCardIcon}>
-              <Ionicons name="trophy" size={18} color={theme.primary} />
-            </View>
-            <Text style={styles.leagueCardName} numberOfLines={1}>
-              {league.name.toUpperCase()}
-            </Text>
-            <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
-          </Pressable>
-        ))
-      ) : (
-        <Pressable
-          style={({ pressed }) => [styles.emptyFeedContainer, pressed && { opacity: 0.9 }]}
-          onPress={() => router.push('/leagues' as any)}
-        >
-          <Ionicons name="trophy-outline" size={32} color={theme.textMuted} style={{ marginBottom: 8 }} />
-          <Text style={styles.emptyFeedTitle}>START A PRIVATE LEAGUE</Text>
-          <Text style={styles.emptyFeedSubtitle}>
-            Create a league with your friends and compete on your own private leaderboard.
-          </Text>
-          <View style={styles.emptyFeedButton}>
-            <Text style={styles.emptyFeedButtonText}>CREATE OR JOIN</Text>
-          </View>
-        </Pressable>
-      )}
+
+      <Pressable style={styles.clubBanner} onPress={() => router.push('/leagues/city' as any)}>
+        <Ionicons name="business" size={18} color={theme.accent} />
+        <Text style={styles.clubBannerText}>CITY LEAGUE{profile?.zone ? ` — ${profile.zone.toUpperCase()}` : ''}</Text>
+        <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+      </Pressable>
+
+      <Pressable style={styles.clubBanner} onPress={() => router.push('/leagues/country' as any)}>
+        <Ionicons name="globe" size={18} color={theme.secondary} />
+        <Text style={styles.clubBannerText}>COUNTRY LEAGUE{profile?.country ? ` — ${profile.country.toUpperCase()}` : ''}</Text>
+        <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+      </Pressable>
 
       <Pressable
         style={({ pressed }) => [styles.coachBanner, pressed && { opacity: 0.9 }]}
@@ -788,7 +771,7 @@ export default function HomeScreen() {
                 </Text>
                 {p.is_pro && <ProBadge size="sm" />}
                 {p.coach_status === 'approved' && <CoachBadge size="sm" />}
-                <Text style={styles.leaderboardElo}>{p.elo} <Text style={{ fontSize: 9, color: theme.textMuted }}>ELO</Text></Text>
+                <Text style={styles.leaderboardElo}>{p.elo} <Text style={{ fontSize: 9, color: theme.textMuted }}>PS</Text></Text>
               </View>
             );
           })}

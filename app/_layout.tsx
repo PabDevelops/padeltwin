@@ -86,7 +86,15 @@ function RootNavigator() {
       />
       <Stack.Screen
         name="leagues/index"
-        options={{ title: 'My Leagues', contentStyle: { paddingBottom: insets.bottom } }}
+        options={{ title: 'Leagues', contentStyle: { paddingBottom: insets.bottom } }}
+      />
+      <Stack.Screen
+        name="leagues/city"
+        options={{ title: 'City League', contentStyle: { paddingBottom: insets.bottom } }}
+      />
+      <Stack.Screen
+        name="leagues/country"
+        options={{ title: 'Country League', contentStyle: { paddingBottom: insets.bottom } }}
       />
       <Stack.Screen
         name="coaches/index"
@@ -115,6 +123,10 @@ function RootNavigator() {
       <Stack.Screen
         name="tournaments/[id]"
         options={{ title: 'Tournament', contentStyle: { paddingBottom: insets.bottom } }}
+      />
+      <Stack.Screen
+        name="pairs/index"
+        options={{ title: 'My Pairs', contentStyle: { paddingBottom: insets.bottom } }}
       />
       <Stack.Screen name="+not-found" />
     </Stack>

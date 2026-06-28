@@ -48,7 +48,7 @@ export default function ClubLeaderboardScreen() {
                 {p.is_pro && <ProBadge size="sm" />}
                 {p.coach_status === 'approved' && <CoachBadge size="sm" />}
                 <Text style={styles.leaderboardElo}>
-                  {p.elo} <Text style={{ fontSize: 9, color: theme.textMuted }}>ELO</Text>
+                  {p.elo} <Text style={{ fontSize: 9, color: theme.textMuted }}>PS</Text>
                 </Text>
               </View>
             );

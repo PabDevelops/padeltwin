@@ -66,3 +66,12 @@ export function computeStartingElo(answers: {
     FREQUENCY_POINTS[answers.frequency]
   );
 }
+
+// Once a player has an ELO (from onboarding placement or real matches), that
+// number is the source of truth for their level — there's no separate
+// "beginner/intermediate/advanced" self-rating to keep in sync with it.
+export function levelFromElo(elo: number): PlayerLevel {
+  if (elo < 1150) return 'iniciacion';
+  if (elo < 1450) return 'intermedio';
+  return 'avanzado';
+}

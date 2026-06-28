@@ -10,6 +10,7 @@ export interface Profile {
   full_name: string | null;
   level: PlayerLevel | null;
   zone: string | null;
+  country: string | null;
   avatar_url: string | null;
   elo: number;
   height_cm: number | null;
@@ -59,6 +60,8 @@ export interface Match {
   location: string;
   level: PlayerLevel;
   max_players: number;
+  min_elo: number | null;
+  max_elo: number | null;
   status: MatchStatus;
   mode: MatchMode;
   visibility: MatchVisibility;
@@ -199,6 +202,20 @@ export interface EloHistoryEntry {
   delta: number;
   elo_after: number;
   created_at: string;
+}
+
+export interface Pair {
+  id: string;
+  player_a_id: string;
+  player_b_id: string;
+  elo: number;
+  matches_played: number;
+  created_at: string;
+}
+
+export interface PairWithProfiles extends Pair {
+  player_a: Profile | null;
+  player_b: Profile | null;
 }
 
 export interface League {

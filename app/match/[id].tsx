@@ -192,7 +192,7 @@ export default function MatchDetailScreen() {
                 <Text style={styles.playerName}>{item.profiles?.full_name ?? 'Player'}</Text>
                 <Text style={styles.playerSub}>{item.profiles?.level ? LEVEL_LABELS[item.profiles.level].toUpperCase() : 'NO LEVEL'}</Text>
               </View>
-              <Text style={styles.playerElo}>{item.profiles?.elo ?? '—'} <Text style={{ fontSize: 9, color: theme.textMuted }}>ELO</Text></Text>
+              <Text style={styles.playerElo}>{item.profiles?.elo ?? '—'} <Text style={{ fontSize: 9, color: theme.textMuted }}>PS</Text></Text>
             </View>
           ))
         ) : (

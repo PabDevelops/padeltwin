@@ -111,7 +111,7 @@ export default function ProfileScreen() {
     recordItems.push({ icon: 'calendar', value: `${records.busiestMonth.count} matches`, label: records.busiestMonth.label });
   }
   if (records?.bestEloGain) {
-    recordItems.push({ icon: 'flash', value: `+${records.bestEloGain.delta} ELO`, label: 'Best ELO gain' });
+    recordItems.push({ icon: 'flash', value: `+${records.bestEloGain.delta} PS`, label: 'Best PS Score gain' });
   }
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -126,6 +126,7 @@ export default function ProfileScreen() {
 
   const [fullName, setFullName] = useState('');
   const [zone, setZone] = useState('');
+  const [country, setCountry] = useState('');
   const [level, setLevel] = useState<PlayerLevel | null>(null);
   const [club, setClub] = useState('');
   const [racket, setRacket] = useState('');
@@ -136,6 +137,7 @@ export default function ProfileScreen() {
     if (profile) {
       setFullName(profile.full_name ?? '');
       setZone(profile.zone ?? '');
+      setCountry(profile.country ?? '');
       setLevel(profile.level);
       setClub(profile.club ?? '');
       setRacket(profile.racket ?? '');
@@ -167,6 +169,7 @@ export default function ProfileScreen() {
       id: userId!,
       full_name: fullName,
       zone,
+      country: country || null,
       level,
       club: club || null,
       racket: racket || null,
@@ -288,7 +291,7 @@ export default function ProfileScreen() {
               <View style={styles.statColumn}>
                 <Text style={styles.statHugeText}>{profile.elo}</Text>
                 <Text style={styles.statSubLabel}>
-                  {isCalibrating ? `Provisional • ${stats?.played ?? 0}/${ELO_PROVISIONAL_MATCHES}` : 'ELO Rating'}
+                  {isCalibrating ? `Provisional • ${stats?.played ?? 0}/${ELO_PROVISIONAL_MATCHES}` : 'PS Score'}
                 </Text>
               </View>
               <View style={styles.statDivider} />
@@ -426,6 +429,17 @@ export default function ProfileScreen() {
             placeholder="e.g. Edinburgh"
             placeholderTextColor={theme.textMuted}
             onFocus={() => setFocusedInput('city')}
+            onBlur={() => setFocusedInput(null)}
+          />
+
+          <Text style={[styles.label, { marginTop: 14 }]}>COUNTRY</Text>
+          <TextInput
+            style={[styles.input, focusedInput === 'country' && styles.inputFocused]}
+            value={country}
+            onChangeText={setCountry}
+            placeholder="e.g. Spain"
+            placeholderTextColor={theme.textMuted}
+            onFocus={() => setFocusedInput('country')}
             onBlur={() => setFocusedInput(null)}
           />
 

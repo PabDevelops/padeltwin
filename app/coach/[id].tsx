@@ -71,7 +71,7 @@ export default function CoachDetailScreen() {
         )}
         <View style={styles.statItem}>
           <Text style={styles.statValue}>{coach.elo}</Text>
-          <Text style={styles.statLabel}>ELO</Text>
+          <Text style={styles.statLabel}>PS Score</Text>
         </View>
       </View>
 

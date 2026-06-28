@@ -22,7 +22,7 @@ export default function PrivacyScreen() {
 
       <Section title="What we collect">
         Account details (name, email), profile information you provide (level, city, photo, club,
-        equipment), match results and ELO history, messages with other players, push notification
+        equipment), match results and PS Score history, messages with other players, push notification
         tokens, and content you post (achievements, follows, vibs, reports).
       </Section>
 
@@ -33,7 +33,7 @@ export default function PrivacyScreen() {
       </Section>
 
       <Section title="Who can see your data">
-        Your profile, ELO, and match history are visible to other players. Direct messages are only
+        Your profile, PS Score, and match history are visible to other players. Direct messages are only
         visible to the two people in that conversation. We never sell your data to third parties.
       </Section>
 

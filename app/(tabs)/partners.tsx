@@ -178,7 +178,7 @@ export default function PartnersScreen() {
           <Text style={styles.levelBadge}>
             {item.level ? LEVEL_LABELS[item.level].toUpperCase() : 'NO LEVEL'}
           </Text>
-          <Text style={styles.elo}>{item.elo} <Text style={{ fontSize: 9, color: theme.textMuted }}>ELO</Text></Text>
+          <Text style={styles.elo}>{item.elo} <Text style={{ fontSize: 9, color: theme.textMuted }}>PS</Text></Text>
         </View>
 
         <Pressable
@@ -435,7 +435,7 @@ export default function PartnersScreen() {
                     </View>
                     <View style={[styles.winnerBadge, { borderColor: theme.secondary }]}>
                       <Text style={[styles.winnerBadgeText, { color: theme.secondary }]}>
-                        {winner?.elo} ELO
+                        {winner?.elo} PS
                       </Text>
                     </View>
                   </View>
@@ -532,7 +532,7 @@ export default function PartnersScreen() {
                     </Text>
                     <Text style={styles.followedDivider}>•</Text>
                     <Text style={styles.followedElo}>
-                      {item.elo} <Text style={{ fontSize: 8, color: theme.textMuted }}>ELO</Text>
+                      {item.elo} <Text style={{ fontSize: 8, color: theme.textMuted }}>PS</Text>
                     </Text>
                   </View>
                 </View>

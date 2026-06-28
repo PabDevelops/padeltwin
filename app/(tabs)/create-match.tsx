@@ -1,16 +1,60 @@
-import { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useCreateMatch, usePartnerRequests } from '@/lib/queries';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { useCreateMatch, usePartnerRequests, useProfile } from '@/lib/queries';
 import { useSession } from '@/lib/useSession';
-import type { MatchMode, MatchVisibility, PartnerRequestWithProfiles, PlayerLevel } from '@/types/database';
+import type { MatchMode, MatchVisibility, PartnerRequestWithProfiles } from '@/types/database';
 import { theme, buttonRadius, chipRadius } from '@/constants/theme';
-import { LEVELS, LEVEL_LABELS } from '@/constants/levels';
+import { levelFromElo } from '@/lib/eloPlacement';
+
+function PulsingDot() {
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.25, duration: 700, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 1, duration: 700, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+
+  return <Animated.View style={[styles.pulsingDot, { opacity }]} />;
+}
+
+// Slot-machine style roll: starts a little off target and spins down/up
+// into place, instead of just popping the final number in.
+function useRollingNumber(target: number, duration = 800) {
+  const [display, setDisplay] = useState(target);
+
+  useEffect(() => {
+    const spinOffset = 80 + Math.round(Math.random() * 60);
+    const startValue = target + (Math.random() > 0.5 ? spinOffset : -spinOffset);
+    const start = Date.now();
+    let raf: number;
+
+    function tick() {
+      const elapsed = Date.now() - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(startValue + (target - startValue) * eased));
+      if (progress < 1) raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+
+  return display;
+}
 
 export default function CreateMatchScreen() {
   const router = useRouter();
   const { session } = useSession();
   const userId = session?.user.id;
+  const { data: profile } = useProfile(userId);
   const createMatch = useCreateMatch();
   const { data: requests } = usePartnerRequests(userId);
 
@@ -20,23 +64,37 @@ export default function CreateMatchScreen() {
     .filter((p): p is NonNullable<typeof p> => !!p);
 
   const [location, setLocation] = useState('');
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
-  const [level, setLevel] = useState<PlayerLevel>('intermedio');
-  const [maxPlayers, setMaxPlayers] = useState('4');
+  const [dateValue, setDateValue] = useState<Date | null>(null);
+  const [timeValue, setTimeValue] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [mode, setMode] = useState<MatchMode>('individual');
   const [visibility, setVisibility] = useState<MatchVisibility>('open');
   const [partnerId, setPartnerId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
+  const requiredLevel = levelFromElo(profile?.elo ?? 1000);
+  const baseElo = profile?.elo ?? 1000;
+  const rangeLow = useRollingNumber(baseElo - 100);
+  const rangeHigh = useRollingNumber(baseElo + 100);
+
+  function handleDateChange(event: DateTimePickerEvent, selected?: Date) {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (event.type === 'set' && selected) setDateValue(selected);
+  }
+
+  function handleTimeChange(event: DateTimePickerEvent, selected?: Date) {
+    setShowTimePicker(Platform.OS === 'ios');
+    if (event.type === 'set' && selected) setTimeValue(selected);
+  }
+
   function handleCreate() {
     setError(null);
     if (!userId) return;
 
-    const dateTime = new Date(`${date}T${time}:00`);
-    if (!location || isNaN(dateTime.getTime())) {
-      setError('Check the location, date (YYYY-MM-DD) and time (HH:MM).');
+    if (!location || !dateValue || !timeValue) {
+      setError('Add a location, date and time for the match.');
       return;
     }
     if (mode === 'pair' && !partnerId) {
@@ -44,13 +102,20 @@ export default function CreateMatchScreen() {
       return;
     }
 
+    const dateTime = new Date(dateValue);
+    dateTime.setHours(timeValue.getHours(), timeValue.getMinutes(), 0, 0);
+
+    const creatorElo = profile?.elo ?? 1000;
+
     createMatch.mutate(
       {
         created_by: userId,
         location,
         date_time: dateTime.toISOString(),
-        level,
-        max_players: Number(maxPlayers) || 4,
+        level: requiredLevel,
+        max_players: 4,
+        min_elo: creatorElo - 100,
+        max_elo: creatorElo + 100,
         mode,
         visibility,
         partnerId: mode === 'pair' ? partnerId! : undefined,
@@ -58,8 +123,8 @@ export default function CreateMatchScreen() {
       {
         onSuccess: (match) => {
           setLocation('');
-          setDate('');
-          setTime('');
+          setDateValue(null);
+          setTimeValue(null);
           router.push(`/match/${match.id}`);
         },
         onError: (err: any) => setError(err.message ?? 'Could not create the match'),
@@ -73,8 +138,19 @@ export default function CreateMatchScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.headerContainer}>
-        <Text style={styles.tagline}>HOST A MATCH</Text>
-        <Text style={styles.title}>Create match</Text>
+        <View style={styles.headerTopRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.tagline}>HOST A MATCH</Text>
+            <Text style={styles.title}>Create match</Text>
+          </View>
+          <View style={styles.eloPill}>
+            <PulsingDot />
+            <Text style={styles.eloPillText}>
+              {rangeLow}–{rangeHigh}
+            </Text>
+            <Text style={styles.eloPillLabel}>PS SCORE</Text>
+          </View>
+        </View>
         <Text style={styles.subtitle}>Set up a match for other compatible athletes to join</Text>
       </View>
 
@@ -92,59 +168,40 @@ export default function CreateMatchScreen() {
           onBlur={() => setFocusedInput(null)}
         />
 
-        <Text style={[styles.label, { marginTop: 14 }]}>DATE (YYYY-MM-DD)</Text>
-        <TextInput
-          style={[styles.input, focusedInput === 'date' && styles.inputFocused]}
-          placeholder="2026-07-01"
-          placeholderTextColor={theme.textMuted}
-          value={date}
-          onChangeText={setDate}
-          onFocus={() => setFocusedInput('date')}
-          onBlur={() => setFocusedInput(null)}
-        />
+        <Text style={[styles.label, { marginTop: 14 }]}>DATE</Text>
+        <Pressable style={styles.input} onPress={() => setShowDatePicker(true)}>
+          <Text style={dateValue ? styles.pickerValue : styles.pickerPlaceholder}>
+            {dateValue
+              ? dateValue.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+              : 'Select a date'}
+          </Text>
+        </Pressable>
+        {showDatePicker && (
+          <DateTimePicker
+            value={dateValue ?? new Date()}
+            mode="date"
+            minimumDate={new Date()}
+            onChange={handleDateChange}
+          />
+        )}
 
-        <Text style={[styles.label, { marginTop: 14 }]}>TIME (HH:MM)</Text>
-        <TextInput
-          style={[styles.input, focusedInput === 'time' && styles.inputFocused]}
-          placeholder="19:30"
-          placeholderTextColor={theme.textMuted}
-          value={time}
-          onChangeText={setTime}
-          onFocus={() => setFocusedInput('time')}
-          onBlur={() => setFocusedInput(null)}
-        />
+        <Text style={[styles.label, { marginTop: 14 }]}>TIME</Text>
+        <Pressable style={styles.input} onPress={() => setShowTimePicker(true)}>
+          <Text style={timeValue ? styles.pickerValue : styles.pickerPlaceholder}>
+            {timeValue
+              ? timeValue.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+              : 'Select a time'}
+          </Text>
+        </Pressable>
+        {showTimePicker && (
+          <DateTimePicker value={timeValue ?? new Date()} mode="time" onChange={handleTimeChange} />
+        )}
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionHeader}>MATCH PREFERENCES</Text>
 
-        <Text style={styles.label}>REQUIRED ATHLETE LEVEL</Text>
-        <View style={styles.row}>
-          {LEVELS.map((l) => (
-            <Pressable
-              key={l}
-              style={({ pressed }) => [
-                styles.chip,
-                level === l && styles.chipActive,
-                pressed && { scale: 0.96 } as any
-              ]}
-              onPress={() => setLevel(l)}>
-              <Text style={[styles.chipText, level === l && styles.chipTextActive]}>{LEVEL_LABELS[l]}</Text>
-            </Pressable>
-          ))}
-        </View>
-
-        <Text style={[styles.label, { marginTop: 16 }]}>MAX PLAYERS</Text>
-        <TextInput
-          style={[styles.input, focusedInput === 'maxPlayers' && styles.inputFocused]}
-          keyboardType="number-pad"
-          value={maxPlayers}
-          onChangeText={setMaxPlayers}
-          onFocus={() => setFocusedInput('maxPlayers')}
-          onBlur={() => setFocusedInput(null)}
-        />
-
-        <Text style={[styles.label, { marginTop: 16 }]}>GAME MODE</Text>
+        <Text style={styles.label}>GAME MODE</Text>
         <View style={styles.row}>
           <Pressable
             style={({ pressed }) => [
@@ -224,13 +281,13 @@ export default function CreateMatchScreen() {
 
       {error && <Text style={styles.error}>{error}</Text>}
 
-      <Pressable 
+      <Pressable
         style={({ pressed }) => [
-          styles.button, 
+          styles.button,
           pressed && styles.buttonPressed,
           createMatch.isPending && styles.buttonDisabled
-        ]} 
-        onPress={handleCreate} 
+        ]}
+        onPress={handleCreate}
         disabled={createMatch.isPending}
       >
         {createMatch.isPending ? (
@@ -247,6 +304,21 @@ export default function CreateMatchScreen() {
 const styles = StyleSheet.create({
   container: { padding: 24, gap: 24, backgroundColor: theme.background },
   headerContainer: { marginBottom: 8, marginTop: 12 },
+  headerTopRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  pulsingDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: theme.success },
+  eloPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: theme.card,
+    borderWidth: 1,
+    borderColor: theme.success,
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  eloPillText: { fontSize: 13, fontWeight: '900', color: theme.text },
+  eloPillLabel: { fontSize: 9, fontWeight: '800', color: theme.success, letterSpacing: 0.5 },
   tagline: { fontSize: 11, fontWeight: '800', color: theme.secondary, letterSpacing: 2, marginBottom: 4 },
   title: { fontSize: 28, fontWeight: '900', color: theme.text, textTransform: 'uppercase', letterSpacing: -0.5 },
   subtitle: { color: theme.textMuted, fontSize: 14, marginTop: 4, lineHeight: 20 },
@@ -254,30 +326,32 @@ const styles = StyleSheet.create({
   sectionHeader: { fontSize: 12, fontWeight: '800', color: theme.secondary, letterSpacing: 1.5, marginBottom: 16, borderBottomWidth: 1, borderBottomColor: theme.border, paddingBottom: 6 },
   label: { fontSize: 11, fontWeight: '700', color: theme.text, letterSpacing: 0.8, marginBottom: 6 },
   helperText: { color: theme.textMuted, fontSize: 12, marginTop: 6, lineHeight: 16 },
-  input: { 
-    borderWidth: 1, 
-    borderColor: theme.border, 
-    borderRadius: 12, 
-    padding: 14, 
-    fontSize: 16, 
-    backgroundColor: '#191922', 
-    color: theme.text 
+  input: {
+    borderWidth: 1,
+    borderColor: theme.border,
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 16,
+    backgroundColor: '#191922',
+    color: theme.text
   },
   inputFocused: {
     borderColor: theme.borderActive,
     backgroundColor: '#1c1c28',
   },
+  pickerValue: { color: theme.text, fontSize: 16 },
+  pickerPlaceholder: { color: theme.textMuted, fontSize: 16 },
   row: { flexDirection: 'row', gap: 8, marginTop: 4, flexWrap: 'wrap' },
-  chip: { 
-    borderWidth: 1, 
-    borderColor: theme.border, 
-    borderRadius: chipRadius, 
-    paddingVertical: 8, 
-    paddingHorizontal: 16, 
-    backgroundColor: '#1a1a24' 
+  chip: {
+    borderWidth: 1,
+    borderColor: theme.border,
+    borderRadius: chipRadius,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#1a1a24'
   },
-  chipActive: { 
-    backgroundColor: theme.accent, 
+  chipActive: {
+    backgroundColor: theme.accent,
     borderColor: theme.accent,
     shadowColor: theme.accent,
     shadowOffset: { width: 0, height: 2 },
@@ -287,12 +361,12 @@ const styles = StyleSheet.create({
   chipText: { color: theme.textMuted, fontWeight: '700', fontSize: 13 },
   chipTextActive: { color: theme.onAccent, fontWeight: '800' },
   partnerContainer: { marginTop: 14, borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 14 },
-  button: { 
-    backgroundColor: theme.primary, 
-    borderRadius: buttonRadius, 
-    padding: 16, 
-    alignItems: 'center', 
-    marginTop: 12, 
+  button: {
+    backgroundColor: theme.primary,
+    borderRadius: buttonRadius,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 12,
     marginBottom: 40,
     shadowColor: theme.primary,
     shadowOffset: { width: 0, height: 4 },

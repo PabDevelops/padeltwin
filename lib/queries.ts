@@ -13,6 +13,7 @@ import type {
   MatchResult,
   MatchResultWithProfiles,
   MatchWithPlayers,
+  PairWithProfiles,
   PartnerRequest,
   PartnerRequestWithProfiles,
   PlayerLevel,
@@ -143,7 +144,7 @@ export function useCreateMatch() {
     mutationFn: async (
       match: Pick<
         Match,
-        "created_by" | "date_time" | "location" | "level" | "max_players" | "mode" | "visibility"
+        "created_by" | "date_time" | "location" | "level" | "max_players" | "min_elo" | "max_elo" | "mode" | "visibility"
       > & { partnerId?: string }
     ) => {
       const { partnerId, ...matchFields } = match;
@@ -1247,5 +1248,72 @@ export function useLeaveTournament() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tournamentParticipants", variables.tournamentId] });
     },
+  });
+}
+
+export function useMyPairs(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["myPairs", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pairs")
+        .select("*, player_a:profiles!pairs_player_a_id_fkey(*), player_b:profiles!pairs_player_b_id_fkey(*)")
+        .or(`player_a_id.eq.${userId},player_b_id.eq.${userId}`)
+        .order("elo", { ascending: false });
+      if (error) throw error;
+      return data as unknown as PairWithProfiles[];
+    },
+    enabled: !!userId,
+  });
+}
+
+export function useDeclarePair() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ partnerId }: { partnerId: string }) => {
+      const { data, error } = await supabase.rpc("declare_pair", { p_partner_id: partnerId });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myPairs"] });
+    },
+  });
+}
+
+// City League: same backing data as the Home zone leaderboard widget, but
+// the full list instead of just the top 10.
+export function useCityLeague(zone: string | null | undefined) {
+  return useQuery({
+    queryKey: ["cityLeague", zone],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .rpc("leaderboard_profiles")
+        .select("*")
+        .ilike("zone", `%${zone}%`)
+        .order("elo", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data as Profile[];
+    },
+    enabled: !!zone,
+  });
+}
+
+// Country League: same idea, scoped to the player's country instead of city.
+export function useCountryLeague(country: string | null | undefined) {
+  return useQuery({
+    queryKey: ["countryLeague", country],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .rpc("leaderboard_profiles")
+        .select("*")
+        .ilike("country", country!)
+        .order("elo", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data as Profile[];
+    },
+    enabled: !!country,
   });
 }

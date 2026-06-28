@@ -62,6 +62,7 @@ export default function OnboardingScreen() {
   const [racket, setRacket] = useState('');
   const [apparelBrand, setApparelBrand] = useState('');
   const [zone, setZone] = useState('');
+  const [country, setCountry] = useState('');
   const [lookingForPartner, setLookingForPartner] = useState(true);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
@@ -76,6 +77,7 @@ export default function OnboardingScreen() {
     setRacket(profile.racket ?? '');
     setApparelBrand(profile.apparel_brand ?? '');
     setZone(profile.zone ?? '');
+    setCountry(profile.country ?? '');
     setLookingForPartner(profile.looking_for_partner);
   }, [profile]);
 
@@ -109,6 +111,7 @@ export default function OnboardingScreen() {
         racket: racket || null,
         apparel_brand: apparelBrand || null,
         zone: zone || null,
+        country: country || null,
         looking_for_partner: lookingForPartner,
         avatar_url: avatarUrl,
         onboarding_completed: true,
@@ -211,7 +214,7 @@ export default function OnboardingScreen() {
           ))}
         </View>
         <Text style={styles.helperText}>
-          Starting ELO: {computeStartingElo({ level, yearsPlaying, competition, frequency })} — this is just your
+          Starting PS Score: {computeStartingElo({ level, yearsPlaying, competition, frequency })} — this is just your
           starting point, it'll move quickly once you play real matches.
         </Text>
       </View>
@@ -317,7 +320,20 @@ export default function OnboardingScreen() {
           onFocus={() => setFocusedInput('zone')}
           onBlur={() => setFocusedInput(null)}
         />
-        <Pressable 
+
+        <Text style={[styles.label, { marginTop: 14 }]}>COUNTRY</Text>
+        <TextInput
+          style={[styles.input, focusedInput === 'country' && styles.inputFocused]}
+          placeholder="e.g. Spain"
+          placeholderTextColor={theme.textMuted}
+          value={country}
+          onChangeText={setCountry}
+          onFocus={() => setFocusedInput('country')}
+          onBlur={() => setFocusedInput(null)}
+        />
+        <Text style={styles.helperText}>Used to rank you in your Country League.</Text>
+
+        <Pressable
           style={({ pressed }) => [
             styles.locationButton,
             pressed && { opacity: 0.7 }

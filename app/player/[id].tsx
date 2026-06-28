@@ -150,7 +150,7 @@ export default function PlayerProfileScreen() {
     recordItems.push({ icon: 'calendar', value: `${records.busiestMonth.count} matches`, label: records.busiestMonth.label });
   }
   if (records?.bestEloGain) {
-    recordItems.push({ icon: 'flash', value: `+${records.bestEloGain.delta} ELO`, label: 'Best ELO gain' });
+    recordItems.push({ icon: 'flash', value: `+${records.bestEloGain.delta} PS`, label: 'Best PS Score gain' });
   }
 
   if (profileLoading || !profile) {
@@ -381,7 +381,7 @@ export default function PlayerProfileScreen() {
           <View style={styles.statColumn}>
             <Text style={styles.statHugeText}>{profile.elo ?? 1200}</Text>
             <Text style={styles.statSubLabel}>
-              {isCalibrating ? `Provisional • ${stats?.played ?? 0}/${ELO_PROVISIONAL_MATCHES}` : 'ELO Rating'}
+              {isCalibrating ? `Provisional • ${stats?.played ?? 0}/${ELO_PROVISIONAL_MATCHES}` : 'PS Score'}
             </Text>
           </View>
           <View style={styles.statDivider} />
