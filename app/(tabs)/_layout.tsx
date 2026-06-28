@@ -53,6 +53,10 @@ function CustomTabBar({ state, descriptors, navigation, bottomInset }: any) {
   const partnersRoute = state.routes.find((r: any) => r.name === 'partners');
   const profileRoute = state.routes.find((r: any) => r.name === 'profile');
 
+  const currentRouteName = state.routes[state.index]?.name ?? '';
+  const isLeaguesFocused = currentRouteName.startsWith('leagues/');
+  const isKopFocused = currentRouteName === 'club-leaderboard';
+
   return (
     <View style={[styles.tabBarContainer, { paddingBottom: bottomInset }]}>
       {/* Solid background bar */}
@@ -64,14 +68,14 @@ function CustomTabBar({ state, descriptors, navigation, bottomInset }: any) {
         {indexRoute && renderRouteButton(indexRoute)}
 
         <Pressable style={styles.tabButton} onPress={() => router.push('/leagues' as any)}>
-          <View style={styles.iconWrapper}>
-            <MaterialCommunityIcons name="podium" size={22} color="#6E707E" />
+          <View style={[styles.iconWrapper, isLeaguesFocused && styles.activeIconWrapper]}>
+            <MaterialCommunityIcons name="podium" size={22} color={isLeaguesFocused ? theme.accent : '#6E707E'} />
           </View>
         </Pressable>
 
         <Pressable style={styles.tabButton} onPress={() => router.push('/club-leaderboard' as any)}>
-          <View style={styles.iconWrapper}>
-            <MaterialCommunityIcons name="crown" size={22} color="#FFD700" />
+          <View style={[styles.iconWrapper, isKopFocused && styles.activeIconWrapper]}>
+            <MaterialCommunityIcons name="crown" size={22} color={isKopFocused ? theme.accent : '#6E707E'} />
           </View>
         </Pressable>
 
