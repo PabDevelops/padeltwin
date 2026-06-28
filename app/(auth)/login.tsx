@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Link } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { theme, buttonRadius } from '@/constants/theme';
@@ -22,11 +22,17 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.container}>
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.headerContainer}>
           <Text style={styles.tagline}>MATCH • CONNECT • PLAY</Text>
-          <Text style={styles.title}>PADELSCRIM</Text>
+          <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
+            PADELSCRIM
+          </Text>
           <Text style={styles.subtitle}>Enter your details to access the court</Text>
         </View>
 
@@ -74,21 +80,22 @@ export default function LoginScreen() {
         <Link href="/(auth)/register" style={styles.link}>
           Don't have an account? <Text style={styles.linkHighlight}>Sign up</Text>
         </Link>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: theme.background },
-  headerContainer: { alignItems: 'center', marginBottom: 28 },
+  container: { flexGrow: 1, justifyContent: 'center', padding: 20, backgroundColor: theme.background },
+  headerContainer: { alignItems: 'center', marginBottom: 28, width: '100%' },
   tagline: { fontSize: 10, fontWeight: '900', color: theme.primary, letterSpacing: 2, marginBottom: 8, textTransform: 'uppercase' },
   title: {
     fontFamily: 'Coubra',
     fontSize: 44,
     color: theme.accent,
     textTransform: 'uppercase',
-    paddingRight: 10,
+    width: '100%',
+    textAlign: 'center',
   },
   subtitle: { fontSize: 13, color: theme.textMuted, marginTop: 4, textAlign: 'center', fontWeight: '700' },
   form: { gap: 14 },

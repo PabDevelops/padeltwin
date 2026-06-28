@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { theme, buttonRadius } from '@/constants/theme';
@@ -34,8 +34,12 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.container}>
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.headerContainer}>
           <Text style={styles.tagline}>JOIN THE CLUB</Text>
           <Text style={styles.title}>Register</Text>
@@ -97,13 +101,13 @@ export default function RegisterScreen() {
         <Link href="/(auth)/login" style={styles.link}>
           Already have an account? <Text style={styles.linkHighlight}>Log in</Text>
         </Link>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: theme.background },
+  container: { flexGrow: 1, justifyContent: 'center', padding: 20, backgroundColor: theme.background },
   headerContainer: { alignItems: 'center', marginBottom: 28 },
   tagline: { fontSize: 10, fontWeight: '900', color: theme.primary, letterSpacing: 2, marginBottom: 8, textTransform: 'uppercase' },
   title: { fontFamily: 'Anton_400Regular', fontSize: 40, color: theme.text, letterSpacing: -1, textTransform: 'uppercase' },
