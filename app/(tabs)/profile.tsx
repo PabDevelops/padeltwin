@@ -38,6 +38,8 @@ import {
   useUnblockUser,
   useDeleteAccount,
   useMyKopStatus,
+  useScrimIndex,
+  scrimIndexLabel,
 } from '@/lib/queries';
 import { ACHIEVEMENT_LABELS, ACHIEVEMENT_ICONS } from '@/constants/achievements';
 import { supabase } from '@/lib/supabase';
@@ -79,6 +81,7 @@ export default function ProfileScreen() {
   const userId = session?.user.id;
   const { data: profile, isLoading } = useProfile(userId);
   const { data: kopStatus } = useMyKopStatus(userId);
+  const { data: scrimIndex } = useScrimIndex(userId);
   const updateProfile = useUpdateProfile();
   const { data: requests } = usePartnerRequests(userId);
   const { data: myAchievements, isLoading: achievementsLoading } = useMyAchievements(userId);
@@ -270,6 +273,13 @@ export default function ProfileScreen() {
         </View>
 
         {profile.zone ? <Text style={styles.locationSub}>📍 {profile.zone.toUpperCase()}</Text> : null}
+
+        {scrimIndex != null && (
+          <View style={[styles.scrimIndexPill, { borderColor: scrimIndex >= 7 ? theme.success : scrimIndex >= 5 ? theme.accent : theme.danger }]}>
+            <Text style={styles.scrimIndexValue}>{scrimIndex.toFixed(1)}</Text>
+            <Text style={styles.scrimIndexLabel}>{scrimIndexLabel(scrimIndex)}</Text>
+          </View>
+        )}
 
         {/* STATS */}
         <View style={styles.psScoreHero}>
@@ -842,6 +852,19 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 4, gap: 8 },
   playerName: { fontFamily: 'Anton_400Regular', fontSize: 26, color: theme.accent, letterSpacing: -0.5, textAlign: 'center' },
   locationSub: { fontSize: 11, fontWeight: '700', color: theme.textMuted, letterSpacing: 0.5, textAlign: 'center', marginBottom: 8 },
+  scrimIndexPill: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+    alignSelf: 'center',
+    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginBottom: 10,
+  },
+  scrimIndexValue: { fontFamily: 'Anton_400Regular', color: theme.text, fontSize: 15 },
+  scrimIndexLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
   psScoreHero: {
     alignItems: 'center',
     backgroundColor: theme.card,

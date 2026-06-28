@@ -1435,3 +1435,79 @@ export function useMyPairLeagues(pairId: string | undefined) {
     enabled: !!pairId,
   });
 }
+
+// Scrim Index: a volatile 1.0-10.0 "form" score, separate from the slow-
+// moving ELO — measures how a player is performing RIGHT NOW (last 5
+// confirmed matches within the last 14 days) rather than their long-term
+// level. Two factors feed it today:
+//   1. Dominance — blowout wins score higher than nail-biters, and close
+//      losses are punished less than blowout losses.
+//   2. Frequency decay — going quiet for 10+ days drags the index down,
+//      nudging inactive players back onto the court.
+// A third factor (an MVP "carry" vote multiplier) is intentionally not
+// implemented yet — there's no MVP voting feature in the app, so it has
+// nothing real to read from. See DOCS.md.
+export function useScrimIndex(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["scrimIndex", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("match_results")
+        .select("*")
+        .eq("status", "confirmed")
+        .or(
+          `team_a_player1.eq.${userId},team_a_player2.eq.${userId},team_b_player1.eq.${userId},team_b_player2.eq.${userId}`
+        )
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+
+      const results = (data as MatchResult[]) ?? [];
+      if (results.length === 0) return null;
+
+      const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      const recentWindow = results.filter((r) => now - new Date(r.created_at).getTime() <= FOURTEEN_DAYS_MS);
+      const eligible = (recentWindow.length > 0 ? recentWindow : results).slice(0, 5);
+
+      let total = 0;
+      for (const r of eligible) {
+        const inTeamA = r.team_a_player1 === userId || r.team_a_player2 === userId;
+        const won = didWin(r, userId!);
+        let gamesFor = 0;
+        let gamesAgainst = 0;
+        for (const set of r.sets) {
+          if (inTeamA) {
+            gamesFor += set.a;
+            gamesAgainst += set.b;
+          } else {
+            gamesFor += set.b;
+            gamesAgainst += set.a;
+          }
+        }
+        const diff = gamesFor - gamesAgainst;
+        let matchScore = won ? 7 + Math.min(3, diff / 4) : 3 - Math.min(2, Math.abs(diff) / 4);
+        matchScore = Math.max(1, Math.min(10, matchScore));
+        total += matchScore;
+      }
+      let index = total / eligible.length;
+
+      const daysSinceLastMatch = (now - new Date(results[0].created_at).getTime()) / (24 * 60 * 60 * 1000);
+      if (daysSinceLastMatch > 10) {
+        const decay = Math.min(4, (daysSinceLastMatch - 10) * 0.15);
+        index = Math.max(1, index - decay);
+      }
+
+      return Math.round(index * 10) / 10;
+    },
+    enabled: !!userId,
+  });
+}
+
+export function scrimIndexLabel(score: number): string {
+  if (score >= 8.5) return 'UNSTOPPABLE';
+  if (score >= 7) return 'IN FORM';
+  if (score >= 5) return 'STEADY';
+  if (score >= 3) return 'COOLING OFF';
+  return 'OUT OF FORM';
+}
