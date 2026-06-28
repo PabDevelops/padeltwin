@@ -54,7 +54,12 @@
           "color": "#C6FF33"
         }
       ],
-      "expo-font",
+      [
+        "expo-font",
+        {
+          "fonts": ["./assets/fonts/CoubraFont.ttf", "./assets/fonts/SpaceMono-Regular.ttf"]
+        }
+      ],
       "@react-native-community/datetimepicker"
     ],
     "experiments": {

@@ -113,6 +113,10 @@ export default function TabLayout() {
       <Tabs.Screen name="create-match" />
       <Tabs.Screen name="partners" />
       <Tabs.Screen name="profile" />
+      <Tabs.Screen name="leagues/index" options={{ href: null }} />
+      <Tabs.Screen name="leagues/city" options={{ href: null }} />
+      <Tabs.Screen name="leagues/country" options={{ href: null }} />
+      <Tabs.Screen name="club-leaderboard" options={{ href: null }} />
     </Tabs>
   );
 }

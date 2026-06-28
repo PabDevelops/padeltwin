@@ -656,32 +656,6 @@ export default function HomeScreen() {
         <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
       </Pressable>
 
-      <Text style={styles.sectionTitle}>LEADERBOARD {profile?.zone ? `• ${profile.zone.toUpperCase()}` : ''}</Text>
-      {leaderboardLoading ? (
-        <ActivityIndicator color={theme.primary} style={{ marginTop: 12 }} />
-      ) : (
-        <View style={styles.leaderboardContainer}>
-          {leaderboard?.map((p, index) => {
-            const rank = index + 1;
-            const isTop3 = rank <= 3;
-            const rankStr = rank < 10 ? `0${rank}` : `${rank}`;
-            return (
-              <View key={p.id} style={[styles.leaderboardRow, rank === leaderboard.length && { borderBottomWidth: 0 }]}>
-                <Text style={[styles.rankText, isTop3 && styles.rankTextTop]}>{rankStr}</Text>
-                <View style={styles.playerAvatarPlaceholder}>
-                  <Text style={styles.avatarLetter}>{(p.full_name ?? '?').slice(0, 1).toUpperCase()}</Text>
-                </View>
-                <Text style={styles.leaderboardName} numberOfLines={1}>
-                  {(p.full_name ?? 'Player').toUpperCase()}
-                </Text>
-                {p.is_pro && <ProBadge size="sm" />}
-                {p.coach_status === 'approved' && <CoachBadge size="sm" />}
-                <Text style={styles.leaderboardElo}>{p.elo} <Text style={{ fontSize: 9, color: theme.textMuted }}>PS</Text></Text>
-              </View>
-            );
-          })}
-        </View>
-      )}
     </ScrollView>
   );
 }
