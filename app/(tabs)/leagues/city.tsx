@@ -1,18 +1,23 @@
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import { useSession } from '@/lib/useSession';
-import { useCityLeague, useProfile } from '@/lib/queries';
+import { usePairLeagueBoard, useProfile, useMyPairs } from '@/lib/queries';
 import { theme, cardRadius } from '@/constants/theme';
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
 import { BackHeader } from '@/components/BackHeader';
 
 export default function CityLeagueScreen() {
+  const { value } = useLocalSearchParams<{ value?: string }>();
   const { session } = useSession();
   const userId = session?.user.id;
   const { data: profile } = useProfile(userId);
-  const { data: players, isLoading } = useCityLeague(profile?.zone);
+  const cityValue = value ?? profile?.zone ?? undefined;
+  const { data: pairs, isLoading } = usePairLeagueBoard('city', cityValue);
+  const { data: myPairs } = useMyPairs(userId);
+  const myPairIds = new Set((myPairs ?? []).map((p) => p.id));
 
-  if (!profile?.zone) {
+  if (!cityValue) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.background }}>
         <BackHeader title="City League" />
@@ -35,25 +40,26 @@ export default function CityLeagueScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, gap: 8 }}>
       <BackHeader title="City League" />
-      <Text style={styles.title}>{profile.zone.toUpperCase()} LEAGUE</Text>
-      <Text style={styles.subtitle}>Ranked by PS Score across your city.</Text>
+      <Text style={styles.title}>{cityValue.toUpperCase()} LEAGUE</Text>
+      <Text style={styles.subtitle}>Ranked pairs by PS Score across this city.</Text>
 
       <View style={styles.leaderboardContainer}>
-        {(players ?? []).length === 0 ? (
-          <Text style={styles.emptyText}>No ranked players in your city yet.</Text>
+        {(pairs ?? []).length === 0 ? (
+          <Text style={styles.emptyText}>No pairs have joined this league yet.</Text>
         ) : (
-          (players ?? []).map((p, index) => {
+          (pairs ?? []).map((pair, index) => {
             const rank = index + 1;
-            const isMe = p.id === userId;
+            const isMine = myPairIds.has(pair.id);
             return (
-              <View key={p.id} style={[styles.row, isMe && styles.rowMe]}>
+              <View key={pair.id} style={[styles.row, isMine && styles.rowMe]}>
                 <Text style={[styles.rankText, rank <= 3 && styles.rankTextTop]}>{rank}</Text>
-                <Text style={styles.playerName} numberOfLines={1}>
-                  {(p.full_name ?? 'Player').toUpperCase()} {isMe ? '(YOU)' : ''}
+                <Text style={styles.pairName} numberOfLines={1}>
+                  {(pair.player_a?.full_name ?? 'Player').toUpperCase()} & {(pair.player_b?.full_name ?? 'Player').toUpperCase()}
+                  {isMine ? ' (YOU)' : ''}
                 </Text>
-                {p.is_pro && <ProBadge size="sm" />}
-                {p.coach_status === 'approved' && <CoachBadge size="sm" />}
-                <Text style={styles.playerElo}>{p.elo}</Text>
+                {pair.player_a?.is_pro || pair.player_b?.is_pro ? <ProBadge size="sm" /> : null}
+                {pair.player_a?.coach_status === 'approved' || pair.player_b?.coach_status === 'approved' ? <CoachBadge size="sm" /> : null}
+                <Text style={styles.pairElo}>{pair.elo}</Text>
               </View>
             );
           })
@@ -87,7 +93,7 @@ const styles = StyleSheet.create({
   rowMe: { backgroundColor: 'rgba(198, 255, 51, 0.08)' },
   rankText: { width: 24, color: theme.textMuted, fontWeight: '800', fontSize: 13 },
   rankTextTop: { color: theme.accent },
-  playerName: { flex: 1, color: theme.text, fontWeight: '800', fontSize: 12, letterSpacing: 0.2 },
-  playerElo: { color: theme.text, fontWeight: '900', fontSize: 13 },
+  pairName: { flex: 1, color: theme.text, fontWeight: '800', fontSize: 12, letterSpacing: 0.2 },
+  pairElo: { color: theme.text, fontWeight: '900', fontSize: 13 },
   emptyText: { color: theme.textMuted, fontSize: 13, textAlign: 'center', padding: 16, lineHeight: 18 },
 });

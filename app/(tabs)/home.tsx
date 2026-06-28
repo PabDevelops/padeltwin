@@ -16,7 +16,7 @@ import {
   useCompatiblePlayers,
   useToggleVib,
   useFollowedLeaderboard,
-  useKopThrones,
+  useMyKopStatus,
   type FeedItem,
 } from '@/lib/queries';
 import { ACHIEVEMENT_LABELS, ACHIEVEMENT_ICONS } from '@/constants/achievements';
@@ -65,7 +65,7 @@ export default function HomeScreen() {
   const { session } = useSession();
   const userId = session?.user.id;
   const { data: profile } = useProfile(userId);
-  const { data: kopThrones } = useKopThrones(profile?.country, userId);
+  const { data: kopStatus } = useMyKopStatus(userId);
   const { data: stats, isLoading: statsLoading } = useMyStats(userId);
   const { data: recentResults, isLoading: resultsLoading } = useRecentResults(userId, 8);
   const { data: leaderboard, isLoading: leaderboardLoading } = useLeaderboard(profile?.zone);
@@ -428,13 +428,13 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.leagueTilesRow}>
-        <Pressable style={({ pressed }) => [styles.leagueTile, pressed && { opacity: 0.9 }]} onPress={() => router.push('/leagues/city' as any)}>
+        <Pressable style={({ pressed }) => [styles.leagueTile, pressed && { opacity: 0.9 }]} onPress={() => router.push('/leagues' as any)}>
           <View style={styles.leagueTileRankBadge}>
-            <Text style={styles.leagueTileRankBadgeText}>1</Text>
+            <MaterialCommunityIcons name="podium" size={18} color={theme.accent} />
           </View>
           <Text style={styles.leagueTileTitle}>LEAGUE</Text>
           <Text style={styles.leagueTileSub} numberOfLines={1}>
-            {profile?.zone ?? 'Set your city'}
+            Ranked by pair
           </Text>
         </Pressable>
 
@@ -447,7 +447,7 @@ export default function HomeScreen() {
           </View>
           <Text style={styles.leagueTileTitle}>KOP</Text>
           <Text style={styles.leagueTileSub} numberOfLines={1}>
-            {kopThrones ? `${kopThrones.crownedClubs.length} crown${kopThrones.crownedClubs.length === 1 ? '' : 's'} held` : 'No crowns yet'}
+            {kopStatus ? `${kopStatus.crownedClubs.length} crown${kopStatus.crownedClubs.length === 1 ? '' : 's'} held` : 'No crowns yet'}
           </Text>
         </Pressable>
       </View>

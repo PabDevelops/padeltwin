@@ -37,7 +37,7 @@ import {
   useBlockedProfiles,
   useUnblockUser,
   useDeleteAccount,
-  useKopThrones,
+  useMyKopStatus,
 } from '@/lib/queries';
 import { ACHIEVEMENT_LABELS, ACHIEVEMENT_ICONS } from '@/constants/achievements';
 import { supabase } from '@/lib/supabase';
@@ -78,7 +78,7 @@ export default function ProfileScreen() {
   const { session } = useSession();
   const userId = session?.user.id;
   const { data: profile, isLoading } = useProfile(userId);
-  const { data: kopThrones } = useKopThrones(profile?.country, userId);
+  const { data: kopStatus } = useMyKopStatus(userId);
   const updateProfile = useUpdateProfile();
   const { data: requests } = usePartnerRequests(userId);
   const { data: myAchievements, isLoading: achievementsLoading } = useMyAchievements(userId);
@@ -428,18 +428,24 @@ export default function ProfileScreen() {
         {/* KOP STATUS */}
         <View style={styles.section}>
           <Text style={styles.sectionHeader}>KOP STATUS</Text>
+          <Text style={styles.helperText}>
+            KOP is contested by your ranked pair, not solo — join a club's board from the KOP tab.
+          </Text>
 
-          <View style={styles.kopCrownRow}>
+          <Pressable style={styles.kopCrownRow} onPress={() => router.push('/club-leaderboard' as any)}>
             <Ionicons name="trophy" size={28} color={theme.success} />
             <View style={{ flex: 1 }}>
               <Text style={styles.kopCrownValue}>
-                {kopThrones?.crownedClubs.length ?? 0} CROWN{(kopThrones?.crownedClubs.length ?? 0) === 1 ? '' : 'S'}
+                {kopStatus?.crownedClubs.length ?? 0} CROWN{(kopStatus?.crownedClubs.length ?? 0) === 1 ? '' : 'S'}
               </Text>
               <Text style={styles.kopCrownSub}>
-                {profile.country ? `Held across clubs in ${profile.country}` : 'Add your country to track crowns'}
+                {kopStatus && kopStatus.joinedClubs.length > 0
+                  ? `Held across ${kopStatus.joinedClubs.length} joined club${kopStatus.joinedClubs.length === 1 ? '' : 's'}`
+                  : 'Not contesting any club yet'}
               </Text>
             </View>
-          </View>
+            <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+          </Pressable>
 
           <Text style={[styles.label, { marginTop: 14 }]}>HOME CLUB</Text>
           <TextInput
@@ -451,11 +457,7 @@ export default function ProfileScreen() {
             onFocus={() => setFocusedInput('club')}
             onBlur={() => setFocusedInput(null)}
           />
-          <Text style={styles.helperText}>
-            {club && !kopThrones?.crownedClubs.includes(club)
-              ? 'Interim status — you don’t hold the throne here yet.'
-              : 'This is where your KOP throne is contested.'}
-          </Text>
+          <Text style={styles.helperText}>Shown on your profile — doesn't by itself enter you into KOP.</Text>
         </View>
 
         <View style={[styles.section, styles.switchRow]}>

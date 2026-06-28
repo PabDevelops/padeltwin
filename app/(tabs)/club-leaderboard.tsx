@@ -1,54 +1,125 @@
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSession } from '@/lib/useSession';
-import { useProfile, useClubLeaderboard } from '@/lib/queries';
+import {
+  useProfile,
+  useMyPairs,
+  usePairClubBoard,
+  useMyPairClubs,
+  useJoinPairClub,
+} from '@/lib/queries';
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
-import { theme, cardRadius } from '@/constants/theme';
+import { theme, cardRadius, chipRadius } from '@/constants/theme';
+
+const FREE_CLUB_LIMIT = 1;
+const PRO_CLUB_LIMIT = 5;
 
 export default function ClubLeaderboardScreen() {
   const { session } = useSession();
   const userId = session?.user.id;
   const { data: profile } = useProfile(userId);
-  const { data: leaderboard, isLoading } = useClubLeaderboard(profile?.club);
+  const { data: pairs } = useMyPairs(userId);
+  const activePair = pairs && pairs.length > 0 ? [...pairs].sort((a, b) => b.elo - a.elo)[0] : null;
+  const { data: myClubs } = useMyPairClubs(activePair?.id);
+  const joinClub = useJoinPairClub();
+  const [clubInput, setClubInput] = useState(profile?.club ?? '');
+  const [viewingClub, setViewingClub] = useState<string | null>(null);
+
+  const activeClub = viewingClub ?? myClubs?.[0]?.club ?? null;
+  const { data: leaderboard, isLoading } = usePairClubBoard(activeClub);
+
+  const isPro = !!(activePair?.player_a?.is_pro || activePair?.player_b?.is_pro);
+  const cap = isPro ? PRO_CLUB_LIMIT : FREE_CLUB_LIMIT;
+  const joinedCount = myClubs?.length ?? 0;
+  const atCap = joinedCount >= cap;
+
+  function handleJoin() {
+    if (!activePair || !clubInput.trim()) return;
+    joinClub.mutate(
+      { pairId: activePair.id, club: clubInput.trim() },
+      {
+        onSuccess: () => setViewingClub(clubInput.trim()),
+        onError: (e) => Alert.alert('Could not join club', e instanceof Error ? e.message : 'Try again.'),
+      }
+    );
+  }
+
+  if (!activePair) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.emptyText}>
+          KOP is contested by ranked pairs — declare a fixed pair first to compete for a club's crown.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>KING OF THE COURT</Text>
-      <Text style={styles.subtitle}>{profile?.club ?? 'Your club'}</Text>
+      <Text style={styles.subtitle}>{activeClub ?? 'Join a club to contest the throne'}</Text>
+
+      {(myClubs ?? []).length > 1 && (
+        <View style={styles.clubChipsRow}>
+          {(myClubs ?? []).map((c) => (
+            <Pressable
+              key={c.id}
+              style={[styles.clubChip, activeClub === c.club && styles.clubChipActive]}
+              onPress={() => setViewingClub(c.club)}
+            >
+              <Text style={[styles.clubChipText, activeClub === c.club && styles.clubChipTextActive]}>{c.club}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+
+      <View style={styles.joinRow}>
+        <TextInput
+          style={styles.joinInput}
+          value={clubInput}
+          onChangeText={setClubInput}
+          placeholder="Club or court name"
+          placeholderTextColor={theme.textMuted}
+        />
+        <Pressable
+          style={[styles.joinBtn, atCap && { opacity: 0.5 }]}
+          onPress={() => (atCap ? Alert.alert('Limit reached', `${isPro ? 'Pro' : 'Free'} pairs can join up to ${cap} club${cap === 1 ? '' : 's'}.`) : handleJoin())}
+          disabled={joinClub.isPending}
+        >
+          <Text style={styles.joinBtnText}>JOIN</Text>
+        </Pressable>
+      </View>
+      <Text style={styles.capText}>{joinedCount}/{cap} clubs joined {isPro ? '(Pro)' : '(Free)'}</Text>
 
       {isLoading ? (
         <ActivityIndicator color={theme.accent} style={{ marginTop: 24 }} />
-      ) : !leaderboard || leaderboard.length === 0 ? (
-        <Text style={styles.emptyText}>
-          Nobody at {profile?.club ?? 'your club'} has played 5+ confirmed matches yet — be the first to claim the
-          crown.
-        </Text>
+      ) : !activeClub ? null : !leaderboard || leaderboard.length === 0 ? (
+        <Text style={styles.emptyText}>No pairs have joined this club yet — be the first to claim the crown.</Text>
       ) : (
         <View style={styles.leaderboardContainer}>
-          {leaderboard.map((p, index) => {
+          {leaderboard.map((pair, index) => {
             const rank = index + 1;
-            const isMe = p.id === userId;
+            const isMine = pair.id === activePair.id;
             return (
               <View
-                key={p.id}
+                key={pair.id}
                 style={[
                   styles.leaderboardRow,
                   rank === leaderboard.length && { borderBottomWidth: 0 },
-                  isMe && styles.leaderboardRowMe,
+                  isMine && styles.leaderboardRowMe,
                   rank === 1 && styles.leaderboardRowChampion,
                 ]}
               >
                 <Text style={[styles.rankText, rank <= 3 && styles.rankTextTop]}>{rank === 1 ? '👑' : rank < 10 ? `0${rank}` : rank}</Text>
-                <View style={styles.playerAvatarPlaceholder}>
-                  <Text style={styles.avatarLetter}>{(p.full_name ?? '?').slice(0, 1).toUpperCase()}</Text>
-                </View>
                 <Text style={styles.leaderboardName} numberOfLines={1}>
-                  {isMe ? 'YOU' : (p.full_name ?? 'Player').toUpperCase()}
+                  {(pair.player_a?.full_name ?? 'Player').toUpperCase()} & {(pair.player_b?.full_name ?? 'Player').toUpperCase()}
+                  {isMine ? ' (YOU)' : ''}
                 </Text>
-                {p.is_pro && <ProBadge size="sm" />}
-                {p.coach_status === 'approved' && <CoachBadge size="sm" />}
+                {pair.player_a?.is_pro || pair.player_b?.is_pro ? <ProBadge size="sm" /> : null}
+                {pair.player_a?.coach_status === 'approved' || pair.player_b?.coach_status === 'approved' ? <CoachBadge size="sm" /> : null}
                 <Text style={styles.leaderboardElo}>
-                  {p.elo} <Text style={{ fontSize: 9, color: theme.textMuted }}>PS</Text>
+                  {pair.elo} <Text style={{ fontSize: 9, color: theme.textMuted }}>PS</Text>
                 </Text>
               </View>
             );
@@ -61,10 +132,31 @@ export default function ClubLeaderboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
+  center: { flex: 1, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center', padding: 24 },
   content: { padding: 20, gap: 4 },
   title: { fontFamily: 'Anton_400Regular', color: theme.text, fontSize: 24, letterSpacing: 0.5 },
-  subtitle: { color: theme.accent, fontWeight: '800', fontSize: 13, marginBottom: 16 },
-  emptyText: { color: theme.textMuted, fontSize: 13, lineHeight: 20, marginTop: 12 },
+  subtitle: { color: theme.accent, fontWeight: '800', fontSize: 13, marginBottom: 8 },
+  clubChipsRow: { flexDirection: 'row', gap: 8, marginBottom: 8, flexWrap: 'wrap' },
+  clubChip: { borderWidth: 1, borderColor: theme.border, borderRadius: chipRadius, paddingHorizontal: 12, paddingVertical: 6 },
+  clubChipActive: { backgroundColor: theme.accent, borderColor: theme.accent },
+  clubChipText: { color: theme.textMuted, fontSize: 11, fontWeight: '700' },
+  clubChipTextActive: { color: theme.onAccent },
+  joinRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  joinInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: theme.border,
+    borderRadius: chipRadius,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    color: theme.text,
+    backgroundColor: theme.card,
+    fontSize: 13,
+  },
+  joinBtn: { backgroundColor: theme.accent, borderRadius: chipRadius, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' },
+  joinBtnText: { color: theme.onAccent, fontWeight: '900', fontSize: 12 },
+  capText: { color: theme.textMuted, fontSize: 11, marginTop: 6, marginBottom: 16 },
+  emptyText: { color: theme.textMuted, fontSize: 13, lineHeight: 20, marginTop: 12, textAlign: 'center' },
   leaderboardContainer: { backgroundColor: theme.card, borderRadius: cardRadius, borderWidth: 1, borderColor: theme.border, overflow: 'hidden' },
   leaderboardRow: {
     flexDirection: 'row',
@@ -79,8 +171,6 @@ const styles = StyleSheet.create({
   leaderboardRowChampion: { backgroundColor: 'rgba(198,255,51,0.1)' },
   rankText: { color: theme.textMuted, fontWeight: '900', fontSize: 13, width: 24 },
   rankTextTop: { color: theme.accent },
-  playerAvatarPlaceholder: { width: 32, height: 32, borderRadius: 16, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center' },
-  avatarLetter: { color: theme.text, fontWeight: '800', fontSize: 12 },
   leaderboardName: { flex: 1, color: theme.text, fontWeight: '800', fontSize: 12, letterSpacing: 0.3 },
   leaderboardElo: { color: theme.text, fontWeight: '900', fontSize: 13 },
 });

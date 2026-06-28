@@ -621,20 +621,111 @@ export function useLeaderboard(zone: string | null | undefined) {
 // scoped to players who entered the same club name on their profile
 // instead of zone. Exact-ish match (no wildcards) since club is a short
 // label, not a free-text search field.
-export function useClubLeaderboard(club: string | null | undefined) {
+// KOP is contested by pairs, not individuals — padel is a 2-person sport.
+// A pair joins a club's KOP board via join_pair_club() (capped 1 free / 5
+// pro), and the crown is whichever joined pair has the highest pair ELO.
+export function usePairClubBoard(club: string | null | undefined) {
   return useQuery({
-    queryKey: ["clubLeaderboard", club],
+    queryKey: ["pairClubBoard", club],
     queryFn: async () => {
       const { data, error } = await supabase
-        .rpc("leaderboard_profiles")
-        .select("*")
-        .ilike("club", club!)
-        .order("elo", { ascending: false })
-        .limit(50);
+        .from("pair_clubs")
+        .select(
+          "pair:pairs(id, elo, matches_played, player_a:profiles!pairs_player_a_id_fkey(*), player_b:profiles!pairs_player_b_id_fkey(*))"
+        )
+        .eq("club", club!);
       if (error) throw error;
-      return data as Profile[];
+      const pairs = (data ?? [])
+        .map((r: any) => r.pair)
+        .filter(Boolean) as PairWithProfiles[];
+      return pairs.sort((a, b) => b.elo - a.elo);
     },
     enabled: !!club,
+  });
+}
+
+export function useJoinPairClub() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ pairId, club }: { pairId: string; club: string }) => {
+      const { error } = await supabase.rpc("join_pair_club", { p_pair_id: pairId, p_club: club });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pairClubBoard"] });
+      queryClient.invalidateQueries({ queryKey: ["myPairClubs"] });
+      queryClient.invalidateQueries({ queryKey: ["myKopStatus"] });
+    },
+  });
+}
+
+export function useLeavePairClub() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("pair_clubs").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pairClubBoard"] });
+      queryClient.invalidateQueries({ queryKey: ["myPairClubs"] });
+      queryClient.invalidateQueries({ queryKey: ["myKopStatus"] });
+    },
+  });
+}
+
+export function useMyPairClubs(pairId: string | undefined) {
+  return useQuery({
+    queryKey: ["myPairClubs", pairId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("pair_clubs").select("*").eq("pair_id", pairId!);
+      if (error) throw error;
+      return data as { id: string; pair_id: string; club: string }[];
+    },
+    enabled: !!pairId,
+  });
+}
+
+// Aggregates KOP status across every pair the player belongs to: which
+// clubs those pairs have joined, and in how many they currently hold the
+// crown (top pair ELO at that club).
+export function useMyKopStatus(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["myKopStatus", userId],
+    queryFn: async () => {
+      const { data: myPairs, error: pairsErr } = await supabase
+        .from("pairs")
+        .select("id")
+        .or(`player_a_id.eq.${userId},player_b_id.eq.${userId}`);
+      if (pairsErr) throw pairsErr;
+      const myPairIds = (myPairs ?? []).map((p) => p.id);
+      if (myPairIds.length === 0) return { joinedClubs: [] as string[], crownedClubs: [] as string[] };
+
+      const { data: myClubRows, error: clubsErr } = await supabase
+        .from("pair_clubs")
+        .select("club")
+        .in("pair_id", myPairIds);
+      if (clubsErr) throw clubsErr;
+      const joinedClubs = Array.from(new Set((myClubRows ?? []).map((r) => r.club)));
+      if (joinedClubs.length === 0) return { joinedClubs, crownedClubs: [] as string[] };
+
+      const { data: board, error: boardErr } = await supabase
+        .from("pair_clubs")
+        .select("club, pair_id, pair:pairs(elo)")
+        .in("club", joinedClubs);
+      if (boardErr) throw boardErr;
+
+      const topPerClub = new Map<string, { pairId: string; elo: number }>();
+      for (const row of board as any[]) {
+        const elo = row.pair?.elo ?? 0;
+        const current = topPerClub.get(row.club);
+        if (!current || elo > current.elo) topPerClub.set(row.club, { pairId: row.pair_id, elo });
+      }
+
+      const crownedClubs = joinedClubs.filter((club) => myPairIds.includes(topPerClub.get(club)?.pairId ?? ''));
+      return { joinedClubs, crownedClubs };
+    },
+    enabled: !!userId,
   });
 }
 
@@ -1281,71 +1372,66 @@ export function useDeclarePair() {
   });
 }
 
-// City League: same backing data as the Home zone leaderboard widget, but
-// the full list instead of just the top 10.
-export function useCityLeague(zone: string | null | undefined) {
+// Leagues are joined by a pair (padel is a 2-person sport), capped at 1
+// free / 5 Pro via join_pair_league(). "city"/"country" aren't separate
+// rows — they're identified by (kind, value), e.g. ('city', 'Edinburgh').
+export function usePairLeagueBoard(kind: 'city' | 'country', value: string | null | undefined) {
   return useQuery({
-    queryKey: ["cityLeague", zone],
+    queryKey: ["pairLeagueBoard", kind, value],
     queryFn: async () => {
       const { data, error } = await supabase
-        .rpc("leaderboard_profiles")
-        .select("*")
-        .ilike("zone", `%${zone}%`)
-        .order("elo", { ascending: false })
-        .limit(100);
+        .from("pair_leagues")
+        .select(
+          "pair:pairs(id, elo, matches_played, player_a:profiles!pairs_player_a_id_fkey(*), player_b:profiles!pairs_player_b_id_fkey(*))"
+        )
+        .eq("kind", kind)
+        .ilike("value", value!);
       if (error) throw error;
-      return data as Profile[];
+      const pairs = (data ?? [])
+        .map((r: any) => r.pair)
+        .filter(Boolean) as PairWithProfiles[];
+      return pairs.sort((a, b) => b.elo - a.elo);
     },
-    enabled: !!zone,
+    enabled: !!value,
   });
 }
 
-// Country League: same idea, scoped to the player's country instead of city.
-export function useCountryLeague(country: string | null | undefined) {
-  return useQuery({
-    queryKey: ["countryLeague", country],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc("leaderboard_profiles")
-        .select("*")
-        .ilike("country", country!)
-        .order("elo", { ascending: false })
-        .limit(200);
+export function useJoinPairLeague() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ pairId, kind, value }: { pairId: string; kind: 'city' | 'country'; value: string }) => {
+      const { error } = await supabase.rpc("join_pair_league", { p_pair_id: pairId, p_kind: kind, p_value: value });
       if (error) throw error;
-      return data as Profile[];
     },
-    enabled: !!country,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pairLeagueBoard"] });
+      queryClient.invalidateQueries({ queryKey: ["myPairLeagues"] });
+    },
   });
 }
 
-// KOP Thrones: across every club in the player's country, how many is this
-// player currently #1 in (their "throne")? Pulls the whole country's ranked
-// players in one query and finds the top player per club client-side,
-// instead of one round-trip per club.
-export function useKopThrones(country: string | null | undefined, userId: string | undefined) {
-  return useQuery({
-    queryKey: ["kopThrones", country, userId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc("leaderboard_profiles")
-        .select("id, club, elo")
-        .ilike("country", country!)
-        .not("club", "is", null)
-        .order("elo", { ascending: false });
+export function useLeavePairLeague() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("pair_leagues").delete().eq("id", id);
       if (error) throw error;
-
-      const topPerClub = new Map<string, string>();
-      for (const row of data as { id: string; club: string; elo: number }[]) {
-        if (!topPerClub.has(row.club)) topPerClub.set(row.club, row.id);
-      }
-
-      const totalClubs = topPerClub.size;
-      const crownedClubs = Array.from(topPerClub.entries())
-        .filter(([, topId]) => topId === userId)
-        .map(([club]) => club);
-
-      return { totalClubs, crownedClubs };
     },
-    enabled: !!country && !!userId,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pairLeagueBoard"] });
+      queryClient.invalidateQueries({ queryKey: ["myPairLeagues"] });
+    },
+  });
+}
+
+export function useMyPairLeagues(pairId: string | undefined) {
+  return useQuery({
+    queryKey: ["myPairLeagues", pairId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("pair_leagues").select("*").eq("pair_id", pairId!);
+      if (error) throw error;
+      return data as { id: string; pair_id: string; kind: 'city' | 'country'; value: string }[];
+    },
+    enabled: !!pairId,
   });
 }
