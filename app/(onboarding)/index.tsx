@@ -19,6 +19,15 @@ import { pickAndUploadAvatar } from '@/lib/uploadAvatar';
 import { useDetectCity } from '@/lib/useLocation';
 import { theme, buttonRadius, chipRadius, cardRadius } from '@/constants/theme';
 import { LEVELS, LEVEL_LABELS, LEVEL_DESCRIPTIONS } from '@/constants/levels';
+import {
+  COMPETITION_OPTIONS,
+  FREQUENCY_OPTIONS,
+  YEARS_PLAYING_OPTIONS,
+  computeStartingElo,
+  type CompetitionExperience,
+  type WeeklyFrequency,
+  type YearsPlaying,
+} from '@/lib/eloPlacement';
 import type { DominantHand, PlayerLevel, Sex } from '@/types/database';
 
 const SEX_OPTIONS: { value: Sex; label: string }[] = [
@@ -43,6 +52,9 @@ export default function OnboardingScreen() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [level, setLevel] = useState<PlayerLevel>('intermedio');
+  const [yearsPlaying, setYearsPlaying] = useState<YearsPlaying>('1to3');
+  const [competition, setCompetition] = useState<CompetitionExperience>('none');
+  const [frequency, setFrequency] = useState<WeeklyFrequency>('oneToTwo');
   const [heightCm, setHeightCm] = useState('');
   const [sex, setSex] = useState<Sex | null>(null);
   const [dominantHand, setDominantHand] = useState<DominantHand | null>(null);
@@ -89,6 +101,7 @@ export default function OnboardingScreen() {
       {
         id: userId,
         level,
+        elo: computeStartingElo({ level, yearsPlaying, competition, frequency }),
         height_cm: heightCm ? Number(heightCm) : null,
         sex,
         dominant_hand: dominantHand,
@@ -155,6 +168,52 @@ export default function OnboardingScreen() {
           ))}
         </View>
         <Text style={styles.helperText}>{LEVEL_DESCRIPTIONS[level]}</Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.label}>HOW LONG HAVE YOU BEEN PLAYING?</Text>
+        <View style={styles.chipRow}>
+          {YEARS_PLAYING_OPTIONS.map((o) => (
+            <Pressable
+              key={o.value}
+              style={({ pressed }) => [styles.chip, yearsPlaying === o.value && styles.chipActive, pressed && { scale: 0.96 } as any]}
+              onPress={() => setYearsPlaying(o.value)}>
+              <Text style={[styles.chipText, yearsPlaying === o.value && styles.chipTextActive]}>{o.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.label}>COMPETITIVE EXPERIENCE</Text>
+        <View style={styles.chipRow}>
+          {COMPETITION_OPTIONS.map((o) => (
+            <Pressable
+              key={o.value}
+              style={({ pressed }) => [styles.chip, competition === o.value && styles.chipActive, pressed && { scale: 0.96 } as any]}
+              onPress={() => setCompetition(o.value)}>
+              <Text style={[styles.chipText, competition === o.value && styles.chipTextActive]}>{o.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.label}>HOW OFTEN DO YOU PLAY?</Text>
+        <View style={styles.chipRow}>
+          {FREQUENCY_OPTIONS.map((o) => (
+            <Pressable
+              key={o.value}
+              style={({ pressed }) => [styles.chip, frequency === o.value && styles.chipActive, pressed && { scale: 0.96 } as any]}
+              onPress={() => setFrequency(o.value)}>
+              <Text style={[styles.chipText, frequency === o.value && styles.chipTextActive]}>{o.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <Text style={styles.helperText}>
+          Starting ELO: {computeStartingElo({ level, yearsPlaying, competition, frequency })} — this is just your
+          starting point, it'll move quickly once you play real matches.
+        </Text>
       </View>
 
       <View style={styles.section}>

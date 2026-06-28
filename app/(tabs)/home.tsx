@@ -714,12 +714,6 @@ export default function HomeScreen() {
         </Pressable>
       )}
 
-      <Pressable style={styles.clubBanner} onPress={() => router.push('/tournaments' as any)}>
-        <Ionicons name="medal" size={18} color={theme.secondary} />
-        <Text style={styles.clubBannerText}>TOURNAMENTS</Text>
-        <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
-      </Pressable>
-
       <View style={styles.leaguesSectionHeader}>
         <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>MY LEAGUES</Text>
         <Pressable onPress={() => router.push('/leagues' as any)}>
