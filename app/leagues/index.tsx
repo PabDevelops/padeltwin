@@ -2,9 +2,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSession } from '@/lib/useSession';
-import { useCityLeague, useKopThrones, useMyPairs, useProfile } from '@/lib/queries';
+import { useCityLeague, useKopThrones, useProfile } from '@/lib/queries';
 import { theme, cardRadius } from '@/constants/theme';
-import { divisionFromPairElo } from '@/lib/pairDivisions';
 
 export default function LeaguesScreen() {
   const router = useRouter();
@@ -12,11 +11,9 @@ export default function LeaguesScreen() {
   const userId = session?.user.id;
   const { data: profile } = useProfile(userId);
   const { data: cityPlayers } = useCityLeague(profile?.zone);
-  const { data: pairs } = useMyPairs(userId);
   const { data: thrones } = useKopThrones(profile?.country, userId);
 
   const myRank = cityPlayers ? cityPlayers.findIndex((p) => p.id === userId) + 1 : 0;
-  const bestPair = pairs && pairs.length > 0 ? [...pairs].sort((a, b) => b.elo - a.elo)[0] : null;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -41,33 +38,20 @@ export default function LeaguesScreen() {
         <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
       </Pressable>
 
-      <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]} onPress={() => router.push('/pairs' as any)}>
-        <View style={[styles.cardIcon, { backgroundColor: 'rgba(125, 57, 235, 0.12)' }]}>
-          <Ionicons name="people" size={20} color={theme.secondary} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.cardName}>Duo Queue</Text>
-          <Text style={styles.cardSub}>
-            {bestPair
-              ? `${divisionFromPairElo(bestPair.elo)} · ${bestPair.elo} PS`
-              : 'Declare a fixed pair to start ranking together'}
-          </Text>
-        </View>
-        <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
-      </Pressable>
-
       <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]} onPress={() => router.push('/club-leaderboard' as any)}>
         <View style={[styles.cardIcon, { backgroundColor: 'rgba(0, 230, 118, 0.12)' }]}>
-          <Ionicons name="trophy" size={20} color={theme.success} />
+          <Ionicons name="flame" size={20} color={theme.success} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.cardName}>KOP Thrones</Text>
+          <Text style={styles.cardName}>My Feuds & KOP Status</Text>
           <Text style={styles.cardSub}>
             {profile?.country
               ? thrones
-                ? `Ruling ${thrones.crownedClubs.length} of ${thrones.totalClubs} clubs in ${profile.country}`
+                ? thrones.crownedClubs.length > 0
+                  ? `Holding ${thrones.crownedClubs.length} KOP Crown${thrones.crownedClubs.length === 1 ? '' : 's'} in ${profile.country}`
+                  : `0 crowns yet — ${thrones.totalClubs} clubs up for grabs in ${profile.country}`
                 : 'No ranked clubs yet'
-              : 'Add your country in your profile to track thrones'}
+              : 'Add your country in your profile to track your crowns'}
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />

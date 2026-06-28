@@ -432,6 +432,11 @@ export default function ProfileScreen() {
             }}
           />
 
+          <Pressable style={styles.duoQueueLink} onPress={() => router.push('/pairs' as any)}>
+            <Text style={styles.duoQueueLinkText}>👥 DUO QUEUE — Manage your fixed pair</Text>
+            <Text style={styles.duoQueueLinkArrow}>{'>'}</Text>
+          </Pressable>
+
           <Text style={[styles.label, { marginTop: 14 }]}>SKILL LEVEL</Text>
           <View style={styles.row}>
             {LEVELS.map((l) => (
@@ -771,6 +776,19 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
+  duoQueueLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 14,
+    backgroundColor: '#191922',
+    borderWidth: 1,
+    borderColor: theme.border,
+    borderRadius: 12,
+    padding: 14,
+  },
+  duoQueueLinkText: { color: theme.text, fontWeight: '700', fontSize: 13 },
+  duoQueueLinkArrow: { color: theme.textMuted, fontWeight: '700' },
   centerContainer: { flex: 1, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center' },
   headerWrapper: {
     position: 'relative',

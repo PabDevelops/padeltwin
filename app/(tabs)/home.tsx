@@ -16,6 +16,7 @@ import {
   useCompatiblePlayers,
   useToggleVib,
   useFollowedLeaderboard,
+  useKopThrones,
   type FeedItem,
 } from '@/lib/queries';
 import { ACHIEVEMENT_LABELS, ACHIEVEMENT_ICONS } from '@/constants/achievements';
@@ -64,6 +65,7 @@ export default function HomeScreen() {
   const { session } = useSession();
   const userId = session?.user.id;
   const { data: profile } = useProfile(userId);
+  const { data: kopThrones } = useKopThrones(profile?.country, userId);
   const { data: stats, isLoading: statsLoading } = useMyStats(userId);
   const { data: recentResults, isLoading: resultsLoading } = useRecentResults(userId, 8);
   const { data: leaderboard, isLoading: leaderboardLoading } = useLeaderboard(profile?.zone);
@@ -717,16 +719,12 @@ export default function HomeScreen() {
         <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
       </Pressable>
 
-      <Pressable style={styles.clubBanner} onPress={() => router.push('/pairs' as any)}>
-        <Ionicons name="people" size={18} color={theme.secondary} />
-        <Text style={styles.clubBannerText}>DUO QUEUE</Text>
-        <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
-      </Pressable>
-
-      {profile?.club && (
+      {profile?.country && (
         <Pressable style={styles.clubBanner} onPress={() => router.push('/club-leaderboard' as any)}>
-          <Ionicons name="trophy" size={18} color={theme.success} />
-          <Text style={styles.clubBannerText}>KOP THRONES — {profile.club.toUpperCase()}</Text>
+          <Ionicons name="flame" size={18} color={theme.success} />
+          <Text style={styles.clubBannerText}>
+            MY FEUDS & KOP STATUS{kopThrones ? ` — ${kopThrones.crownedClubs.length} CROWN${kopThrones.crownedClubs.length === 1 ? '' : 'S'}` : ''}
+          </Text>
           <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
         </Pressable>
       )}
