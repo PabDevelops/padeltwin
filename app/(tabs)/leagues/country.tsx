@@ -1,34 +1,48 @@
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSession } from '@/lib/useSession';
-import { useCityLeague, useProfile } from '@/lib/queries';
+import { useCountryLeague, useProfile } from '@/lib/queries';
 import { theme, cardRadius } from '@/constants/theme';
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
+import { BackHeader } from '@/components/BackHeader';
 
-export default function CityLeagueScreen() {
+export default function CountryLeagueScreen() {
   const { session } = useSession();
   const userId = session?.user.id;
   const { data: profile } = useProfile(userId);
-  const { data: players, isLoading } = useCityLeague(profile?.zone);
+  const { data: players, isLoading } = useCountryLeague(profile?.country);
 
-  if (!profile?.zone) {
+  if (!profile?.country) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.emptyText}>Add your city in your profile to see your local ranking.</Text>
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
+        <BackHeader title="Country League" />
+        <View style={styles.center}>
+          <Text style={styles.emptyText}>
+            Add your country in your profile to see your national ranking.
+          </Text>
+        </View>
       </View>
     );
   }
 
-  if (isLoading) return <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />;
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
+        <BackHeader title="Country League" />
+        <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, gap: 8 }}>
-      <Text style={styles.title}>{profile.zone.toUpperCase()} LEAGUE</Text>
-      <Text style={styles.subtitle}>Ranked by PS Score across your city.</Text>
+      <BackHeader title="Country League" />
+      <Text style={styles.title}>{profile.country.toUpperCase()} LEAGUE</Text>
+      <Text style={styles.subtitle}>Ranked by PS Score across the whole country.</Text>
 
       <View style={styles.leaderboardContainer}>
         {(players ?? []).length === 0 ? (
-          <Text style={styles.emptyText}>No ranked players in your city yet.</Text>
+          <Text style={styles.emptyText}>No ranked players in your country yet.</Text>
         ) : (
           (players ?? []).map((p, index) => {
             const rank = index + 1;

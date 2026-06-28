@@ -65,9 +65,7 @@ function CustomTabBar({ state, descriptors, navigation, bottomInset }: any) {
 
         <Pressable style={styles.tabButton} onPress={() => router.push('/leagues' as any)}>
           <View style={styles.iconWrapper}>
-            <View style={styles.leagueTabBadge}>
-              <Text style={styles.leagueTabBadgeText}>1</Text>
-            </View>
+            <MaterialCommunityIcons name="podium" size={22} color="#6E707E" />
           </View>
         </Pressable>
 
@@ -163,14 +161,4 @@ const styles = StyleSheet.create({
   activeIconWrapper: {
     borderColor: theme.accent,
   },
-  leagueTabBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1.5,
-    borderColor: '#6E707E',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  leagueTabBadgeText: { color: '#6E707E', fontWeight: '900', fontSize: 11 },
 });

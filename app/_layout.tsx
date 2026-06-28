@@ -85,18 +85,6 @@ function RootNavigator() {
         options={{ title: 'League', contentStyle: { paddingBottom: insets.bottom } }}
       />
       <Stack.Screen
-        name="leagues/index"
-        options={{ title: 'Leagues', contentStyle: { paddingBottom: insets.bottom } }}
-      />
-      <Stack.Screen
-        name="leagues/city"
-        options={{ title: 'City League', contentStyle: { paddingBottom: insets.bottom } }}
-      />
-      <Stack.Screen
-        name="leagues/country"
-        options={{ title: 'Country League', contentStyle: { paddingBottom: insets.bottom } }}
-      />
-      <Stack.Screen
         name="coaches/index"
         options={{ title: 'Coaches', contentStyle: { paddingBottom: insets.bottom } }}
       />
@@ -111,10 +99,6 @@ function RootNavigator() {
       <Stack.Screen
         name="privacy"
         options={{ title: 'Privacy Policy', contentStyle: { paddingBottom: insets.bottom } }}
-      />
-      <Stack.Screen
-        name="club-leaderboard"
-        options={{ title: 'King of the Court', contentStyle: { paddingBottom: insets.bottom } }}
       />
       <Stack.Screen
         name="tournaments/index"
