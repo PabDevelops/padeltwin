@@ -2,39 +2,84 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSession } from '@/lib/useSession';
-import { useProfile } from '@/lib/queries';
+import { useCityLeague, useKopThrones, useMyPairs, useProfile } from '@/lib/queries';
 import { theme, cardRadius } from '@/constants/theme';
+import { divisionFromPairElo } from '@/lib/pairDivisions';
 
 export default function LeaguesScreen() {
   const router = useRouter();
   const { session } = useSession();
-  const { data: profile } = useProfile(session?.user.id);
+  const userId = session?.user.id;
+  const { data: profile } = useProfile(userId);
+  const { data: cityPlayers } = useCityLeague(profile?.zone);
+  const { data: pairs } = useMyPairs(userId);
+  const { data: thrones } = useKopThrones(profile?.country, userId);
+
+  const myRank = cityPlayers ? cityPlayers.findIndex((p) => p.id === userId) + 1 : 0;
+  const bestPair = pairs && pairs.length > 0 ? [...pairs].sort((a, b) => b.elo - a.elo)[0] : null;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.intro}>
-        Leagues are now official rankings by city and country — everyone competes on the same board, ranked by
-        PS Score. No invites needed.
+        Your competitive standing, all in one place — ranked by PS Score, no invites needed.
       </Text>
 
-      <Pressable style={({ pressed }) => [styles.leagueCard, pressed && { opacity: 0.9 }]} onPress={() => router.push('/leagues/city' as any)}>
-        <View style={styles.leagueCardIcon}>
-          <Ionicons name="business" size={20} color={theme.accent} />
+      <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]} onPress={() => router.push('/leagues/city' as any)}>
+        <View style={styles.cardIcon}>
+          <Ionicons name="person" size={20} color={theme.accent} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.leagueCardName}>City League</Text>
-          <Text style={styles.leagueCardSub}>{profile?.zone ? profile.zone : 'Add your city in your profile'}</Text>
+          <Text style={styles.cardName}>SoloQueue — {profile?.zone ?? 'Set your city'}</Text>
+          <Text style={styles.cardSub}>
+            {profile?.zone
+              ? myRank > 0
+                ? `You're rank #${myRank} of ${cityPlayers?.length ?? 0}`
+                : 'Play 5 ranked matches to appear on the board'
+              : 'Add your city in your profile to join'}
+          </Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
       </Pressable>
 
-      <Pressable style={({ pressed }) => [styles.leagueCard, pressed && { opacity: 0.9 }]} onPress={() => router.push('/leagues/country' as any)}>
-        <View style={[styles.leagueCardIcon, { backgroundColor: 'rgba(125, 57, 235, 0.12)' }]}>
-          <Ionicons name="globe" size={20} color={theme.secondary} />
+      <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]} onPress={() => router.push('/pairs' as any)}>
+        <View style={[styles.cardIcon, { backgroundColor: 'rgba(125, 57, 235, 0.12)' }]}>
+          <Ionicons name="people" size={20} color={theme.secondary} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.leagueCardName}>Country League</Text>
-          <Text style={styles.leagueCardSub}>{profile?.country ? profile.country : 'Add your country in your profile'}</Text>
+          <Text style={styles.cardName}>Duo Queue</Text>
+          <Text style={styles.cardSub}>
+            {bestPair
+              ? `${divisionFromPairElo(bestPair.elo)} · ${bestPair.elo} PS`
+              : 'Declare a fixed pair to start ranking together'}
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+      </Pressable>
+
+      <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]} onPress={() => router.push('/club-leaderboard' as any)}>
+        <View style={[styles.cardIcon, { backgroundColor: 'rgba(0, 230, 118, 0.12)' }]}>
+          <Ionicons name="trophy" size={20} color={theme.success} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.cardName}>KOP Thrones</Text>
+          <Text style={styles.cardSub}>
+            {profile?.country
+              ? thrones
+                ? `Ruling ${thrones.crownedClubs.length} of ${thrones.totalClubs} clubs in ${profile.country}`
+                : 'No ranked clubs yet'
+              : 'Add your country in your profile to track thrones'}
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+      </Pressable>
+
+      <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]} onPress={() => router.push('/leagues/country' as any)}>
+        <View style={[styles.cardIcon, { backgroundColor: 'rgba(255, 255, 255, 0.08)' }]}>
+          <Ionicons name="globe" size={20} color={theme.text} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.cardName}>National Ranking — {profile?.country ?? 'Set your country'}</Text>
+          <Text style={styles.cardSub}>See how you stack up nationally</Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
       </Pressable>
@@ -46,7 +91,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
   content: { padding: 20, gap: 12 },
   intro: { color: theme.textMuted, fontSize: 13, lineHeight: 18, marginBottom: 4 },
-  leagueCard: {
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -56,7 +101,7 @@ const styles = StyleSheet.create({
     borderColor: theme.border,
     padding: 16,
   },
-  leagueCardIcon: {
+  cardIcon: {
     width: 40,
     height: 40,
     borderRadius: 12,
@@ -64,6 +109,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  leagueCardName: { color: theme.text, fontWeight: '800', fontSize: 15 },
-  leagueCardSub: { color: theme.textMuted, fontSize: 12, marginTop: 2 },
+  cardName: { color: theme.text, fontWeight: '800', fontSize: 14 },
+  cardSub: { color: theme.textMuted, fontSize: 12, marginTop: 2 },
 });

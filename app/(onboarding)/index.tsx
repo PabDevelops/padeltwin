@@ -17,6 +17,7 @@ import { useSession } from '@/lib/useSession';
 import { useProfile, useUpdateProfile } from '@/lib/queries';
 import { pickAndUploadAvatar } from '@/lib/uploadAvatar';
 import { useDetectCity } from '@/lib/useLocation';
+import { CityAutocomplete } from '@/components/CityAutocomplete';
 import { theme, buttonRadius, chipRadius, cardRadius } from '@/constants/theme';
 import { LEVELS, LEVEL_LABELS, LEVEL_DESCRIPTIONS } from '@/constants/levels';
 import {
@@ -311,14 +312,13 @@ export default function OnboardingScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionHeader}>LOCATION</Text>
         <Text style={styles.label}>CITY / ZONE</Text>
-        <TextInput
-          style={[styles.input, focusedInput === 'zone' && styles.inputFocused]}
-          placeholder="e.g. Madrid"
-          placeholderTextColor={theme.textMuted}
+        <CityAutocomplete
           value={zone}
           onChangeText={setZone}
+          focused={focusedInput === 'zone'}
           onFocus={() => setFocusedInput('zone')}
           onBlur={() => setFocusedInput(null)}
+          placeholder="e.g. Madrid"
         />
 
         <Text style={[styles.label, { marginTop: 14 }]}>COUNTRY</Text>

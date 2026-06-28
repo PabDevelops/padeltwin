@@ -704,20 +704,6 @@ export default function HomeScreen() {
         </>
       )}
 
-      {profile?.club && (
-        <Pressable style={styles.clubBanner} onPress={() => router.push('/club-leaderboard' as any)}>
-          <Ionicons name="trophy" size={18} color={theme.accent} />
-          <Text style={styles.clubBannerText}>KING OF THE COURT — {profile.club.toUpperCase()}</Text>
-          <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
-        </Pressable>
-      )}
-
-      <Pressable style={styles.clubBanner} onPress={() => router.push('/pairs' as any)}>
-        <Ionicons name="people" size={18} color={theme.secondary} />
-        <Text style={styles.clubBannerText}>MY PAIRS</Text>
-        <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
-      </Pressable>
-
       <View style={styles.leaguesSectionHeader}>
         <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>LEAGUES</Text>
         <Pressable onPress={() => router.push('/leagues' as any)}>
@@ -726,16 +712,24 @@ export default function HomeScreen() {
       </View>
 
       <Pressable style={styles.clubBanner} onPress={() => router.push('/leagues/city' as any)}>
-        <Ionicons name="business" size={18} color={theme.accent} />
-        <Text style={styles.clubBannerText}>CITY LEAGUE{profile?.zone ? ` — ${profile.zone.toUpperCase()}` : ''}</Text>
+        <Ionicons name="person" size={18} color={theme.accent} />
+        <Text style={styles.clubBannerText}>SOLOQUEUE{profile?.zone ? ` — ${profile.zone.toUpperCase()}` : ''}</Text>
         <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
       </Pressable>
 
-      <Pressable style={styles.clubBanner} onPress={() => router.push('/leagues/country' as any)}>
-        <Ionicons name="globe" size={18} color={theme.secondary} />
-        <Text style={styles.clubBannerText}>COUNTRY LEAGUE{profile?.country ? ` — ${profile.country.toUpperCase()}` : ''}</Text>
+      <Pressable style={styles.clubBanner} onPress={() => router.push('/pairs' as any)}>
+        <Ionicons name="people" size={18} color={theme.secondary} />
+        <Text style={styles.clubBannerText}>DUO QUEUE</Text>
         <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
       </Pressable>
+
+      {profile?.club && (
+        <Pressable style={styles.clubBanner} onPress={() => router.push('/club-leaderboard' as any)}>
+          <Ionicons name="trophy" size={18} color={theme.success} />
+          <Text style={styles.clubBannerText}>KOP THRONES — {profile.club.toUpperCase()}</Text>
+          <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+        </Pressable>
+      )}
 
       <Pressable
         style={({ pressed }) => [styles.coachBanner, pressed && { opacity: 0.9 }]}

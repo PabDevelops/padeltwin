@@ -46,6 +46,7 @@ import { theme, buttonRadius, cardRadius, chipRadius } from '@/constants/theme';
 import { LEVELS, LEVEL_LABELS, LEVEL_DESCRIPTIONS } from '@/constants/levels';
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
+import { CityAutocomplete } from '@/components/CityAutocomplete';
 import { ELO_PROVISIONAL_MATCHES, isEloProvisional } from '@/constants/elo';
 
 function didWin(result: MatchResultWithProfiles, userId: string) {
@@ -422,12 +423,10 @@ export default function ProfileScreen() {
           />
 
           <Text style={[styles.label, { marginTop: 14 }]}>CITY</Text>
-          <TextInput
-            style={[styles.input, focusedInput === 'city' && styles.inputFocused]}
+          <CityAutocomplete
             value={zone}
             onChangeText={setZone}
-            placeholder="e.g. Edinburgh"
-            placeholderTextColor={theme.textMuted}
+            focused={focusedInput === 'city'}
             onFocus={() => setFocusedInput('city')}
             onBlur={() => setFocusedInput(null)}
           />

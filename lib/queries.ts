@@ -1317,3 +1317,56 @@ export function useCountryLeague(country: string | null | undefined) {
     enabled: !!country,
   });
 }
+
+// City autocomplete: suggests real cities already used by other players
+// instead of a free-text guess, so City/Country League grouping actually
+// matches up between players (no "Edinburgh" vs "edinburgh" vs "Edimburgo").
+export function useCitySuggestions(query: string) {
+  return useQuery({
+    queryKey: ["citySuggestions", query],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("zone")
+        .not("zone", "is", null)
+        .ilike("zone", `%${query}%`)
+        .limit(50);
+      if (error) throw error;
+      const unique = Array.from(new Set((data ?? []).map((r) => r.zone as string)));
+      return unique.sort().slice(0, 8);
+    },
+    enabled: query.length >= 2,
+  });
+}
+
+// KOP Thrones: across every club in the player's country, how many is this
+// player currently #1 in (their "throne")? Pulls the whole country's ranked
+// players in one query and finds the top player per club client-side,
+// instead of one round-trip per club.
+export function useKopThrones(country: string | null | undefined, userId: string | undefined) {
+  return useQuery({
+    queryKey: ["kopThrones", country, userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .rpc("leaderboard_profiles")
+        .select("id, club, elo")
+        .ilike("country", country!)
+        .not("club", "is", null)
+        .order("elo", { ascending: false });
+      if (error) throw error;
+
+      const topPerClub = new Map<string, string>();
+      for (const row of data as { id: string; club: string; elo: number }[]) {
+        if (!topPerClub.has(row.club)) topPerClub.set(row.club, row.id);
+      }
+
+      const totalClubs = topPerClub.size;
+      const crownedClubs = Array.from(topPerClub.entries())
+        .filter(([, topId]) => topId === userId)
+        .map(([club]) => club);
+
+      return { totalClubs, crownedClubs };
+    },
+    enabled: !!country && !!userId,
+  });
+}
