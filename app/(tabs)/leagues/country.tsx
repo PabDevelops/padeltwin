@@ -1,7 +1,8 @@
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useSession } from '@/lib/useSession';
-import { usePairLeagueBoard, useProfile, useMyPairs } from '@/lib/queries';
+import { useCountryLeagueBoard, useProfile, useMyPairs } from '@/lib/queries';
+import { divisionFromPairElo } from '@/lib/pairDivisions';
 import { theme, cardRadius } from '@/constants/theme';
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
@@ -13,7 +14,7 @@ export default function CountryLeagueScreen() {
   const userId = session?.user.id;
   const { data: profile } = useProfile(userId);
   const countryValue = value ?? profile?.country ?? undefined;
-  const { data: pairs, isLoading } = usePairLeagueBoard('country', countryValue);
+  const { data: pairs, isLoading } = useCountryLeagueBoard(countryValue);
   const { data: myPairs } = useMyPairs(userId);
   const myPairIds = new Set((myPairs ?? []).map((p) => p.id));
 
@@ -41,25 +42,35 @@ export default function CountryLeagueScreen() {
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, gap: 8 }}>
       <BackHeader title="Country League" />
       <Text style={styles.title}>{countryValue.toUpperCase()} LEAGUE</Text>
-      <Text style={styles.subtitle}>Ranked pairs by PS Score across the whole country.</Text>
+      <Text style={styles.subtitle}>
+        Every pair in {countryValue} is here automatically — ranked by PS Score, grouped into divisions.
+      </Text>
 
       <View style={styles.leaderboardContainer}>
         {(pairs ?? []).length === 0 ? (
-          <Text style={styles.emptyText}>No pairs have joined this league yet.</Text>
+          <Text style={styles.emptyText}>No pairs from this country yet.</Text>
         ) : (
           (pairs ?? []).map((pair, index) => {
             const rank = index + 1;
             const isMine = myPairIds.has(pair.id);
+            const showDivisionHeader = index === 0 || divisionFromPairElo(pair.elo) !== divisionFromPairElo((pairs ?? [])[index - 1].elo);
             return (
-              <View key={pair.id} style={[styles.row, isMine && styles.rowMe]}>
-                <Text style={[styles.rankText, rank <= 3 && styles.rankTextTop]}>{rank}</Text>
-                <Text style={styles.pairName} numberOfLines={1}>
-                  {(pair.player_a?.full_name ?? 'Player').toUpperCase()} & {(pair.player_b?.full_name ?? 'Player').toUpperCase()}
-                  {isMine ? ' (YOU)' : ''}
-                </Text>
-                {pair.player_a?.is_pro || pair.player_b?.is_pro ? <ProBadge size="sm" /> : null}
-                {pair.player_a?.coach_status === 'approved' || pair.player_b?.coach_status === 'approved' ? <CoachBadge size="sm" /> : null}
-                <Text style={styles.pairElo}>{pair.elo}</Text>
+              <View key={pair.id}>
+                {showDivisionHeader && (
+                  <View style={styles.divisionHeader}>
+                    <Text style={styles.divisionHeaderText}>{divisionFromPairElo(pair.elo).toUpperCase()}</Text>
+                  </View>
+                )}
+                <View style={[styles.row, isMine && styles.rowMe]}>
+                  <Text style={[styles.rankText, rank <= 3 && styles.rankTextTop]}>{rank}</Text>
+                  <Text style={styles.pairName} numberOfLines={1}>
+                    {(pair.player_a?.full_name ?? 'Player').toUpperCase()} & {(pair.player_b?.full_name ?? 'Player').toUpperCase()}
+                    {isMine ? ' (YOU)' : ''}
+                  </Text>
+                  {pair.player_a?.is_pro || pair.player_b?.is_pro ? <ProBadge size="sm" /> : null}
+                  {pair.player_a?.coach_status === 'approved' || pair.player_b?.coach_status === 'approved' ? <CoachBadge size="sm" /> : null}
+                  <Text style={styles.pairElo}>{pair.elo}</Text>
+                </View>
               </View>
             );
           })
@@ -81,6 +92,8 @@ const styles = StyleSheet.create({
     borderColor: theme.border,
     overflow: 'hidden',
   },
+  divisionHeader: { backgroundColor: 'rgba(198, 255, 51, 0.1)', paddingHorizontal: 14, paddingVertical: 6 },
+  divisionHeaderText: { color: theme.accent, fontWeight: '900', fontSize: 10, letterSpacing: 0.8 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

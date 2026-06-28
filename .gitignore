@@ -42,3 +42,4 @@ app-example
 admin-panel/node_modules
 admin-panel/dist
 admin-panel/.env
+docs/

@@ -1372,67 +1372,27 @@ export function useDeclarePair() {
   });
 }
 
-// Leagues are joined by a pair (padel is a 2-person sport), capped at 1
-// free / 5 Pro via join_pair_league(). "city"/"country" aren't separate
-// rows — they're identified by (kind, value), e.g. ('city', 'Edinburgh').
-export function usePairLeagueBoard(kind: 'city' | 'country', value: string | null | undefined) {
+// There's exactly ONE league per country — a pair doesn't "join" it, it's
+// automatically theirs based on the verified country of player_a (the
+// pairs we have are formed between two GPS-verified accounts in the same
+// country). Divisions (lib/pairDivisions.ts) are what organizes the
+// ranking inside that single league into tiers — there's no separate
+// per-league join/cap. A player can still show up in multiple country
+// leagues, but only by declaring a different pair for each (capped at
+// the pair level: 2 free / unlimited Pro, see useDeclarePair).
+export function useCountryLeagueBoard(country: string | null | undefined) {
   return useQuery({
-    queryKey: ["pairLeagueBoard", kind, value],
+    queryKey: ["countryLeagueBoard", country],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("pair_leagues")
-        .select(
-          "pair:pairs(id, elo, matches_played, player_a:profiles!pairs_player_a_id_fkey(*), player_b:profiles!pairs_player_b_id_fkey(*))"
-        )
-        .eq("kind", kind)
-        .ilike("value", value!);
+        .from("pairs")
+        .select("id, elo, matches_played, player_a:profiles!pairs_player_a_id_fkey(*), player_b:profiles!pairs_player_b_id_fkey(*)")
+        .order("elo", { ascending: false });
       if (error) throw error;
-      const pairs = (data ?? [])
-        .map((r: any) => r.pair)
-        .filter(Boolean) as PairWithProfiles[];
-      return pairs.sort((a, b) => b.elo - a.elo);
+      const pairs = (data ?? []) as unknown as PairWithProfiles[];
+      return pairs.filter((p) => p.player_a?.country?.toLowerCase() === country?.toLowerCase());
     },
-    enabled: !!value,
-  });
-}
-
-export function useJoinPairLeague() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ pairId, kind, value }: { pairId: string; kind: 'city' | 'country'; value: string }) => {
-      const { error } = await supabase.rpc("join_pair_league", { p_pair_id: pairId, p_kind: kind, p_value: value });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pairLeagueBoard"] });
-      queryClient.invalidateQueries({ queryKey: ["myPairLeagues"] });
-    },
-  });
-}
-
-export function useLeavePairLeague() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("pair_leagues").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pairLeagueBoard"] });
-      queryClient.invalidateQueries({ queryKey: ["myPairLeagues"] });
-    },
-  });
-}
-
-export function useMyPairLeagues(pairId: string | undefined) {
-  return useQuery({
-    queryKey: ["myPairLeagues", pairId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("pair_leagues").select("*").eq("pair_id", pairId!);
-      if (error) throw error;
-      return data as { id: string; pair_id: string; kind: 'city' | 'country'; value: string }[];
-    },
-    enabled: !!pairId,
+    enabled: !!country,
   });
 }
 

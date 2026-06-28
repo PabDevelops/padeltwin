@@ -1,18 +1,10 @@
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSession } from '@/lib/useSession';
-import {
-  useProfile,
-  useMyPairs,
-  useMyPairLeagues,
-  useJoinPairLeague,
-  useMyKopStatus,
-} from '@/lib/queries';
+import { useProfile, useMyPairs, useMyKopStatus } from '@/lib/queries';
+import { divisionFromPairElo } from '@/lib/pairDivisions';
 import { theme, cardRadius, chipRadius } from '@/constants/theme';
-
-const FREE_LEAGUE_LIMIT = 1;
-const PRO_LEAGUE_LIMIT = 5;
 
 export default function LeaguesScreen() {
   const router = useRouter();
@@ -21,23 +13,7 @@ export default function LeaguesScreen() {
   const { data: profile } = useProfile(userId);
   const { data: pairs, isLoading: pairsLoading } = useMyPairs(userId);
   const activePair = pairs && pairs.length > 0 ? [...pairs].sort((a, b) => b.elo - a.elo)[0] : null;
-  const { data: myLeagues } = useMyPairLeagues(activePair?.id);
   const { data: kopStatus } = useMyKopStatus(userId);
-  const joinLeague = useJoinPairLeague();
-
-  const isPro = !!(activePair?.player_a?.is_pro || activePair?.player_b?.is_pro);
-  const cap = isPro ? PRO_LEAGUE_LIMIT : FREE_LEAGUE_LIMIT;
-  const joinedCount = myLeagues?.length ?? 0;
-  const joinedCity = (myLeagues ?? []).some((l) => l.kind === 'city' && l.value === profile?.zone);
-  const joinedCountry = (myLeagues ?? []).some((l) => l.kind === 'country' && l.value === profile?.country);
-
-  function handleJoin(kind: 'city' | 'country', value: string | null | undefined) {
-    if (!activePair || !value) return;
-    joinLeague.mutate(
-      { pairId: activePair.id, kind, value },
-      { onError: (e) => Alert.alert('Could not join league', e instanceof Error ? e.message : 'Try again.') }
-    );
-  }
 
   if (pairsLoading) return null;
 
@@ -47,8 +23,8 @@ export default function LeaguesScreen() {
         <Ionicons name="people-outline" size={36} color={theme.textMuted} style={{ marginBottom: 10 }} />
         <Text style={styles.emptyTitle}>Leagues are for ranked pairs</Text>
         <Text style={styles.emptyText}>
-          Padel is a 2-person sport — declare a fixed pair with an accepted partner before you can join a league or
-          contest a KOP crown.
+          Padel is a 2-person sport — declare a fixed pair with an accepted partner. Your pair is automatically
+          ranked in your country's league, no joining required.
         </Text>
         <Pressable style={styles.emptyBtn} onPress={() => router.push('/pairs' as any)}>
           <Text style={styles.emptyBtnText}>DECLARE A PAIR</Text>
@@ -60,49 +36,32 @@ export default function LeaguesScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.intro}>
-        Leagues and KOP are contested by your ranked pair, not solo. {isPro ? 'Pro pairs' : 'Free pairs'} can join up
-        to {cap} league{cap === 1 ? '' : 's'} ({joinedCount}/{cap} used).
+        Your pair is automatically ranked in the league of your country — no need to join. Want to compete in
+        another country's league too? Declare another pair there (up to your pair limit).
       </Text>
 
       <View style={styles.pairBanner}>
-        <Text style={styles.pairBannerText}>
-          Playing as: {activePair.player_a?.full_name ?? 'You'} & {activePair.player_b?.full_name ?? 'Partner'}
-        </Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.pairBannerText}>
+            Playing as: {activePair.player_a?.full_name ?? 'You'} & {activePair.player_b?.full_name ?? 'Partner'}
+          </Text>
+          <Text style={styles.pairBannerDivision}>{divisionFromPairElo(activePair.elo)}</Text>
+        </View>
         <Text style={styles.pairBannerElo}>{activePair.elo} PS</Text>
       </View>
 
       <Pressable
         style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}
-        onPress={() => (joinedCity ? router.push(`/leagues/city?value=${encodeURIComponent(profile?.zone ?? '')}` as any) : handleJoin('city', profile?.zone))}
-      >
-        <View style={styles.cardIcon}>
-          <Ionicons name="business" size={20} color={theme.accent} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.cardName}>City League — {profile?.zone ?? 'Set your city'}</Text>
-          <Text style={styles.cardSub}>
-            {!profile?.zone ? 'Add your city in your profile' : joinedCity ? 'View your board' : 'Tap to join'}
-          </Text>
-        </View>
-        {!joinedCity && <View style={styles.joinPill}><Text style={styles.joinPillText}>JOIN</Text></View>}
-        {joinedCity && <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />}
-      </Pressable>
-
-      <Pressable
-        style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}
-        onPress={() => (joinedCountry ? router.push(`/leagues/country?value=${encodeURIComponent(profile?.country ?? '')}` as any) : handleJoin('country', profile?.country))}
+        onPress={() => router.push(`/leagues/country?value=${encodeURIComponent(profile?.country ?? '')}` as any)}
       >
         <View style={[styles.cardIcon, { backgroundColor: 'rgba(255, 255, 255, 0.08)' }]}>
           <Ionicons name="globe" size={20} color={theme.text} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.cardName}>Country League — {profile?.country ?? 'Set your country'}</Text>
-          <Text style={styles.cardSub}>
-            {!profile?.country ? 'Add your country in your profile' : joinedCountry ? 'View your board' : 'Tap to join'}
-          </Text>
+          <Text style={styles.cardName}>{profile?.country ?? 'Set your country'} League</Text>
+          <Text style={styles.cardSub}>{!profile?.country ? 'Add your country in your profile' : 'View the full ranking'}</Text>
         </View>
-        {!joinedCountry && <View style={styles.joinPill}><Text style={styles.joinPillText}>JOIN</Text></View>}
-        {joinedCountry && <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />}
+        <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
       </Pressable>
 
       <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]} onPress={() => router.push('/club-leaderboard' as any)}>
@@ -143,7 +102,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     marginBottom: 4,
   },
-  pairBannerText: { color: theme.text, fontSize: 12, fontWeight: '700', flex: 1 },
+  pairBannerText: { color: theme.text, fontSize: 12, fontWeight: '700' },
+  pairBannerDivision: { color: theme.accent, fontSize: 10, fontWeight: '900', marginTop: 2, letterSpacing: 0.5 },
   pairBannerElo: { color: theme.accent, fontWeight: '900', fontSize: 13 },
   card: {
     flexDirection: 'row',
@@ -165,8 +125,6 @@ const styles = StyleSheet.create({
   },
   cardName: { color: theme.text, fontWeight: '800', fontSize: 14 },
   cardSub: { color: theme.textMuted, fontSize: 12, marginTop: 2 },
-  joinPill: { backgroundColor: theme.accent, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 },
-  joinPillText: { color: theme.onAccent, fontWeight: '900', fontSize: 10 },
   emptyContainer: { flex: 1, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center', padding: 28 },
   emptyTitle: { color: theme.text, fontWeight: '900', fontSize: 16, marginBottom: 8, textAlign: 'center' },
   emptyText: { color: theme.textMuted, fontSize: 13, textAlign: 'center', lineHeight: 19, marginBottom: 18 },
