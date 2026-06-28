@@ -11,6 +11,52 @@ import { supabase } from '@/lib/supabase';
 
 function CustomTabBar({ state, descriptors, navigation, bottomInset }: any) {
   const router = useRouter();
+
+  const fabRoute = state.routes.find((r: any) => r.name === 'create-match');
+  const fabIndex = state.routes.findIndex((r: any) => r.name === 'create-match');
+
+  function renderRouteButton(route: any) {
+    const index = state.routes.findIndex((r: any) => r.key === route.key);
+    const isFocused = state.index === index;
+
+    const onPress = () => {
+      const event = navigation.emit({
+        type: 'tabPress',
+        target: route.key,
+        canPreventDefault: true,
+      });
+
+      if (!isFocused && !event.defaultPrevented) {
+        navigation.navigate(route.name);
+      }
+    };
+
+    let iconName = '';
+    if (route.name === 'home') {
+      iconName = isFocused ? 'home' : 'home-outline';
+    } else if (route.name === 'index') {
+      iconName = isFocused ? 'tennisball' : 'tennisball-outline';
+    } else if (route.name === 'partners') {
+      iconName = isFocused ? 'people' : 'people-outline';
+    } else if (route.name === 'profile') {
+      iconName = isFocused ? 'person' : 'person-outline';
+    }
+
+    return (
+      <Pressable key={route.key} onPress={onPress} style={styles.tabButton}>
+        <View style={[styles.iconWrapper, isFocused && styles.activeIconWrapper]}>
+          <Ionicons name={iconName as any} size={18} color={isFocused ? '#FFF' : '#6E707E'} />
+        </View>
+        {isFocused && <View style={styles.activeIndicator} />}
+      </Pressable>
+    );
+  }
+
+  const homeRoute = state.routes.find((r: any) => r.name === 'home');
+  const indexRoute = state.routes.find((r: any) => r.name === 'index');
+  const partnersRoute = state.routes.find((r: any) => r.name === 'partners');
+  const profileRoute = state.routes.find((r: any) => r.name === 'profile');
+
   return (
     <View style={[styles.tabBarContainer, { paddingBottom: bottomInset }]}>
       {/* Curved/Dipped background shape */}
@@ -23,72 +69,8 @@ function CustomTabBar({ state, descriptors, navigation, bottomInset }: any) {
 
       {/* Tab Buttons */}
       <View style={styles.buttonsContainer}>
-        {state.routes.map((route: any, index: number) => {
-          const { options } = descriptors[route.key];
-          const isFocused = state.index === index;
-
-          const onPress = () => {
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
-
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name);
-            }
-          };
-
-          if (route.name === 'create-match') {
-            // Orange Floating Button centered perfectly in the circular notch
-            return (
-              <View key={route.key} style={styles.centerButtonWrapper}>
-                <Pressable
-                  onPress={onPress}
-                  style={({ pressed }) => [
-                    styles.centerButton,
-                    pressed && { opacity: 0.95, transform: [{ scale: 0.96 }] },
-                  ]}
-                >
-                  <Ionicons name="add" size={28} color={theme.onAccent} />
-                </Pressable>
-              </View>
-            );
-          }
-
-          let iconName = '';
-          if (route.name === 'home') {
-            iconName = isFocused ? 'home' : 'home-outline';
-          } else if (route.name === 'index') {
-            iconName = isFocused ? 'tennisball' : 'tennisball-outline';
-          } else if (route.name === 'partners') {
-            iconName = isFocused ? 'people' : 'people-outline';
-          } else if (route.name === 'profile') {
-            iconName = isFocused ? 'person' : 'person-outline';
-          }
-
-          return (
-            <Pressable
-              key={route.key}
-              onPress={onPress}
-              style={styles.tabButton}
-            >
-              <View style={[
-                styles.iconWrapper,
-                isFocused && styles.activeIconWrapper
-              ]}>
-                <Ionicons 
-                  name={iconName as any} 
-                  size={20} 
-                  color={isFocused ? '#FFF' : '#6E707E'} 
-                />
-              </View>
-              {isFocused && (
-                <View style={styles.activeIndicator} />
-              )}
-            </Pressable>
-          );
-        })}
+        {homeRoute && renderRouteButton(homeRoute)}
+        {indexRoute && renderRouteButton(indexRoute)}
 
         <Pressable style={styles.tabButton} onPress={() => router.push('/leagues' as any)}>
           <View style={styles.iconWrapper}>
@@ -98,11 +80,35 @@ function CustomTabBar({ state, descriptors, navigation, bottomInset }: any) {
           </View>
         </Pressable>
 
+        <View style={styles.centerButtonWrapper}>
+          <Pressable
+            onPress={() => {
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: fabRoute.key,
+                canPreventDefault: true,
+              });
+              if (state.index !== fabIndex && !event.defaultPrevented) {
+                navigation.navigate(fabRoute.name);
+              }
+            }}
+            style={({ pressed }) => [
+              styles.centerButton,
+              pressed && { opacity: 0.95, transform: [{ scale: 0.96 }] },
+            ]}
+          >
+            <Ionicons name="add" size={26} color={theme.onAccent} />
+          </Pressable>
+        </View>
+
         <Pressable style={styles.tabButton} onPress={() => router.push('/club-leaderboard' as any)}>
           <View style={styles.iconWrapper}>
-            <MaterialCommunityIcons name="crown" size={20} color="#FFD700" />
+            <MaterialCommunityIcons name="crown" size={18} color="#FFD700" />
           </View>
         </Pressable>
+
+        {partnersRoute && renderRouteButton(partnersRoute)}
+        {profileRoute && renderRouteButton(profileRoute)}
       </View>
     </View>
   );
@@ -185,7 +191,7 @@ const styles = StyleSheet.create({
     height: 68,
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
   },
   tabButton: {
     flex: 1,
@@ -194,9 +200,9 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   iconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -217,17 +223,17 @@ const styles = StyleSheet.create({
     borderRadius: 1.5,
   },
   leagueTabBadge: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     borderWidth: 1.5,
     borderColor: '#6E707E',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  leagueTabBadgeText: { color: '#6E707E', fontWeight: '900', fontSize: 11 },
+  leagueTabBadgeText: { color: '#6E707E', fontWeight: '900', fontSize: 10 },
   centerButtonWrapper: {
-    width: 96,
+    width: 64,
     alignItems: 'center',
     justifyContent: 'center',
     height: '100%',
@@ -235,9 +241,9 @@ const styles = StyleSheet.create({
   centerButton: {
     position: 'absolute',
     top: -14, // Centered perfectly in the circular mask (sharing center coordinate y=12)
-    width: 52,
-    height: 52,
-    borderRadius: 26, // Perfect circle!
+    width: 48,
+    height: 48,
+    borderRadius: 24, // Perfect circle!
     backgroundColor: theme.primary,
     alignItems: 'center',
     justifyContent: 'center',
