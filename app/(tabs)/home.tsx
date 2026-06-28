@@ -299,7 +299,7 @@ export default function HomeScreen() {
       {upcomingLoading ? (
         <ActivityIndicator color={theme.primary} style={{ marginVertical: 10 }} />
       ) : nextMatch ? (
-        <Pressable 
+        <Pressable
           style={({ pressed }) => [
             styles.nextMatchCard,
             pressed && { opacity: 0.9 }
@@ -325,21 +325,7 @@ export default function HomeScreen() {
             </Text>
           </View>
         </Pressable>
-      ) : (
-        <View style={styles.nextMatchCardEmpty}>
-          <Text style={styles.nextMatchTagEmpty}>NO UPCOMING MATCHES</Text>
-          <Text style={styles.nextMatchTextEmpty}>Your court schedule is clear. Check the match feed to join an active game or set up a new match request.</Text>
-          <View style={styles.emptyCardActions}>
-            <Pressable
-              style={[styles.emptyCardButton, { backgroundColor: theme.primary }]}
-              onPress={() => router.push('/create-match')}
-            >
-              <Ionicons name="add-circle" size={13} color={theme.onAccent} />
-              <Text style={styles.emptyCardButtonText}>CREATE MATCH</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
+      ) : null}
 
       {/* Main ELO Performance Widget */}
       <View style={styles.eloPerformanceCard}>
@@ -434,7 +420,39 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>RECENT MATCHES</Text>
+      <View style={styles.leaguesSectionHeader}>
+        <Text style={[styles.sectionTitle, { marginBottom: 0, fontSize: 18 }]}>LEAGUES</Text>
+        <Pressable onPress={() => router.push('/leagues' as any)}>
+          <Text style={styles.leaguesSeeAll}>SEE ALL</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.leagueTilesRow}>
+        <Pressable style={({ pressed }) => [styles.leagueTile, pressed && { opacity: 0.9 }]} onPress={() => router.push('/leagues/city' as any)}>
+          <View style={styles.leagueTileRankBadge}>
+            <Text style={styles.leagueTileRankBadgeText}>1</Text>
+          </View>
+          <Text style={styles.leagueTileTitle}>LEAGUE</Text>
+          <Text style={styles.leagueTileSub} numberOfLines={1}>
+            {profile?.zone ?? 'Set your city'}
+          </Text>
+        </Pressable>
+
+        <Pressable style={({ pressed }) => [styles.leagueTile, pressed && { opacity: 0.9 }]} onPress={() => router.push('/club-leaderboard' as any)}>
+          <View style={styles.kopTileHeader}>
+            <MaterialCommunityIcons name="crown" size={26} color="#FFD700" />
+            <View style={styles.proTag}>
+              <Text style={styles.proTagText}>PRO</Text>
+            </View>
+          </View>
+          <Text style={styles.leagueTileTitle}>KOP</Text>
+          <Text style={styles.leagueTileSub} numberOfLines={1}>
+            {kopThrones ? `${kopThrones.crownedClubs.length} crown${kopThrones.crownedClubs.length === 1 ? '' : 's'} held` : 'No crowns yet'}
+          </Text>
+        </Pressable>
+      </View>
+
+      <Text style={[styles.sectionTitle, { marginTop: 16 }]}>RECENT MATCHES</Text>
       {resultsLoading ? (
         <ActivityIndicator color={theme.primary} style={{ marginTop: 12 }} />
       ) : recentResults && recentResults.length > 0 ? (
@@ -619,38 +637,6 @@ export default function HomeScreen() {
           </View>
         </>
       )}
-
-      <View style={styles.leaguesSectionHeader}>
-        <Text style={[styles.sectionTitle, { marginBottom: 0, fontSize: 18 }]}>LEAGUES</Text>
-        <Pressable onPress={() => router.push('/leagues' as any)}>
-          <Text style={styles.leaguesSeeAll}>SEE ALL</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.leagueTilesRow}>
-        <Pressable style={({ pressed }) => [styles.leagueTile, pressed && { opacity: 0.9 }]} onPress={() => router.push('/leagues/city' as any)}>
-          <View style={styles.leagueTileRankBadge}>
-            <Text style={styles.leagueTileRankBadgeText}>1</Text>
-          </View>
-          <Text style={styles.leagueTileTitle}>LEAGUE</Text>
-          <Text style={styles.leagueTileSub} numberOfLines={1}>
-            {profile?.zone ?? 'Set your city'}
-          </Text>
-        </Pressable>
-
-        <Pressable style={({ pressed }) => [styles.leagueTile, pressed && { opacity: 0.9 }]} onPress={() => router.push('/club-leaderboard' as any)}>
-          <View style={styles.kopTileHeader}>
-            <MaterialCommunityIcons name="crown" size={26} color="#FFD700" />
-            <View style={styles.proTag}>
-              <Text style={styles.proTagText}>PRO</Text>
-            </View>
-          </View>
-          <Text style={styles.leagueTileTitle}>KOP</Text>
-          <Text style={styles.leagueTileSub} numberOfLines={1}>
-            {kopThrones ? `${kopThrones.crownedClubs.length} crown${kopThrones.crownedClubs.length === 1 ? '' : 's'} held` : 'No crowns yet'}
-          </Text>
-        </Pressable>
-      </View>
 
       <View style={styles.leaguesSectionHeader}>
         <Text style={[styles.sectionTitle, { marginBottom: 0, fontSize: 18 }]}>LEARNING</Text>
@@ -863,19 +849,7 @@ const styles = StyleSheet.create({
     borderLeftColor: theme.primary,
     marginBottom: 4,
   },
-  nextMatchCardEmpty: { 
-    backgroundColor: theme.card, 
-    borderRadius: cardRadius, 
-    padding: 16, 
-    borderWidth: 1, 
-    borderColor: theme.border,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-    opacity: 0.8,
-  },
-  nextMatchHeader: { 
+  nextMatchHeader: {
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
@@ -887,14 +861,7 @@ const styles = StyleSheet.create({
     color: theme.primary, 
     letterSpacing: 2 
   },
-  nextMatchTagEmpty: { 
-    fontSize: 10, 
-    fontWeight: '900', 
-    color: theme.textMuted, 
-    letterSpacing: 2,
-    marginBottom: 4
-  },
-  nextMatchLocation: { 
+  nextMatchLocation: {
     fontSize: 15, 
     fontWeight: '900', 
     color: theme.text, 
@@ -907,14 +874,7 @@ const styles = StyleSheet.create({
     color: theme.textMuted, 
     marginTop: 4 
   },
-  nextMatchTextEmpty: { 
-    fontSize: 12, 
-    color: theme.textMuted, 
-    textAlign: 'center', 
-    lineHeight: 18, 
-    paddingHorizontal: 8 
-  },
-  nextMatchFooter: { 
+  nextMatchFooter: {
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
@@ -949,27 +909,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: theme.primary,
     letterSpacing: 1.2,
-  },
-  emptyCardActions: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 14,
-    width: '100%',
-  },
-  emptyCardButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    height: 38,
-    borderRadius: 10,
-  },
-  emptyCardButtonText: {
-    color: theme.onAccent,
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 0.5,
   },
   partnerAlertBanner: {
     flexDirection: 'row',

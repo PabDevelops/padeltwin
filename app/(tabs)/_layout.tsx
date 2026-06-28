@@ -1,7 +1,7 @@
-import { Redirect, Tabs } from 'expo-router';
+import { Redirect, Tabs, useRouter } from 'expo-router';
 import React from 'react';
-import { Platform, View, Pressable, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Platform, View, Pressable, Text, StyleSheet } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '@/constants/theme';
@@ -10,6 +10,7 @@ import { useProfile } from '@/lib/queries';
 import { supabase } from '@/lib/supabase';
 
 function CustomTabBar({ state, descriptors, navigation, bottomInset }: any) {
+  const router = useRouter();
   return (
     <View style={[styles.tabBarContainer, { paddingBottom: bottomInset }]}>
       {/* Curved/Dipped background shape */}
@@ -88,6 +89,20 @@ function CustomTabBar({ state, descriptors, navigation, bottomInset }: any) {
             </Pressable>
           );
         })}
+
+        <Pressable style={styles.tabButton} onPress={() => router.push('/leagues' as any)}>
+          <View style={styles.iconWrapper}>
+            <View style={styles.leagueTabBadge}>
+              <Text style={styles.leagueTabBadgeText}>1</Text>
+            </View>
+          </View>
+        </Pressable>
+
+        <Pressable style={styles.tabButton} onPress={() => router.push('/club-leaderboard' as any)}>
+          <View style={styles.iconWrapper}>
+            <MaterialCommunityIcons name="crown" size={20} color="#FFD700" />
+          </View>
+        </Pressable>
       </View>
     </View>
   );
@@ -201,6 +216,16 @@ const styles = StyleSheet.create({
     backgroundColor: theme.primary, // Orange indicator line at the bottom
     borderRadius: 1.5,
   },
+  leagueTabBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#6E707E',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  leagueTabBadgeText: { color: '#6E707E', fontWeight: '900', fontSize: 11 },
   centerButtonWrapper: {
     width: 96,
     alignItems: 'center',

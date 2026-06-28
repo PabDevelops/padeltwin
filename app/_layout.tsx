@@ -30,7 +30,7 @@ const navigationDarkTheme = {
 export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-    Coubra: require('../assets/fonts/CoubraFont.otf'),
+    Coubra: require('../assets/fonts/CoubraFont.ttf'),
     Anton_400Regular,
   });
 
