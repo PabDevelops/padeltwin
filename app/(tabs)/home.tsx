@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSession } from '@/lib/useSession';
 import {
   useProfile,
@@ -94,8 +94,6 @@ export default function HomeScreen() {
     followPlayer.mutate({ followerId: userId, followedId });
   }
 
-  const animatedHeights = useRef(Array.from({ length: 8 }).map(() => new Animated.Value(8))).current;
-  const miniAnimatedHeights = useRef(Array.from({ length: 4 }).map(() => new Animated.Value(4))).current;
 
   // Reconstruct player ELO history from recent results
   const currentElo = profile?.elo ?? 1200;
@@ -184,51 +182,6 @@ export default function HomeScreen() {
   // 1. Total Matches Badge
   const playedCount = stats?.played ?? 0;
   const isCalibrating = playedCount < ELO_PROVISIONAL_MATCHES;
-
-  useEffect(() => {
-    if (!isCalibrating) return;
-    const animations = animatedHeights.map((anim, index) => {
-      return Animated.loop(
-        Animated.sequence([
-          Animated.delay(index * 100),
-          Animated.timing(anim, {
-            toValue: 36,
-            duration: 500,
-            useNativeDriver: false,
-          }),
-          Animated.timing(anim, {
-            toValue: 8,
-            duration: 500,
-            useNativeDriver: false,
-          }),
-        ])
-      );
-    });
-
-    const miniAnimations = miniAnimatedHeights.map((anim, index) => {
-      return Animated.loop(
-        Animated.sequence([
-          Animated.delay(index * 80),
-          Animated.timing(anim, {
-            toValue: 28,
-            duration: 400,
-            useNativeDriver: false,
-          }),
-          Animated.timing(anim, {
-            toValue: 4,
-            duration: 400,
-            useNativeDriver: false,
-          }),
-        ])
-      );
-    });
-
-    Animated.parallel([...animations, ...miniAnimations]).start();
-    return () => {
-      animatedHeights.forEach((anim) => anim.stopAnimation());
-      miniAnimatedHeights.forEach((anim) => anim.stopAnimation());
-    };
-  }, [isCalibrating]);
 
   let matchesBadgeText = '💤 INACTIVE';
   let matchesBadgeColor = 'rgba(110, 112, 126, 0.1)';
@@ -377,19 +330,12 @@ export default function HomeScreen() {
           <Text style={styles.nextMatchTagEmpty}>NO UPCOMING MATCHES</Text>
           <Text style={styles.nextMatchTextEmpty}>Your court schedule is clear. Check the match feed to join an active game or set up a new match request.</Text>
           <View style={styles.emptyCardActions}>
-            <Pressable 
-              style={[styles.emptyCardButton, { backgroundColor: theme.primary }]} 
-              onPress={() => router.push('/')}
-            >
-              <Ionicons name="search" size={13} color={theme.onAccent} />
-              <Text style={styles.emptyCardButtonText}>FIND A MATCH</Text>
-            </Pressable>
-            <Pressable 
-              style={[styles.emptyCardButton, { borderColor: theme.border, borderWidth: 1 }]} 
+            <Pressable
+              style={[styles.emptyCardButton, { backgroundColor: theme.primary }]}
               onPress={() => router.push('/create-match')}
             >
-              <Ionicons name="add-circle" size={13} color={theme.textMuted} />
-              <Text style={[styles.emptyCardButtonText, { color: theme.textMuted }]}>CREATE MATCH</Text>
+              <Ionicons name="add-circle" size={13} color={theme.onAccent} />
+              <Text style={styles.emptyCardButtonText}>CREATE MATCH</Text>
             </Pressable>
           </View>
         </View>
@@ -399,54 +345,22 @@ export default function HomeScreen() {
       <View style={styles.eloPerformanceCard}>
         <View style={styles.eloHeader}>
           <Text style={styles.widgetTag}>CURRENT RANKING</Text>
-          <View style={isCalibrating ? { backgroundColor: 'rgba(110, 112, 126, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 } : styles.badgeOrange}>
-            <Text style={isCalibrating ? { color: theme.textMuted, fontSize: 9, fontWeight: '900', letterSpacing: 0.5 } : styles.badgeOrangeText}>
-              {isCalibrating ? 'CALIBRATING' : 'PRO LEVEL'}
-            </Text>
+          <View style={styles.badgeOrange}>
+            <Text style={styles.badgeOrangeText}>PRO LEVEL</Text>
           </View>
         </View>
         <View style={styles.eloContent}>
-          {isCalibrating ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 48 }}>
-              <Text style={[styles.eloHuge, { fontSize: 26, letterSpacing: -0.5, lineHeight: 48 }]}>CALIBRATING</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 5, height: 30, paddingBottom: 6 }}>
-                {miniAnimatedHeights.map((anim, index) => (
-                  <Animated.View 
-                    key={index} 
-                    style={{
-                      width: 5,
-                      height: anim,
-                      backgroundColor: theme.primary,
-                      borderRadius: 2.5,
-                    }}
-                  />
-                ))}
-              </View>
-            </View>
-          ) : (
-            <Text style={styles.eloHuge}>{profile?.elo ?? '1200'}</Text>
-          )}
-          <Text style={styles.eloLabel}>
-            {isCalibrating ? `CALIBRATING PS SCORE • ${playedCount}/${ELO_PROVISIONAL_MATCHES} MATCHES` : 'PS SCORE'}
-          </Text>
+          <Text style={styles.eloHuge}>{profile?.elo ?? '1200'}</Text>
+          <Text style={styles.eloLabel}>PS SCORE</Text>
         </View>
         <View style={styles.chartSimulation}>
           {/* Stylized telemetry bar chart representing ELO fluctuations */}
-          {chartBars.map((bar, index) => {
-            const barHeight = isCalibrating ? animatedHeights[index] : bar.height;
-            return (
-              <Animated.View 
-                key={index} 
-                style={[
-                  styles.chartBar, 
-                  { 
-                    height: barHeight, 
-                    backgroundColor: isCalibrating ? 'rgba(255, 92, 0, 0.4)' : bar.color 
-                  }
-                ]} 
-              />
-            );
-          })}
+          {chartBars.map((bar, index) => (
+            <Animated.View
+              key={index}
+              style={[styles.chartBar, { height: bar.height, backgroundColor: bar.color }]}
+            />
+          ))}
         </View>
       </View>
 
@@ -707,27 +621,40 @@ export default function HomeScreen() {
       )}
 
       <View style={styles.leaguesSectionHeader}>
-        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>LEAGUES</Text>
+        <Text style={[styles.sectionTitle, { marginBottom: 0, fontSize: 18 }]}>LEAGUES</Text>
         <Pressable onPress={() => router.push('/leagues' as any)}>
           <Text style={styles.leaguesSeeAll}>SEE ALL</Text>
         </Pressable>
       </View>
 
-      <Pressable style={styles.clubBanner} onPress={() => router.push('/leagues/city' as any)}>
-        <Ionicons name="person" size={18} color={theme.accent} />
-        <Text style={styles.clubBannerText}>SOLOQUEUE{profile?.zone ? ` — ${profile.zone.toUpperCase()}` : ''}</Text>
-        <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
-      </Pressable>
-
-      {profile?.country && (
-        <Pressable style={styles.clubBanner} onPress={() => router.push('/club-leaderboard' as any)}>
-          <Ionicons name="flame" size={18} color={theme.success} />
-          <Text style={styles.clubBannerText}>
-            MY FEUDS & KOP STATUS{kopThrones ? ` — ${kopThrones.crownedClubs.length} CROWN${kopThrones.crownedClubs.length === 1 ? '' : 'S'}` : ''}
+      <View style={styles.leagueTilesRow}>
+        <Pressable style={({ pressed }) => [styles.leagueTile, pressed && { opacity: 0.9 }]} onPress={() => router.push('/leagues/city' as any)}>
+          <View style={styles.leagueTileRankBadge}>
+            <Text style={styles.leagueTileRankBadgeText}>1</Text>
+          </View>
+          <Text style={styles.leagueTileTitle}>LEAGUE</Text>
+          <Text style={styles.leagueTileSub} numberOfLines={1}>
+            {profile?.zone ?? 'Set your city'}
           </Text>
-          <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
         </Pressable>
-      )}
+
+        <Pressable style={({ pressed }) => [styles.leagueTile, pressed && { opacity: 0.9 }]} onPress={() => router.push('/club-leaderboard' as any)}>
+          <View style={styles.kopTileHeader}>
+            <MaterialCommunityIcons name="crown" size={26} color="#FFD700" />
+            <View style={styles.proTag}>
+              <Text style={styles.proTagText}>PRO</Text>
+            </View>
+          </View>
+          <Text style={styles.leagueTileTitle}>KOP</Text>
+          <Text style={styles.leagueTileSub} numberOfLines={1}>
+            {kopThrones ? `${kopThrones.crownedClubs.length} crown${kopThrones.crownedClubs.length === 1 ? '' : 's'} held` : 'No crowns yet'}
+          </Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.leaguesSectionHeader}>
+        <Text style={[styles.sectionTitle, { marginBottom: 0, fontSize: 18 }]}>LEARNING</Text>
+      </View>
 
       <Pressable
         style={({ pressed }) => [styles.coachBanner, pressed && { opacity: 0.9 }]}
@@ -775,17 +702,31 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   scrollContainer: { flex: 1, backgroundColor: theme.background },
-  clubBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+  leagueTilesRow: { flexDirection: 'row', gap: 12 },
+  leagueTile: {
+    flex: 1,
     backgroundColor: theme.card,
     borderRadius: cardRadius,
     borderWidth: 1,
     borderColor: theme.border,
-    padding: 14,
+    padding: 16,
+    gap: 8,
+    minHeight: 110,
   },
-  clubBannerText: { flex: 1, color: theme.text, fontWeight: '800', fontSize: 11, letterSpacing: 0.4 },
+  leagueTileRankBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(198, 255, 51, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  leagueTileRankBadgeText: { fontFamily: 'Anton_400Regular', color: theme.accent, fontSize: 18 },
+  kopTileHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  proTag: { backgroundColor: 'rgba(255, 215, 0, 0.15)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3 },
+  proTagText: { color: '#FFD700', fontWeight: '900', fontSize: 9, letterSpacing: 0.5 },
+  leagueTileTitle: { fontFamily: 'Anton_400Regular', color: theme.text, fontSize: 18, marginTop: 4 },
+  leagueTileSub: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
   container: { padding: 20, gap: 16, paddingBottom: 32 },
   headerContainer: { marginBottom: 4, marginTop: 12 },
   welcomeTag: { fontSize: 10, fontWeight: '900', color: theme.primary, letterSpacing: 2, marginBottom: 4 },

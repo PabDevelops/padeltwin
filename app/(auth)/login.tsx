@@ -26,7 +26,7 @@ export default function LoginScreen() {
       <View style={styles.container}>
         <View style={styles.headerContainer}>
           <Text style={styles.tagline}>MATCH • CONNECT • PLAY</Text>
-          <Text style={styles.title}>PadelScrim</Text>
+          <Text style={styles.title}>PADELSCRIM</Text>
           <Text style={styles.subtitle}>Enter your details to access the court</Text>
         </View>
 
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: theme.background },
   headerContainer: { alignItems: 'center', marginBottom: 28 },
   tagline: { fontSize: 10, fontWeight: '900', color: theme.primary, letterSpacing: 2, marginBottom: 8, textTransform: 'uppercase' },
-  title: { fontFamily: 'Anton_400Regular', fontSize: 40, color: theme.text, letterSpacing: -1, textTransform: 'uppercase' },
+  title: { fontFamily: 'Coubra', fontSize: 44, color: theme.accent, letterSpacing: -0.5, textTransform: 'uppercase' },
   subtitle: { fontSize: 13, color: theme.textMuted, marginTop: 4, textAlign: 'center', fontWeight: '700' },
   form: { gap: 14 },
   label: { fontSize: 9, fontWeight: '900', color: theme.textMuted, letterSpacing: 1.5, textTransform: 'uppercase' },

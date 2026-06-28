@@ -37,17 +37,16 @@ import {
   useBlockedProfiles,
   useUnblockUser,
   useDeleteAccount,
+  useKopThrones,
 } from '@/lib/queries';
 import { ACHIEVEMENT_LABELS, ACHIEVEMENT_ICONS } from '@/constants/achievements';
 import { supabase } from '@/lib/supabase';
 import { pickAndUploadAvatar } from '@/lib/uploadAvatar';
 import type { PartnerRequestWithProfiles, PlayerLevel, MatchResultWithProfiles } from '@/types/database';
 import { theme, buttonRadius, cardRadius, chipRadius } from '@/constants/theme';
-import { LEVELS, LEVEL_LABELS, LEVEL_DESCRIPTIONS } from '@/constants/levels';
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
 import { VerifiedLocation } from '@/components/VerifiedLocation';
-import { ELO_PROVISIONAL_MATCHES, isEloProvisional } from '@/constants/elo';
 
 function didWin(result: MatchResultWithProfiles, userId: string) {
   const inTeamA = result.team_a_player1 === userId || result.team_a_player2 === userId;
@@ -79,6 +78,7 @@ export default function ProfileScreen() {
   const { session } = useSession();
   const userId = session?.user.id;
   const { data: profile, isLoading } = useProfile(userId);
+  const { data: kopThrones } = useKopThrones(profile?.country, userId);
   const updateProfile = useUpdateProfile();
   const { data: requests } = usePartnerRequests(userId);
   const { data: myAchievements, isLoading: achievementsLoading } = useMyAchievements(userId);
@@ -102,7 +102,6 @@ export default function ProfileScreen() {
   const [coachRate, setCoachRate] = useState('');
   const [coachExperience, setCoachExperience] = useState('');
   const [coachSpecialties, setCoachSpecialties] = useState('');
-  const isCalibrating = isEloProvisional(stats?.played ?? 0);
 
   const recordItems: { icon: keyof typeof Ionicons.glyphMap; value: string; label: string }[] = [];
   if (records?.longestWinStreak) {
@@ -130,8 +129,6 @@ export default function ProfileScreen() {
   const [country, setCountry] = useState('');
   const [level, setLevel] = useState<PlayerLevel | null>(null);
   const [club, setClub] = useState('');
-  const [racket, setRacket] = useState('');
-  const [apparelBrand, setApparelBrand] = useState('');
   const [lookingForPartner, setLookingForPartner] = useState(true);
 
   useEffect(() => {
@@ -141,8 +138,6 @@ export default function ProfileScreen() {
       setCountry(profile.country ?? '');
       setLevel(profile.level);
       setClub(profile.club ?? '');
-      setRacket(profile.racket ?? '');
-      setApparelBrand(profile.apparel_brand ?? '');
       setLookingForPartner(profile.looking_for_partner);
     }
   }, [profile]);
@@ -173,8 +168,6 @@ export default function ProfileScreen() {
       country: country || null,
       level,
       club: club || null,
-      racket: racket || null,
-      apparel_brand: apparelBrand || null,
       looking_for_partner: lookingForPartner,
     });
   }
@@ -243,18 +236,13 @@ export default function ProfileScreen() {
 
       <View style={styles.contentBody}>
         {/* BADGES */}
-        <View style={styles.badgeRow}>
-          <View style={styles.outlinedBadge}>
-            <Text style={styles.outlinedBadgeText}>
-              {profile.level ? LEVEL_LABELS[profile.level].toUpperCase() : 'NO LEVEL'}
-            </Text>
-          </View>
-          {lookingForPartner && (
+        {lookingForPartner && (
+          <View style={styles.badgeRow}>
             <View style={styles.outlinedBadge}>
               <Text style={styles.outlinedBadgeText}>LOOKING FOR PARTNER</Text>
             </View>
-          )}
-        </View>
+          </View>
+        )}
 
         {/* SOCIAL */}
         <View style={styles.socialStatsRow}>
@@ -284,18 +272,16 @@ export default function ProfileScreen() {
         {profile.zone ? <Text style={styles.locationSub}>📍 {profile.zone.toUpperCase()}</Text> : null}
 
         {/* STATS */}
+        <View style={styles.psScoreHero}>
+          <Text style={styles.psScoreHeroValue}>{profile.elo}</Text>
+          <Text style={styles.psScoreHeroLabel}>PS SCORE</Text>
+        </View>
+
         <View style={styles.statsCardContainer}>
           {statsLoading ? (
             <ActivityIndicator color={theme.accent} />
           ) : (
             <>
-              <View style={styles.statColumn}>
-                <Text style={styles.statHugeText}>{profile.elo}</Text>
-                <Text style={styles.statSubLabel}>
-                  {isCalibrating ? `Provisional • ${stats?.played ?? 0}/${ELO_PROVISIONAL_MATCHES}` : 'PS Score'}
-                </Text>
-              </View>
-              <View style={styles.statDivider} />
               <View style={styles.statColumn}>
                 <Text style={styles.statHugeText}>{stats?.played ?? 0}</Text>
                 <Text style={styles.statSubLabel}>Matches Played</Text>
@@ -437,61 +423,39 @@ export default function ProfileScreen() {
             <Text style={styles.duoQueueLinkArrow}>{'>'}</Text>
           </Pressable>
 
-          <Text style={[styles.label, { marginTop: 14 }]}>SKILL LEVEL</Text>
-          <View style={styles.row}>
-            {LEVELS.map((l) => (
-              <Pressable
-                key={l}
-                style={({ pressed }) => [
-                  styles.chip,
-                  level === l && styles.chipActive,
-                  pressed && ({ transform: [{ scale: 0.96 }] } as any),
-                ]}
-                onPress={() => setLevel(l)}
-              >
-                <Text style={[styles.chipText, level === l && styles.chipTextActive]}>{LEVEL_LABELS[l]}</Text>
-              </Pressable>
-            ))}
-          </View>
-          {level && <Text style={styles.helperText}>{LEVEL_DESCRIPTIONS[level]}</Text>}
         </View>
 
-        {/* EQUIPMENT */}
+        {/* KOP STATUS */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeader}>EQUIPMENT CONFIG</Text>
+          <Text style={styles.sectionHeader}>KOP STATUS</Text>
 
-          <Text style={styles.label}>CLUB OR COURT</Text>
+          <View style={styles.kopCrownRow}>
+            <Ionicons name="trophy" size={28} color={theme.success} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.kopCrownValue}>
+                {kopThrones?.crownedClubs.length ?? 0} CROWN{(kopThrones?.crownedClubs.length ?? 0) === 1 ? '' : 'S'}
+              </Text>
+              <Text style={styles.kopCrownSub}>
+                {profile.country ? `Held across clubs in ${profile.country}` : 'Add your country to track crowns'}
+              </Text>
+            </View>
+          </View>
+
+          <Text style={[styles.label, { marginTop: 14 }]}>HOME CLUB</Text>
           <TextInput
             style={[styles.input, focusedInput === 'club' && styles.inputFocused]}
             value={club}
             onChangeText={setClub}
-            placeholder="Your club or team"
+            placeholder="Your club or court"
             placeholderTextColor={theme.textMuted}
             onFocus={() => setFocusedInput('club')}
             onBlur={() => setFocusedInput(null)}
           />
-
-          <Text style={[styles.label, { marginTop: 14 }]}>RACKET MODEL</Text>
-          <TextInput
-            style={[styles.input, focusedInput === 'racket' && styles.inputFocused]}
-            value={racket}
-            onChangeText={setRacket}
-            placeholder="Brand / model"
-            placeholderTextColor={theme.textMuted}
-            onFocus={() => setFocusedInput('racket')}
-            onBlur={() => setFocusedInput(null)}
-          />
-
-          <Text style={[styles.label, { marginTop: 14 }]}>PREFERRED APPAREL BRAND</Text>
-          <TextInput
-            style={[styles.input, focusedInput === 'apparel' && styles.inputFocused]}
-            value={apparelBrand}
-            onChangeText={setApparelBrand}
-            placeholder="e.g. Nike, Asics"
-            placeholderTextColor={theme.textMuted}
-            onFocus={() => setFocusedInput('apparel')}
-            onBlur={() => setFocusedInput(null)}
-          />
+          <Text style={styles.helperText}>
+            {club && !kopThrones?.crownedClubs.includes(club)
+              ? 'Interim status — you don’t hold the throne here yet.'
+              : 'This is where your KOP throne is contested.'}
+          </Text>
         </View>
 
         <View style={[styles.section, styles.switchRow]}>
@@ -789,6 +753,18 @@ const styles = StyleSheet.create({
   },
   duoQueueLinkText: { color: theme.text, fontWeight: '700', fontSize: 13 },
   duoQueueLinkArrow: { color: theme.textMuted, fontWeight: '700' },
+  kopCrownRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#191922',
+    borderWidth: 1,
+    borderColor: theme.border,
+    borderRadius: 12,
+    padding: 14,
+  },
+  kopCrownValue: { color: theme.text, fontWeight: '900', fontSize: 16, letterSpacing: 0.5 },
+  kopCrownSub: { color: theme.textMuted, fontSize: 11, marginTop: 2 },
   centerContainer: { flex: 1, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center' },
   headerWrapper: {
     position: 'relative',
@@ -864,6 +840,17 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 4, gap: 8 },
   playerName: { fontFamily: 'Anton_400Regular', fontSize: 26, color: theme.accent, letterSpacing: -0.5, textAlign: 'center' },
   locationSub: { fontSize: 11, fontWeight: '700', color: theme.textMuted, letterSpacing: 0.5, textAlign: 'center', marginBottom: 8 },
+  psScoreHero: {
+    alignItems: 'center',
+    backgroundColor: theme.card,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: theme.accent,
+    paddingVertical: 20,
+    marginBottom: 10,
+  },
+  psScoreHeroValue: { fontFamily: 'Anton_400Regular', fontSize: 56, color: theme.accent, letterSpacing: -1 },
+  psScoreHeroLabel: { fontSize: 12, fontWeight: '900', color: theme.text, letterSpacing: 1.5, marginTop: 2 },
   statsCardContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
