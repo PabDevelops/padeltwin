@@ -223,6 +223,20 @@ export default function HomeScreen() {
     }
   }
 
+  // Longest win streak within the loaded match history
+  let bestWinStreak = 0;
+  if (userId && displayResults && displayResults.length > 0) {
+    let run = 0;
+    for (let i = 0; i < displayResults.length; i++) {
+      if (didWin(displayResults[i], userId)) {
+        run++;
+        bestWinStreak = Math.max(bestWinStreak, run);
+      } else {
+        run = 0;
+      }
+    }
+  }
+
   // Find next upcoming match
   const nextMatch = upcomingMatches && upcomingMatches.length > 0 ? upcomingMatches[0] : null;
   
@@ -262,33 +276,28 @@ export default function HomeScreen() {
     }
   }
 
-  // Claude Code Style Heatmap Data (12 weeks x 7 days)
+  // Activity heatmap (12 weeks x 7 days) built from real match dates
   const heatmapCols = 12;
   const heatmapRows = 7;
-  const contributionGrid = Array.from({ length: heatmapRows }).map((_, rIdx) => {
-    return Array.from({ length: heatmapCols }).map((_, cIdx) => {
-      // Deterministic pattern for "hardcoded" look
-      const seed = (rIdx * 17) + (cIdx * 23);
-      const isRecent = cIdx >= 9;
-      
-      let active = false;
-      let intensity = 1;
+  const contributionGrid = Array.from({ length: heatmapRows }, (_, rIdx) =>
+    Array.from({ length: heatmapCols }, (_, cIdx) => ({ id: `${rIdx}-${cIdx}`, active: false, intensity: 1 }))
+  );
 
-      if (isRecent) {
-        active = (seed % 10) > 5;
-        intensity = (seed % 10) > 7 ? 2 : 1;
-      } else {
-        active = (seed % 10) > 7;
-        intensity = (seed % 10) > 8 ? 2 : 1;
+  if (userId && displayResults) {
+    const now = Date.now();
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    for (const r of displayResults) {
+      const date = new Date(r.created_at);
+      const weeksAgo = Math.floor((now - date.getTime()) / weekMs);
+      const colIdx = heatmapCols - 1 - weeksAgo;
+      const rowIdx = date.getDay();
+      if (colIdx >= 0 && colIdx < heatmapCols) {
+        const cell = contributionGrid[rowIdx][colIdx];
+        cell.active = true;
+        if (didWin(r, userId)) cell.intensity = 2;
       }
-
-      return {
-        id: `${rIdx}-${cIdx}`,
-        active,
-        intensity
-      };
-    });
-  });
+    }
+  }
 
   return (
     <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.container}>
@@ -498,7 +507,7 @@ export default function HomeScreen() {
                   </View>
                   <View style={[styles.claudeStatBox, { flex: 1 }]}>
                     <Text style={styles.claudeStatLabel}>Best Streak</Text>
-                    <Text style={styles.claudeStatValue}>{Math.max(streak, 4)}W</Text>
+                    <Text style={styles.claudeStatValue}>{bestWinStreak}W</Text>
                   </View>
                 </View>
               </View>
