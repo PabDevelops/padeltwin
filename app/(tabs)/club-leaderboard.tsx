@@ -11,6 +11,7 @@ import {
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
 import { theme, cardRadius, chipRadius } from '@/constants/theme';
+import { GlassCard } from '@/components/GlassCard';
 
 const FREE_CLUB_LIMIT = 1;
 const PRO_CLUB_LIMIT = 5;
@@ -48,9 +49,11 @@ export default function ClubLeaderboardScreen() {
   if (!activePair) {
     return (
       <View style={styles.center}>
-        <Text style={styles.emptyText}>
-          KOP is contested by ranked pairs — declare a fixed pair first to compete for a club's crown.
-        </Text>
+        <GlassCard style={{ padding: 24, alignSelf: 'center', width: '100%' }} contentStyle={{ alignItems: 'center' }}>
+          <Text style={styles.emptyText}>
+            KOP is contested by ranked pairs — declare a fixed pair first to compete for a club's crown.
+          </Text>
+        </GlassCard>
       </View>
     );
   }
@@ -97,7 +100,7 @@ export default function ClubLeaderboardScreen() {
       ) : !activeClub ? null : !leaderboard || leaderboard.length === 0 ? (
         <Text style={styles.emptyText}>No pairs have joined this club yet — be the first to claim the crown.</Text>
       ) : (
-        <View style={styles.leaderboardContainer}>
+        <GlassCard style={styles.leaderboardContainer} contentStyle={{ overflow: 'hidden' }}>
           {leaderboard.map((pair, index) => {
             const rank = index + 1;
             const isMine = pair.id === activePair.id;
@@ -124,7 +127,7 @@ export default function ClubLeaderboardScreen() {
               </View>
             );
           })}
-        </View>
+        </GlassCard>
       )}
     </ScrollView>
   );
@@ -133,11 +136,11 @@ export default function ClubLeaderboardScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
   center: { flex: 1, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  content: { padding: 20, gap: 4 },
+  content: { padding: 20, gap: 4, paddingBottom: 110 },
   title: { fontFamily: 'Anton_400Regular', color: theme.text, fontSize: 24, letterSpacing: 0.5 },
   subtitle: { color: theme.accent, fontWeight: '800', fontSize: 13, marginBottom: 8 },
   clubChipsRow: { flexDirection: 'row', gap: 8, marginBottom: 8, flexWrap: 'wrap' },
-  clubChip: { borderWidth: 1, borderColor: theme.border, borderRadius: chipRadius, paddingHorizontal: 12, paddingVertical: 6 },
+  clubChip: { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', borderRadius: chipRadius, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: 'rgba(255, 255, 255, 0.04)' },
   clubChipActive: { backgroundColor: theme.accent, borderColor: theme.accent },
   clubChipText: { color: theme.textMuted, fontSize: 11, fontWeight: '700' },
   clubChipTextActive: { color: theme.onAccent },
@@ -145,19 +148,19 @@ const styles = StyleSheet.create({
   joinInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: chipRadius,
     paddingHorizontal: 14,
     paddingVertical: 10,
     color: theme.text,
-    backgroundColor: theme.card,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     fontSize: 13,
   },
   joinBtn: { backgroundColor: theme.accent, borderRadius: chipRadius, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' },
   joinBtnText: { color: theme.onAccent, fontWeight: '900', fontSize: 12 },
   capText: { color: theme.textMuted, fontSize: 11, marginTop: 6, marginBottom: 16 },
   emptyText: { color: theme.textMuted, fontSize: 13, lineHeight: 20, marginTop: 12, textAlign: 'center' },
-  leaderboardContainer: { backgroundColor: theme.card, borderRadius: cardRadius, borderWidth: 1, borderColor: theme.border, overflow: 'hidden' },
+  leaderboardContainer: { borderRadius: cardRadius, overflow: 'hidden' },
   leaderboardRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -165,7 +168,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: theme.border,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
   leaderboardRowMe: { backgroundColor: 'rgba(198,255,51,0.06)' },
   leaderboardRowChampion: { backgroundColor: 'rgba(198,255,51,0.1)' },

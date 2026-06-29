@@ -7,6 +7,7 @@ import { useSession } from '@/lib/useSession';
 import type { MatchWithPlayers, PlayerLevel } from '@/types/database';
 import { theme, cardRadius, chipRadius } from '@/constants/theme';
 import { LEVELS, LEVEL_LABELS } from '@/constants/levels';
+import { GlassCard } from '@/components/GlassCard';
 
 const DATE_RANGE_OPTIONS: { value: MatchDateRange; label: string }[] = [
   { value: 'today', label: 'TODAY' },
@@ -243,64 +244,66 @@ export default function MatchSearchScreen() {
     const emptySlots = Math.max(0, maxPlayers - joinedCount);
 
     return (
-      <Pressable 
-        style={({ pressed }) => [
-          styles.card,
-          pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }
-        ]} 
-        onPress={() => router.push(`/match/${item.id}`)}
-      >
-        <View style={styles.cardAccentBar} />
-        <View style={styles.cardContent}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle} numberOfLines={1}>{item.location}</Text>
-            <View style={styles.modeBadge}>
-              <Text style={styles.modeBadgeText}>
-                {item.mode === 'pair' ? '⚔️ DOUBLES' : '⚔️ SINGLES'}
-              </Text>
-            </View>
-          </View>
-          
-          <Text style={styles.cardSubtitle}>
-            📅 {new Date(item.date_time).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase()} • {new Date(item.date_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-          </Text>
-
-          <View style={styles.cardRow}>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{LEVEL_LABELS[item.level].toUpperCase()}</Text>
-            </View>
-
-            <View style={styles.rosterContainer}>
-              <View style={styles.avatarStack}>
-                {joinedPlayers.map((player, idx) => (
-                  <View 
-                    key={player.profiles?.id || idx} 
-                    style={[styles.playerAvatar, { marginLeft: idx === 0 ? 0 : -8 }]}
-                  >
-                    <Text style={styles.avatarInitial}>
-                      {(player.profiles?.full_name ?? '?').slice(0, 1).toUpperCase()}
-                    </Text>
-                  </View>
-                ))}
-                {Array.from({ length: emptySlots }).map((_, idx) => (
-                  <View 
-                    key={idx} 
-                    style={[
-                      styles.emptyAvatar, 
-                      { marginLeft: joinedCount === 0 && idx === 0 ? 0 : -8 }
-                    ]}
-                  >
-                    <Ionicons name="add" size={10} color={theme.textMuted} />
-                  </View>
-                ))}
+      <GlassCard style={styles.card} contentStyle={{ padding: 0, flexDirection: 'row' }}>
+        <Pressable 
+          style={({ pressed }) => [
+            { flex: 1, flexDirection: 'row' },
+            pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }
+          ]} 
+          onPress={() => router.push(`/match/${item.id}`)}
+        >
+          <View style={styles.cardAccentBar} />
+          <View style={styles.cardContent}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle} numberOfLines={1}>{item.location}</Text>
+              <View style={styles.modeBadge}>
+                <Text style={styles.modeBadgeText}>
+                  {item.mode === 'pair' ? '⚔️ DOUBLES' : '⚔️ SINGLES'}
+                </Text>
               </View>
-              <Text style={[styles.slotsText, isFull && { color: theme.danger }]}>
-                {isFull ? 'FULL' : `${joinedCount}/${maxPlayers} JOINED`}
-              </Text>
+            </View>
+            
+            <Text style={styles.cardSubtitle}>
+              📅 {new Date(item.date_time).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase()} • {new Date(item.date_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+
+            <View style={styles.cardRow}>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{LEVEL_LABELS[item.level].toUpperCase()}</Text>
+              </View>
+
+              <View style={styles.rosterContainer}>
+                <View style={styles.avatarStack}>
+                  {joinedPlayers.map((player, idx) => (
+                    <View 
+                      key={player.profiles?.id || idx} 
+                      style={[styles.playerAvatar, { marginLeft: idx === 0 ? 0 : -8 }]}
+                    >
+                      <Text style={styles.avatarInitial}>
+                        {(player.profiles?.full_name ?? '?').slice(0, 1).toUpperCase()}
+                      </Text>
+                    </View>
+                  ))}
+                  {Array.from({ length: emptySlots }).map((_, idx) => (
+                    <View 
+                      key={idx} 
+                      style={[
+                        styles.emptyAvatar, 
+                        { marginLeft: joinedCount === 0 && idx === 0 ? 0 : -8 }
+                      ]}
+                    >
+                      <Ionicons name="add" size={10} color={theme.textMuted} />
+                    </View>
+                  ))}
+                </View>
+                <Text style={[styles.slotsText, isFull && { color: theme.danger }]}>
+                  {isFull ? 'FULL' : `${joinedCount}/${maxPlayers} JOINED`}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
-      </Pressable>
+        </Pressable>
+      </GlassCard>
     );
   }
 
@@ -613,7 +616,7 @@ export default function MatchSearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: theme.background },
+  container: { flex: 1, padding: 20, backgroundColor: 'transparent' },
   headerContainer: { marginBottom: 14, marginTop: 12 },
   createMatchFab: {
     width: 40,
@@ -629,12 +632,12 @@ const styles = StyleSheet.create({
   // Tab selector styles
   tabSelector: {
     flexDirection: 'row',
-    backgroundColor: '#16171E',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
     padding: 4,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   tabButton: {
     flex: 1,
@@ -646,10 +649,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   tabButtonActive: {
-    backgroundColor: '#1E1E28',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
@@ -663,7 +666,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: '900',
   },
-
+  
   // Search input styles
   searchWrapper: {
     position: 'relative',
@@ -684,33 +687,33 @@ const styles = StyleSheet.create({
   input: { 
     flex: 1,
     borderWidth: 1, 
-    borderColor: theme.border, 
+    borderColor: 'rgba(255, 255, 255, 0.1)', 
     borderRadius: 14, 
     paddingLeft: 42,
     paddingRight: 42,
     paddingVertical: 14, 
     fontSize: 12, 
     fontWeight: '800',
-    backgroundColor: theme.card, 
+    backgroundColor: 'rgba(255, 255, 255, 0.05)', 
     color: theme.text,
     letterSpacing: 0.5,
   },
   inputFocused: {
-    borderColor: theme.borderActive,
-    backgroundColor: '#1B1C24',
+    borderColor: theme.primary,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
-
+  
   // Filter styles
   filterSection: { marginBottom: 16 },
   filterLabel: { fontSize: 9, fontWeight: '900', color: theme.textMuted, letterSpacing: 1.5, marginBottom: 8 },
   levelRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   levelChip: { 
     borderWidth: 1, 
-    borderColor: theme.border, 
+    borderColor: 'rgba(255, 255, 255, 0.08)', 
     borderRadius: chipRadius, 
     paddingVertical: 8, 
     paddingHorizontal: 14, 
-    backgroundColor: theme.card 
+    backgroundColor: 'rgba(255, 255, 255, 0.04)' 
   },
   levelChipActive: { 
     backgroundColor: 'rgba(255, 92, 0, 0.15)', 
@@ -718,15 +721,12 @@ const styles = StyleSheet.create({
   },
   levelChipText: { color: theme.textMuted, fontWeight: '800', fontSize: 11, letterSpacing: 0.5 },
   levelChipTextActive: { color: theme.primary, fontWeight: '900' },
-
+  
   // List & Card styles
-  listContent: { gap: 12, paddingBottom: 80 },
+  listContent: { gap: 12, paddingBottom: 110 },
   card: { 
     flexDirection: 'row',
     borderRadius: cardRadius, 
-    backgroundColor: theme.card,
-    borderWidth: 1,
-    borderColor: theme.border,
     overflow: 'hidden',
   },
   cardAccentBar: {
@@ -740,9 +740,9 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardTitle: { fontSize: 15, fontWeight: '900', color: theme.text, flex: 1, marginRight: 8, textTransform: 'uppercase', letterSpacing: 0.2 },
   modeBadge: { 
-    backgroundColor: '#1E1E28', 
+    backgroundColor: 'rgba(255, 255, 255, 0.05)', 
     borderWidth: 1, 
-    borderColor: theme.border, 
+    borderColor: 'rgba(255, 255, 255, 0.08)', 
     borderRadius: 6, 
     paddingHorizontal: 8, 
     paddingVertical: 4 
@@ -760,9 +760,9 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#1E1E28',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     borderWidth: 1.5,
-    borderColor: theme.card,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -815,10 +815,10 @@ const styles = StyleSheet.create({
     height: 140,
     borderRadius: 70,
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.card,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     marginBottom: 24,
   },
   radarActiveWrapper: {
@@ -841,9 +841,9 @@ const styles = StyleSheet.create({
     width: 140,
     height: 140,
     borderRadius: 70,
-    backgroundColor: '#12131A',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 2,
-    borderColor: theme.border,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -936,7 +936,7 @@ const styles = StyleSheet.create({
   lolModalCard: {
     width: '100%',
     maxWidth: 320,
-    backgroundColor: '#15161F',
+    backgroundColor: 'rgba(21, 22, 31, 0.9)',
     borderRadius: cardRadius,
     borderWidth: 1.5,
     borderColor: '#FF5C00', // Glowing orange outline

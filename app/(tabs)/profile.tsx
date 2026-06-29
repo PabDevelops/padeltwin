@@ -49,6 +49,7 @@ import { theme, buttonRadius, cardRadius, chipRadius } from '@/constants/theme';
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
 import { VerifiedLocation } from '@/components/VerifiedLocation';
+import { GlassCard } from '@/components/GlassCard';
 
 function didWin(result: MatchResultWithProfiles, userId: string) {
   const inTeamA = result.team_a_player1 === userId || result.team_a_player2 === userId;
@@ -282,12 +283,12 @@ export default function ProfileScreen() {
         )}
 
         {/* STATS */}
-        <View style={styles.psScoreHero}>
+        <GlassCard style={styles.psScoreHero} contentStyle={{ alignItems: 'center', paddingVertical: 20 }}>
           <Text style={styles.psScoreHeroValue}>{profile.elo}</Text>
           <Text style={styles.psScoreHeroLabel}>PS SCORE</Text>
-        </View>
+        </GlassCard>
 
-        <View style={styles.statsCardContainer}>
+        <GlassCard style={styles.statsCardContainer} contentStyle={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 10 }}>
           {statsLoading ? (
             <ActivityIndicator color={theme.accent} />
           ) : (
@@ -303,13 +304,13 @@ export default function ProfileScreen() {
               </View>
             </>
           )}
-        </View>
+        </GlassCard>
 
         {/* RECORDS */}
         {recordItems.length > 0 && (
           <>
             <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Personal records</Text>
-            <View style={styles.recordsCardContainer}>
+            <GlassCard style={styles.recordsCardContainer} contentStyle={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 10 }}>
               {recordItems.map((item, index) => (
                 <View key={item.label} style={styles.recordItem}>
                   {index > 0 && <View style={styles.statDivider} />}
@@ -320,7 +321,7 @@ export default function ProfileScreen() {
                   </View>
                 </View>
               ))}
-            </View>
+            </GlassCard>
           </>
         )}
 
@@ -341,7 +342,7 @@ export default function ProfileScreen() {
               const scoreString = r.sets.map((s) => `${s.a}-${s.b}`).join(', ');
 
               return (
-                <View key={r.id} style={styles.horizontalReviewCard}>
+                <GlassCard key={r.id} style={styles.horizontalReviewCard} contentStyle={{ padding: 14 }}>
                   <View style={styles.cardHeaderRow}>
                     {opponentAvatar ? (
                       <Image source={{ uri: opponentAvatar }} style={styles.smallAvatar} />
@@ -368,7 +369,7 @@ export default function ProfileScreen() {
                       </View>
                     </View>
                   </View>
-                </View>
+                </GlassCard>
               );
             })}
           </ScrollView>
@@ -377,7 +378,7 @@ export default function ProfileScreen() {
         )}
 
         {/* ACHIEVEMENTS */}
-        <View style={styles.section}>
+        <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
           <Text style={styles.sectionHeader}>MY ACHIEVEMENTS</Text>
           {achievementsLoading ? (
             <ActivityIndicator color={theme.accent} />
@@ -401,10 +402,10 @@ export default function ProfileScreen() {
           ) : (
             <Text style={styles.helperText}>Play matches and win games to unlock exclusive player badges!</Text>
           )}
-        </View>
+        </GlassCard>
 
         {/* ATHLETE DETAILS */}
-        <View style={styles.section}>
+        <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
           <Text style={styles.sectionHeader}>ATHLETE DETAILS</Text>
 
           <Text style={styles.label}>NAME</Text>
@@ -433,10 +434,10 @@ export default function ProfileScreen() {
             <Text style={styles.duoQueueLinkArrow}>{'>'}</Text>
           </Pressable>
 
-        </View>
+        </GlassCard>
 
         {/* KOP STATUS */}
-        <View style={styles.section}>
+        <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
           <Text style={styles.sectionHeader}>KOP STATUS</Text>
           <Text style={styles.helperText}>
             KOP is contested by your ranked pair, not solo — join a club's board from the KOP tab.
@@ -468,9 +469,9 @@ export default function ProfileScreen() {
             onBlur={() => setFocusedInput(null)}
           />
           <Text style={styles.helperText}>Shown on your profile — doesn't by itself enter you into KOP.</Text>
-        </View>
+        </GlassCard>
 
-        <View style={[styles.section, styles.switchRow]}>
+        <GlassCard style={styles.section} contentStyle={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 }}>
           <View style={{ flex: 1, marginRight: 16 }}>
             <Text style={[styles.label, { marginTop: 0 }]}>PARTNER SEARCH</Text>
             <Text style={styles.helperText}>Make profile visible in the matchmaking pool.</Text>
@@ -481,7 +482,7 @@ export default function ProfileScreen() {
             trackColor={{ true: theme.accent, false: theme.border }}
             thumbColor={lookingForPartner ? theme.secondary : '#7F7F8F'}
           />
-        </View>
+        </GlassCard>
 
         <Pressable
           style={({ pressed }) => [
@@ -500,7 +501,7 @@ export default function ProfileScreen() {
         </Pressable>
 
         {profile.coach_status === 'approved' ? (
-          <View style={styles.section}>
+          <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
             <Text style={styles.sectionHeader}>COACH LISTING</Text>
             <Text style={styles.helperText}>
               You're listed in the coach directory. {leads && leads.length > 0 ? `${leads.length} lesson request${leads.length > 1 ? 's' : ''} received.` : 'No requests yet.'}
@@ -542,38 +543,40 @@ export default function ProfileScreen() {
             >
               <Text style={{ color: theme.danger, fontWeight: '800', fontSize: 11 }}>STOP COACHING</Text>
             </Pressable>
-          </View>
+          </GlassCard>
         ) : profile.coach_status === 'pending' ? (
-          <View style={styles.section}>
+          <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
             <Text style={styles.sectionHeader}>COACH APPLICATION</Text>
             <Text style={styles.helperText}>
               Your application is under review. We'll list you in the coach directory once it's approved.
             </Text>
-          </View>
+          </GlassCard>
         ) : !profile.is_pro ? (
-          <View style={styles.section}>
+          <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
             <Text style={styles.sectionHeader}>ARE YOU A PADEL COACH?</Text>
             <Text style={styles.helperText}>
               Listing as a coach is a Pro feature. Upgrade to Pro to apply for a spot in the coach directory.
             </Text>
             <Text style={[styles.label, { color: theme.textMuted, marginTop: 10 }]}>PRO REQUIRED</Text>
-          </View>
+          </GlassCard>
         ) : (
-          <Pressable
-            style={({ pressed }) => [styles.section, pressed && { opacity: 0.9 }]}
-            onPress={() => setCoachModalVisible(true)}
-          >
-            <Text style={styles.sectionHeader}>ARE YOU A PADEL COACH?</Text>
-            <Text style={styles.helperText}>Apply to be listed in the coach directory and get lesson requests from players near you. Subject to review.</Text>
-            <Text style={[styles.label, { color: theme.accent, marginTop: 10 }]}>APPLY TO BECOME A COACH →</Text>
-          </Pressable>
+          <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
+            <Pressable
+              style={({ pressed }) => [pressed && { opacity: 0.9 }]}
+              onPress={() => setCoachModalVisible(true)}
+            >
+              <Text style={styles.sectionHeader}>ARE YOU A PADEL COACH?</Text>
+              <Text style={styles.helperText}>Apply to be listed in the coach directory and get lesson requests from players near you. Subject to review.</Text>
+              <Text style={[styles.label, { color: theme.accent, marginTop: 10 }]}>APPLY TO BECOME A COACH →</Text>
+            </Pressable>
+          </GlassCard>
         )}
 
         {pendingReceived.length > 0 && (
           <View style={styles.partnersSection}>
             <Text style={styles.sectionTitle}>PARTNER REQUESTS</Text>
             {pendingReceived.map((r) => (
-              <View key={r.id} style={styles.requestCard}>
+              <GlassCard key={r.id} style={styles.requestCard} contentStyle={{ padding: 16 }}>
                 <Text style={styles.requestName}>{otherProfile(r)?.full_name ?? 'Player'}</Text>
                 <View style={styles.requestActions}>
                   <Pressable
@@ -589,7 +592,7 @@ export default function ProfileScreen() {
                     <Text style={styles.smallButtonText}>DECLINE</Text>
                   </Pressable>
                 </View>
-              </View>
+              </GlassCard>
             ))}
           </View>
         )}
@@ -598,49 +601,50 @@ export default function ProfileScreen() {
           <View style={styles.partnersSection}>
             <Text style={styles.sectionTitle}>MY PARTNERS</Text>
             {accepted.map((r) => (
-              <Pressable
-                key={r.id}
-                style={({ pressed }) => [
-                  styles.partnerRequestCard,
-                  pressed && { opacity: 0.9, transform: [{ scale: 0.99 }] },
-                ]}
-                onPress={() => router.push({ pathname: '/chat/[requestId]', params: { requestId: r.id } })}
-              >
-                <View style={styles.partnerInfo}>
-                  <Text style={styles.requestName}>{otherProfile(r)?.full_name ?? 'Player'}</Text>
-                  <Text style={styles.partnerCity}>{otherProfile(r)?.zone ?? 'Madrid'}</Text>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <View style={styles.chatLinkBadge}>
-                    <Text style={styles.chatLinkText}>CHAT</Text>
+              <GlassCard key={r.id} style={styles.partnerRequestCard}>
+                <Pressable
+                  style={({ pressed }) => [
+                    { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
+                    pressed && { opacity: 0.9, transform: [{ scale: 0.99 }] },
+                  ]}
+                  onPress={() => router.push({ pathname: '/chat/[requestId]', params: { requestId: r.id } })}
+                >
+                  <View style={styles.partnerInfo}>
+                    <Text style={styles.requestName}>{otherProfile(r)?.full_name ?? 'Player'}</Text>
+                    <Text style={styles.partnerCity}>{otherProfile(r)?.zone ?? 'Madrid'}</Text>
                   </View>
-                  <Pressable
-                    style={({ pressed }) => [styles.deleteChatBtn, pressed && { opacity: 0.7 }]}
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      Alert.alert(
-                        'Delete chat?',
-                        `This removes the chat from your list only — ${otherProfile(r)?.full_name ?? 'this player'} will still see it.`,
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          {
-                            text: 'Delete',
-                            style: 'destructive',
-                            onPress: () => userId && hideChat.mutate({ requestId: r.id, profileId: userId }),
-                          },
-                        ]
-                      );
-                    }}
-                  >
-                    <Ionicons name="trash-outline" size={16} color={theme.danger} />
-                  </Pressable>
-                </View>
-              </Pressable>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={styles.chatLinkBadge}>
+                      <Text style={styles.chatLinkText}>CHAT</Text>
+                    </View>
+                    <Pressable
+                      style={({ pressed }) => [styles.deleteChatBtn, pressed && { opacity: 0.7 }]}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        Alert.alert(
+                          'Delete chat?',
+                          `This removes the chat from your list only — ${otherProfile(r)?.full_name ?? 'this player'} will still see it.`,
+                          [
+                            { text: 'Cancel', style: 'cancel' },
+                            {
+                              text: 'Delete',
+                              style: 'destructive',
+                              onPress: () => userId && hideChat.mutate({ requestId: r.id, profileId: userId }),
+                            },
+                          ]
+                        );
+                      }}
+                    >
+                      <Ionicons name="trash-outline" size={16} color={theme.danger} />
+                    </Pressable>
+                  </View>
+                </Pressable>
+              </GlassCard>
             ))}
           </View>
         )}
 
-        <View style={styles.section}>
+        <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
           <Text style={styles.sectionHeader}>PRIVACY & SAFETY</Text>
 
           <Pressable onPress={() => router.push('/privacy' as any)}>
@@ -686,7 +690,7 @@ export default function ProfileScreen() {
           >
             <Text style={{ color: theme.danger, fontWeight: '800', fontSize: 11, letterSpacing: 0.5 }}>DELETE MY ACCOUNT</Text>
           </Pressable>
-        </View>
+        </GlassCard>
       </View>
 
       <Modal visible={coachModalVisible} transparent animationType="fade" onRequestClose={() => setCoachModalVisible(false)}>
@@ -751,15 +755,15 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.background },
+  container: { flex: 1, backgroundColor: 'transparent' },
   duoQueueLink: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 14,
-    backgroundColor: '#191922',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     padding: 14,
   },
@@ -769,20 +773,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#191922',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     padding: 14,
   },
   kopCrownValue: { color: theme.text, fontWeight: '900', fontSize: 16, letterSpacing: 0.5 },
   kopCrownSub: { color: theme.textMuted, fontSize: 11, marginTop: 2 },
-  centerContainer: { flex: 1, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center' },
+  centerContainer: { flex: 1, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   headerWrapper: {
     position: 'relative',
     width: '100%',
     zIndex: 10,
-    backgroundColor: theme.background,
+    backgroundColor: 'transparent',
     alignItems: 'center',
     paddingTop: 24,
     paddingBottom: 8,
@@ -838,7 +842,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 6,
   },
-  contentBody: { backgroundColor: theme.background, paddingTop: 16, paddingHorizontal: 24, paddingBottom: 40, gap: 16 },
+  contentBody: { backgroundColor: 'transparent', paddingTop: 16, paddingHorizontal: 24, paddingBottom: 110, gap: 16 },
   badgeRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 16 },
   outlinedBadge: {
     borderWidth: 1.5,
@@ -867,12 +871,7 @@ const styles = StyleSheet.create({
   scrimIndexLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
   psScoreHero: {
     alignItems: 'center',
-    backgroundColor: theme.card,
     borderRadius: 24,
-    borderWidth: 1,
-    borderColor: theme.accent,
-    paddingVertical: 20,
-    marginBottom: 10,
   },
   psScoreHeroValue: { fontFamily: 'Anton_400Regular', fontSize: 56, color: theme.accent, letterSpacing: -1 },
   psScoreHeroLabel: { fontSize: 12, fontWeight: '900', color: theme.text, letterSpacing: 1.5, marginTop: 2 },
@@ -880,12 +879,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: theme.card,
     borderRadius: 24,
-    paddingVertical: 18,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: theme.border,
   },
   statColumn: { flex: 1, alignItems: 'center' },
   statHugeText: { fontFamily: 'Anton_400Regular', fontSize: 22, color: theme.accent, letterSpacing: -0.5 },
@@ -896,9 +890,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: theme.card,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 20,
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -909,12 +903,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: theme.card,
     borderRadius: 24,
-    paddingVertical: 16,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: theme.border,
     marginTop: 10,
   },
   recordItem: { flex: 1, flexDirection: 'row', alignItems: 'center' },
@@ -924,7 +913,7 @@ const styles = StyleSheet.create({
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sectionTitle: { fontSize: 16, fontWeight: '800', color: theme.text },
   horizontalScroll: { gap: 12, paddingBottom: 4 },
-  horizontalReviewCard: { width: 220, backgroundColor: theme.card, borderRadius: 20, padding: 14, borderWidth: 1, borderColor: theme.border },
+  horizontalReviewCard: { width: 220, borderRadius: 20 },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center' },
   smallAvatar: { width: 36, height: 36, borderRadius: 18, marginRight: 10 },
   smallAvatarPlaceholder: {
@@ -945,7 +934,7 @@ const styles = StyleSheet.create({
   cardResultText: { fontSize: 10, fontWeight: '700', color: theme.text },
   cardTimeText: { fontSize: 9, fontWeight: '500', color: theme.textMuted },
   emptyText: { color: theme.textMuted, fontSize: 12, fontStyle: 'italic' },
-  section: { backgroundColor: theme.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.border },
+  section: { borderRadius: 16 },
   sectionHeader: {
     fontSize: 12,
     fontWeight: '800',
@@ -958,10 +947,10 @@ const styles = StyleSheet.create({
   },
   label: { fontSize: 11, fontWeight: '700', color: theme.text, letterSpacing: 0.8, marginBottom: 6 },
   helperText: { color: theme.textMuted, fontSize: 12, marginTop: 6, lineHeight: 16 },
-  input: { borderWidth: 1, borderColor: theme.border, borderRadius: 12, padding: 14, fontSize: 16, backgroundColor: '#191922', color: theme.text },
-  inputFocused: { borderColor: theme.borderActive, backgroundColor: '#1c1c28' },
+  input: { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', borderRadius: 12, padding: 14, fontSize: 16, backgroundColor: 'rgba(255, 255, 255, 0.03)', color: theme.text },
+  inputFocused: { borderColor: theme.accent, backgroundColor: 'rgba(255, 255, 255, 0.06)' },
   row: { flexDirection: 'row', gap: 8, marginTop: 4, flexWrap: 'wrap' },
-  chip: { borderWidth: 1, borderColor: theme.border, borderRadius: chipRadius, paddingVertical: 8, paddingHorizontal: 16, backgroundColor: '#1a1a24' },
+  chip: { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', borderRadius: chipRadius, paddingVertical: 8, paddingHorizontal: 16, backgroundColor: 'rgba(255, 255, 255, 0.04)' },
   chipActive: {
     backgroundColor: theme.accent,
     borderColor: theme.accent,
@@ -988,16 +977,12 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.5 },
   buttonText: { color: theme.onAccent, fontSize: 16, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
   partnersSection: { gap: 8 },
-  requestCard: { borderRadius: cardRadius, padding: 16, backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border },
+  requestCard: { borderRadius: cardRadius },
   partnerRequestCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderRadius: cardRadius,
-    padding: 16,
-    backgroundColor: theme.card,
-    borderWidth: 1,
-    borderColor: theme.border,
   },
   partnerInfo: { flex: 1, marginRight: 12 },
   partnerCity: { color: theme.textMuted, fontSize: 12, marginTop: 2, fontWeight: '600' },
@@ -1040,7 +1025,7 @@ const styles = StyleSheet.create({
   modalCancelText: { color: theme.textMuted, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
   modalConfirmBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: buttonRadius, backgroundColor: theme.accent },
   modalConfirmText: { color: theme.onAccent, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
-  leadCard: { borderRadius: 12, borderWidth: 1, borderColor: theme.border, backgroundColor: '#191922', padding: 12, marginTop: 10 },
+  leadCard: { borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.03)', padding: 12, marginTop: 10 },
   leadStatus: { fontSize: 9, fontWeight: '900', color: theme.textMuted, letterSpacing: 0.5 },
   leadStatusPending: { color: theme.accent },
 });

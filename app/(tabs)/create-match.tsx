@@ -6,6 +6,7 @@ import { useCreateMatch, usePartnerRequests, useProfile } from '@/lib/queries';
 import { useSession } from '@/lib/useSession';
 import type { MatchMode, MatchVisibility, PartnerRequestWithProfiles } from '@/types/database';
 import { theme, buttonRadius, chipRadius } from '@/constants/theme';
+import { GlassCard } from '@/components/GlassCard';
 import { levelFromElo } from '@/lib/eloPlacement';
 
 function PulsingDot() {
@@ -154,7 +155,7 @@ export default function CreateMatchScreen() {
         <Text style={styles.subtitle}>Set up a match for other compatible athletes to join</Text>
       </View>
 
-      <View style={styles.section}>
+      <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
         <Text style={styles.sectionHeader}>COURT LOGISTICS</Text>
 
         <Text style={styles.label}>LOCATION / COURT NAME</Text>
@@ -196,9 +197,9 @@ export default function CreateMatchScreen() {
         {showTimePicker && (
           <DateTimePicker value={timeValue ?? new Date()} mode="time" onChange={handleTimeChange} />
         )}
-      </View>
+      </GlassCard>
 
-      <View style={styles.section}>
+      <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
         <Text style={styles.sectionHeader}>MATCH PREFERENCES</Text>
 
         <Text style={styles.label}>GAME MODE</Text>
@@ -277,7 +278,7 @@ export default function CreateMatchScreen() {
             ? ' Madrid public feed: Anyone with a compatible level can find and join.'
             : 'Private roster: Only players you invite can join.'}
         </Text>
-      </View>
+      </GlassCard>
 
       {error && <Text style={styles.error}>{error}</Text>}
 
@@ -302,7 +303,7 @@ export default function CreateMatchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 24, gap: 24, backgroundColor: theme.background },
+  container: { padding: 24, gap: 24, backgroundColor: 'transparent' },
   headerContainer: { marginBottom: 8, marginTop: 12 },
   headerTopRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   pulsingDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: theme.success },
@@ -310,9 +311,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: theme.card,
+    backgroundColor: 'rgba(0, 230, 115, 0.1)',
     borderWidth: 1,
-    borderColor: theme.success,
+    borderColor: 'rgba(0, 230, 115, 0.25)',
     borderRadius: 20,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -322,33 +323,33 @@ const styles = StyleSheet.create({
   tagline: { fontSize: 11, fontWeight: '800', color: theme.secondary, letterSpacing: 2, marginBottom: 4 },
   title: { fontSize: 28, fontWeight: '900', color: theme.text, textTransform: 'uppercase', letterSpacing: -0.5 },
   subtitle: { color: theme.textMuted, fontSize: 14, marginTop: 4, lineHeight: 20 },
-  section: { backgroundColor: theme.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.border },
-  sectionHeader: { fontSize: 12, fontWeight: '800', color: theme.secondary, letterSpacing: 1.5, marginBottom: 16, borderBottomWidth: 1, borderBottomColor: theme.border, paddingBottom: 6 },
+  section: { borderRadius: 16 },
+  sectionHeader: { fontSize: 12, fontWeight: '800', color: theme.secondary, letterSpacing: 1.5, marginBottom: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.08)', paddingBottom: 6 },
   label: { fontSize: 11, fontWeight: '700', color: theme.text, letterSpacing: 0.8, marginBottom: 6 },
   helperText: { color: theme.textMuted, fontSize: 12, marginTop: 6, lineHeight: 16 },
   input: {
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     padding: 14,
     fontSize: 16,
-    backgroundColor: '#191922',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     color: theme.text
   },
   inputFocused: {
-    borderColor: theme.borderActive,
-    backgroundColor: '#1c1c28',
+    borderColor: theme.accent,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
   },
   pickerValue: { color: theme.text, fontSize: 16 },
   pickerPlaceholder: { color: theme.textMuted, fontSize: 16 },
   row: { flexDirection: 'row', gap: 8, marginTop: 4, flexWrap: 'wrap' },
   chip: {
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: chipRadius,
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: '#1a1a24'
+    backgroundColor: 'rgba(255, 255, 255, 0.04)'
   },
   chipActive: {
     backgroundColor: theme.accent,
@@ -360,14 +361,14 @@ const styles = StyleSheet.create({
   },
   chipText: { color: theme.textMuted, fontWeight: '700', fontSize: 13 },
   chipTextActive: { color: theme.onAccent, fontWeight: '800' },
-  partnerContainer: { marginTop: 14, borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 14 },
+  partnerContainer: { marginTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.08)', paddingTop: 14 },
   button: {
     backgroundColor: theme.primary,
     borderRadius: buttonRadius,
     padding: 16,
     alignItems: 'center',
     marginTop: 12,
-    marginBottom: 40,
+    marginBottom: 110,
     shadowColor: theme.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,

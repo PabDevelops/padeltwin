@@ -1,6 +1,7 @@
 import { Redirect, Tabs, useRouter } from 'expo-router';
 import React from 'react';
 import { Platform, View, Pressable, Text, StyleSheet } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -58,12 +59,12 @@ function CustomTabBar({ state, descriptors, navigation, bottomInset }: any) {
   const isKopFocused = currentRouteName === 'club-leaderboard';
 
   return (
-    <View style={[styles.tabBarContainer, { paddingBottom: bottomInset }]}>
-      {/* Solid background bar */}
-      <View style={styles.solidBg} />
+    <View style={[styles.tabBarWrapper, { bottom: bottomInset + 16 }]}>
+      <View style={styles.tabBarContainer}>
+        <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
 
-      {/* Tab Buttons */}
-      <View style={styles.buttonsContainer}>
+        {/* Tab Buttons */}
+        <View style={styles.buttonsContainer}>
         {homeRoute && renderRouteButton(homeRoute)}
         {indexRoute && renderRouteButton(indexRoute)}
 
@@ -79,8 +80,9 @@ function CustomTabBar({ state, descriptors, navigation, bottomInset }: any) {
           </View>
         </Pressable>
 
-        {partnersRoute && renderRouteButton(partnersRoute)}
-        {profileRoute && renderRouteButton(profileRoute)}
+          {partnersRoute && renderRouteButton(partnersRoute)}
+          {profileRoute && renderRouteButton(profileRoute)}
+        </View>
       </View>
     </View>
   );
@@ -105,10 +107,9 @@ export default function TabLayout() {
       tabBar={(props) => <CustomTabBar {...props} bottomInset={bottomInset} />}
       screenOptions={{
         headerShown: false,
-        sceneStyle: { 
-          paddingTop: insets.top, 
+        sceneStyle: {
+          paddingTop: insets.top,
           backgroundColor: theme.background,
-          paddingBottom: 68 + bottomInset
         },
       }}
     >
@@ -125,30 +126,43 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  tabBarContainer: {
+  tabBarWrapper: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'transparent',
-    elevation: 12,
+    left: 20,
+    right: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.35,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 6,
+      },
+      web: {
+        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)',
+      },
+    }),
   },
-  solidBg: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#1E1E28', // matching card background color
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+  tabBarContainer: {
+    borderRadius: 32,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    overflow: 'hidden',
+    backgroundColor: Platform.select({
+      ios: 'rgba(15, 16, 22, 0.4)',
+      android: 'rgba(15, 16, 22, 0.85)',
+      web: 'rgba(15, 16, 22, 0.65)',
+      default: 'rgba(15, 16, 22, 0.75)',
+    }),
   },
   buttonsContainer: {
     flexDirection: 'row',
     height: 68,
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 4,
+    paddingHorizontal: 6,
   },
   tabButton: {
     flex: 1,
@@ -162,10 +176,11 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: 'transparent',
   },
   activeIconWrapper: {
-    borderColor: theme.accent,
+    backgroundColor: 'rgba(198, 255, 51, 0.12)',
+    borderColor: 'rgba(198, 255, 51, 0.25)',
   },
 });

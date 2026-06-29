@@ -5,6 +5,7 @@ import { useSession } from '@/lib/useSession';
 import { useProfile, useMyPairs, useMyKopStatus } from '@/lib/queries';
 import { divisionFromPairElo } from '@/lib/pairDivisions';
 import { theme, cardRadius, chipRadius } from '@/constants/theme';
+import { GlassCard } from '@/components/GlassCard';
 
 export default function LeaguesScreen() {
   const router = useRouter();
@@ -20,15 +21,17 @@ export default function LeaguesScreen() {
   if (!activePair) {
     return (
       <View style={styles.emptyContainer}>
-        <Ionicons name="people-outline" size={36} color={theme.textMuted} style={{ marginBottom: 10 }} />
-        <Text style={styles.emptyTitle}>Leagues are for ranked pairs</Text>
-        <Text style={styles.emptyText}>
-          Padel is a 2-person sport — declare a fixed pair with an accepted partner. Your pair is automatically
-          ranked in your country's league, no joining required.
-        </Text>
-        <Pressable style={styles.emptyBtn} onPress={() => router.push('/pairs' as any)}>
-          <Text style={styles.emptyBtnText}>DECLARE A PAIR</Text>
-        </Pressable>
+        <GlassCard style={{ padding: 24, alignSelf: 'center', width: '100%' }} contentStyle={{ alignItems: 'center' }}>
+          <Ionicons name="people-outline" size={36} color={theme.textMuted} style={{ marginBottom: 10 }} />
+          <Text style={styles.emptyTitle}>Leagues are for ranked pairs</Text>
+          <Text style={styles.emptyText}>
+            Padel is a 2-person sport — declare a fixed pair with an accepted partner. Your pair is automatically
+            ranked in your country's league, no joining required.
+          </Text>
+          <Pressable style={styles.emptyBtn} onPress={() => router.push('/pairs' as any)}>
+            <Text style={styles.emptyBtnText}>DECLARE A PAIR</Text>
+          </Pressable>
+        </GlassCard>
       </View>
     );
   }
@@ -40,7 +43,7 @@ export default function LeaguesScreen() {
         another country's league too? Declare another pair there (up to your pair limit).
       </Text>
 
-      <View style={styles.pairBanner}>
+      <GlassCard style={styles.pairBanner} contentStyle={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 14 }}>
         <View style={{ flex: 1 }}>
           <Text style={styles.pairBannerText}>
             Playing as: {activePair.player_a?.full_name ?? 'You'} & {activePair.player_b?.full_name ?? 'Partner'}
@@ -48,72 +51,73 @@ export default function LeaguesScreen() {
           <Text style={styles.pairBannerDivision}>{divisionFromPairElo(activePair.elo)}</Text>
         </View>
         <Text style={styles.pairBannerElo}>{activePair.elo} PS</Text>
-      </View>
+      </GlassCard>
 
-      <Pressable
-        style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}
-        onPress={() => router.push(`/leagues/country?value=${encodeURIComponent(profile?.country ?? '')}` as any)}
-      >
-        <View style={[styles.cardIcon, { backgroundColor: 'rgba(255, 255, 255, 0.08)' }]}>
-          <Ionicons name="globe" size={20} color={theme.text} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.cardName}>{profile?.country ?? 'Set your country'} League</Text>
-          <Text style={styles.cardSub}>{!profile?.country ? 'Add your country in your profile' : 'View the full ranking'}</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
-      </Pressable>
+      <GlassCard style={styles.card}>
+        <Pressable
+          style={({ pressed }) => [
+            { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 },
+            pressed && { opacity: 0.8 }
+          ]}
+          onPress={() => router.push(`/leagues/country?value=${encodeURIComponent(profile?.country ?? '')}` as any)}
+        >
+          <View style={[styles.cardIcon, { backgroundColor: 'rgba(255, 255, 255, 0.08)' }]}>
+            <Ionicons name="globe" size={20} color={theme.text} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardName}>{profile?.country ?? 'Set your country'} League</Text>
+            <Text style={styles.cardSub}>{!profile?.country ? 'Add your country in your profile' : 'View the full ranking'}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+        </Pressable>
+      </GlassCard>
 
-      <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]} onPress={() => router.push('/club-leaderboard' as any)}>
-        <View style={[styles.cardIcon, { backgroundColor: 'rgba(0, 230, 118, 0.12)' }]}>
-          <Ionicons name="flame" size={20} color={theme.success} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.cardName}>My Feuds & KOP Status</Text>
-          <Text style={styles.cardSub}>
-            {kopStatus
-              ? kopStatus.crownedClubs.length > 0
-                ? `Holding ${kopStatus.crownedClubs.length} KOP Crown${kopStatus.crownedClubs.length === 1 ? '' : 's'}`
-                : kopStatus.joinedClubs.length > 0
-                  ? 'Contesting, no crown yet'
-                  : 'Join a club to contest the throne'
-              : 'Join a club to contest the throne'}
-          </Text>
-        </View>
-        <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
-      </Pressable>
+      <GlassCard style={styles.card}>
+        <Pressable
+          style={({ pressed }) => [
+            { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 },
+            pressed && { opacity: 0.8 }
+          ]}
+          onPress={() => router.push('/club-leaderboard' as any)}
+        >
+          <View style={[styles.cardIcon, { backgroundColor: 'rgba(0, 230, 118, 0.12)' }]}>
+            <Ionicons name="flame" size={20} color={theme.success} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardName}>My Feuds & KOP Status</Text>
+            <Text style={styles.cardSub}>
+              {kopStatus
+                ? kopStatus.crownedClubs.length > 0
+                  ? `Holding ${kopStatus.crownedClubs.length} KOP Crown${kopStatus.crownedClubs.length === 1 ? '' : 's'}`
+                  : kopStatus.joinedClubs.length > 0
+                    ? 'Contesting, no crown yet'
+                    : 'Join a club to contest the throne'
+                : 'Join a club to contest the throne'}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+        </Pressable>
+      </GlassCard>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
-  content: { padding: 20, gap: 12 },
+  content: { padding: 20, gap: 12, paddingBottom: 110 },
   intro: { color: theme.textMuted, fontSize: 13, lineHeight: 18, marginBottom: 4 },
   pairBanner: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: 'rgba(198, 255, 51, 0.08)',
+    backgroundColor: 'rgba(198, 255, 51, 0.04)',
     borderWidth: 1,
-    borderColor: theme.accent,
+    borderColor: 'rgba(198, 255, 51, 0.15)',
     borderRadius: chipRadius,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
     marginBottom: 4,
   },
   pairBannerText: { color: theme.text, fontSize: 12, fontWeight: '700' },
   pairBannerDivision: { color: theme.accent, fontSize: 10, fontWeight: '900', marginTop: 2, letterSpacing: 0.5 },
   pairBannerElo: { color: theme.accent, fontWeight: '900', fontSize: 13 },
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: theme.card,
     borderRadius: cardRadius,
-    borderWidth: 1,
-    borderColor: theme.border,
-    padding: 16,
   },
   cardIcon: {
     width: 40,

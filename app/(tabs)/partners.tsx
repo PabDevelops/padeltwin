@@ -11,6 +11,7 @@ import { theme, buttonRadius, cardRadius, chipRadius } from '@/constants/theme';
 import { LEVEL_LABELS } from '@/constants/levels';
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
+import { GlassCard } from '@/components/GlassCard';
 
 const REEL_ITEM_HEIGHT = 120;
 
@@ -147,79 +148,89 @@ export default function PartnersScreen() {
     };
 
     return (
-      <Pressable 
-        style={styles.card}
-        onPress={() => router.push(`/player/${item.id}` as any)}
-      >
-        <View style={styles.avatarBox}>
-          {item.avatar_url ? (
-            <Image source={{ uri: item.avatar_url }} style={styles.avatarImage} />
-          ) : (
-            <View style={styles.placeholderContainer}>
-              <Text style={styles.avatarPlaceholder}>{(item.full_name ?? '?').slice(0, 2).toUpperCase()}</Text>
-            </View>
-          )}
-          {item.looking_for_partner && (
-            <View style={styles.lookingBadge}>
-              <Text style={styles.lookingBadgeText}>ACTIVE FINDER</Text>
-            </View>
-          )}
-        </View>
-
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Text style={styles.cardTitle} numberOfLines={1}>
-            {item.full_name ?? 'Player'}
-          </Text>
-          {item.is_pro && <ProBadge size="sm" />}
-          {item.coach_status === 'approved' && <CoachBadge size="sm" />}
-        </View>
-
-        <View style={styles.cardRow}>
-          <Text style={styles.levelBadge}>
-            {item.level ? LEVEL_LABELS[item.level].toUpperCase() : 'NO LEVEL'}
-          </Text>
-          <Text style={styles.elo}>{item.elo} <Text style={{ fontSize: 9, color: theme.textMuted }}>PS</Text></Text>
-        </View>
-
-        <Pressable
+      <GlassCard style={styles.card} contentStyle={{ padding: 12 }}>
+        <Pressable 
           style={({ pressed }) => [
-            styles.button,
-            buttonVariant === 'primary' && styles.buttonPrimary,
-            buttonVariant === 'pending' && styles.buttonPending,
-            buttonVariant === 'connected' && styles.buttonConnected,
-            pressed && !disabled && { scale: 0.96 } as any
+            pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }
           ]}
-          disabled={disabled || sendRequest.isPending}
-          onPress={() => userId && sendRequest.mutate({ fromId: userId, toId: item.id })}>
-          <Text style={[
-            styles.buttonText,
-            buttonVariant === 'primary' && styles.buttonTextPrimary,
-            buttonVariant === 'pending' && styles.buttonTextPending,
-            buttonVariant === 'connected' && styles.buttonTextConnected,
-          ]}>
-            {buttonLabel}
-          </Text>
-        </Pressable>
+          onPress={() => router.push(`/player/${item.id}` as any)}
+        >
+          <View style={styles.avatarBox}>
+            {item.avatar_url ? (
+              <Image source={{ uri: item.avatar_url }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.placeholderContainer}>
+                <Text style={styles.avatarPlaceholder}>{(item.full_name ?? '?').slice(0, 2).toUpperCase()}</Text>
+              </View>
+            )}
+            {item.looking_for_partner && (
+              <View style={styles.lookingBadge}>
+                <Text style={styles.lookingBadgeText}>ACTIVE FINDER</Text>
+              </View>
+            )}
+          </View>
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.followBtn,
-            isFollowing && styles.followBtnActive,
-            pressed && !followPending && { scale: 0.96 } as any
-          ]}
-          disabled={followPending}
-          onPress={handleFollowPress}>
-          <Ionicons 
-            name={isFollowing ? "checkmark-circle" : "person-add"} 
-            size={11} 
-            color={isFollowing ? theme.primary : theme.textMuted} 
-            style={{ marginRight: 4 }} 
-          />
-          <Text style={[styles.followBtnText, isFollowing && styles.followBtnTextActive]}>
-            {isFollowing ? 'FOLLOWING' : 'FOLLOW'}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={styles.cardTitle} numberOfLines={1}>
+              {item.full_name ?? 'Player'}
+            </Text>
+            {item.is_pro && <ProBadge size="sm" />}
+            {item.coach_status === 'approved' && <CoachBadge size="sm" />}
+          </View>
+
+          <View style={styles.cardRow}>
+            <Text style={styles.levelBadge}>
+              {item.level ? LEVEL_LABELS[item.level].toUpperCase() : 'NO LEVEL'}
+            </Text>
+            <Text style={styles.elo}>{item.elo} <Text style={{ fontSize: 9, color: theme.textMuted }}>PS</Text></Text>
+          </View>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              buttonVariant === 'primary' && styles.buttonPrimary,
+              buttonVariant === 'pending' && styles.buttonPending,
+              buttonVariant === 'connected' && styles.buttonConnected,
+              pressed && !disabled && { scale: 0.96 } as any
+            ]}
+            disabled={disabled || sendRequest.isPending}
+            onPress={(e) => {
+              e.stopPropagation();
+              userId && sendRequest.mutate({ fromId: userId, toId: item.id });
+            }}>
+            <Text style={[
+              styles.buttonText,
+              buttonVariant === 'primary' && styles.buttonTextPrimary,
+              buttonVariant === 'pending' && styles.buttonTextPending,
+              buttonVariant === 'connected' && styles.buttonTextConnected,
+            ]}>
+              {buttonLabel}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.followBtn,
+              isFollowing && styles.followBtnActive,
+              pressed && !followPending && { scale: 0.96 } as any
+            ]}
+            disabled={followPending}
+            onPress={(e) => {
+              e.stopPropagation();
+              handleFollowPress();
+            }}>
+            <Ionicons 
+              name={isFollowing ? "checkmark-circle" : "person-add"} 
+              size={11} 
+              color={isFollowing ? theme.primary : theme.textMuted} 
+              style={{ marginRight: 4 }} 
+            />
+            <Text style={[styles.followBtnText, isFollowing && styles.followBtnTextActive]}>
+              {isFollowing ? 'FOLLOWING' : 'FOLLOW'}
+            </Text>
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </GlassCard>
     );
   }
 
@@ -300,7 +311,7 @@ export default function PartnersScreen() {
             renderItem={renderGridItem}
             numColumns={2}
             columnWrapperStyle={{ gap: 12 }}
-            contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingBottom: 80 }}
+            contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingBottom: 110 }}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
@@ -324,7 +335,7 @@ export default function PartnersScreen() {
               </Text>
             </View>
           ) : (
-            <View style={styles.slotConsole}>
+            <GlassCard style={styles.slotConsole} contentStyle={{ padding: 20, alignItems: 'stretch' }}>
               {/* VS Split Display */}
               <View style={styles.slotVisualRow}>
                 {/* Left Side: You */}
@@ -391,7 +402,7 @@ export default function PartnersScreen() {
                   CANDIDATES IN POOL: <Text style={{ color: theme.primary, fontWeight: '900' }}>{candidates.length}</Text>
                 </Text>
               </View>
-            </View>
+            </GlassCard>
           )}
 
           {/* Winner Reveal Modal Overlay */}
@@ -505,59 +516,65 @@ export default function PartnersScreen() {
             data={followedProfiles}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ gap: 10, paddingBottom: 80 }}
+            contentContainerStyle={{ gap: 10, paddingBottom: 110 }}
             renderItem={({ item }) => (
-              <Pressable 
-                style={styles.followedRow}
-                onPress={() => router.push(`/player/${item.id}` as any)}
-              >
-                <View style={styles.followedAvatarContainer}>
-                  {item.avatar_url ? (
-                    <Image source={{ uri: item.avatar_url }} style={styles.followedAvatar} />
-                  ) : (
-                    <View style={styles.followedAvatarPlaceholder}>
-                      <Text style={styles.followedAvatarText}>
-                        {(item.full_name ?? '?').slice(0, 2).toUpperCase()}
+              <GlassCard style={styles.followedRow} contentStyle={{ padding: 12, flexDirection: 'row', alignItems: 'center' }}>
+                <Pressable 
+                  style={({ pressed }) => [
+                    { flex: 1, flexDirection: 'row', alignItems: 'center' },
+                    pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }
+                  ]}
+                  onPress={() => router.push(`/player/${item.id}` as any)}
+                >
+                  <View style={styles.followedAvatarContainer}>
+                    {item.avatar_url ? (
+                      <Image source={{ uri: item.avatar_url }} style={styles.followedAvatar} />
+                    ) : (
+                      <View style={styles.followedAvatarPlaceholder}>
+                        <Text style={styles.followedAvatarText}>
+                          {(item.full_name ?? '?').slice(0, 2).toUpperCase()}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.followedInfo}>
+                    <Text style={styles.followedName} numberOfLines={1}>
+                      {item.full_name ?? 'Player'}
+                    </Text>
+                    <View style={styles.followedMetaRow}>
+                      <Text style={styles.followedLevel}>
+                        {item.level ? LEVEL_LABELS[item.level].toUpperCase() : 'NO LEVEL'}
+                      </Text>
+                      <Text style={styles.followedDivider}>•</Text>
+                      <Text style={styles.followedElo}>
+                        {item.elo} <Text style={{ fontSize: 8, color: theme.textMuted }}>PS</Text>
                       </Text>
                     </View>
-                  )}
-                </View>
-                <View style={styles.followedInfo}>
-                  <Text style={styles.followedName} numberOfLines={1}>
-                    {item.full_name ?? 'Player'}
-                  </Text>
-                  <View style={styles.followedMetaRow}>
-                    <Text style={styles.followedLevel}>
-                      {item.level ? LEVEL_LABELS[item.level].toUpperCase() : 'NO LEVEL'}
-                    </Text>
-                    <Text style={styles.followedDivider}>•</Text>
-                    <Text style={styles.followedElo}>
-                      {item.elo} <Text style={{ fontSize: 8, color: theme.textMuted }}>PS</Text>
-                    </Text>
                   </View>
-                </View>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.unfollowButton,
-                    pressed && { opacity: 0.8 }
-                  ]}
-                  onPress={() => {
-                    if (!userId) return;
-                    unfollowPlayer.mutate({ followerId: userId, followedId: item.id }, {
-                      onSuccess: () => {
-                        queryClient.invalidateQueries({ queryKey: ["followedProfiles"] });
-                      }
-                    });
-                  }}
-                >
-                  <Ionicons name="person-remove-outline" size={12} color={theme.danger} style={{ marginRight: 4 }} />
-                  <Text style={styles.unfollowButtonText}>UNFOLLOW</Text>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.unfollowButton,
+                      pressed && { opacity: 0.8 }
+                    ]}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      if (!userId) return;
+                      unfollowPlayer.mutate({ followerId: userId, followedId: item.id }, {
+                        onSuccess: () => {
+                          queryClient.invalidateQueries({ queryKey: ["followedProfiles"] });
+                        }
+                      });
+                    }}
+                  >
+                    <Ionicons name="person-remove-outline" size={12} color={theme.danger} style={{ marginRight: 4 }} />
+                    <Text style={styles.unfollowButtonText}>UNFOLLOW</Text>
+                  </Pressable>
                 </Pressable>
-              </Pressable>
+              </GlassCard>
             )}
           />
         ) : (
-          <View style={styles.emptyFollowedContainer}>
+          <GlassCard style={styles.emptyFollowedContainer} contentStyle={{ padding: 30, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="people-outline" size={48} color={theme.textMuted} style={{ marginBottom: 12 }} />
             <Text style={styles.emptyFollowedTitle}>YOU'RE NOT FOLLOWING ANYONE YET</Text>
             <Text style={styles.emptyFollowedDesc}>
@@ -572,7 +589,7 @@ export default function PartnersScreen() {
             >
               <Text style={styles.emptyFollowedBtnText}>DISCOVER PLAYERS</Text>
             </Pressable>
-          </View>
+          </GlassCard>
         )
       )}
     </View>
@@ -580,7 +597,7 @@ export default function PartnersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, backgroundColor: theme.background },
+  container: { flex: 1, padding: 24, backgroundColor: 'transparent' },
   headerContainer: { marginBottom: 16, marginTop: 12 },
   tagline: { fontSize: 10, fontWeight: '900', color: theme.primary, letterSpacing: 2, marginBottom: 4 },
   title: { fontSize: 28, fontWeight: '900', color: theme.text, letterSpacing: -0.5 },
@@ -588,12 +605,12 @@ const styles = StyleSheet.create({
   // Tab Selector styles
   tabSelector: {
     flexDirection: 'row',
-    backgroundColor: '#16171E',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
     padding: 4,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   tabButton: {
     flex: 1,
@@ -605,10 +622,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   tabButtonActive: {
-    backgroundColor: '#1E1E28',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
@@ -627,24 +644,20 @@ const styles = StyleSheet.create({
   card: { 
     flex: 1, 
     borderRadius: cardRadius, 
-    padding: 12, 
-    backgroundColor: theme.card,
-    borderWidth: 1,
-    borderColor: theme.border,
   },
   avatarBox: {
     aspectRatio: 1,
     borderRadius: 12,
-    backgroundColor: '#1E1E28',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   avatarImage: { width: '100%', height: '100%' },
-  placeholderContainer: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: '#13131A' },
+  placeholderContainer: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
   avatarPlaceholder: { color: theme.textMuted, fontSize: 20, fontWeight: '900', letterSpacing: 1 },
   lookingBadge: {
     position: 'absolute',
@@ -713,12 +726,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   slotConsole: {
-    backgroundColor: theme.card,
     borderRadius: cardRadius,
-    borderWidth: 1,
-    borderColor: theme.border,
-    padding: 20,
-    alignItems: 'stretch',
   },
   slotVisualRow: {
     flexDirection: 'row',
@@ -736,9 +744,9 @@ const styles = StyleSheet.create({
     height: 76,
     borderRadius: 38,
     borderWidth: 2,
-    borderColor: theme.border,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     padding: 3,
-    backgroundColor: '#16171E',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     marginBottom: 8,
   },
   avatarSide: {
@@ -750,7 +758,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 35,
-    backgroundColor: '#1E1E28',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -791,15 +799,15 @@ const styles = StyleSheet.create({
   vsLineSegment: {
     width: 1,
     flex: 1,
-    backgroundColor: theme.border,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   vsBadgeCircle: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: theme.background,
+    backgroundColor: '#08080C',
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 10,
@@ -820,7 +828,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: REEL_ITEM_HEIGHT,
     borderRadius: 12,
-    backgroundColor: '#12131A',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderWidth: 1.5,
     borderColor: theme.primary,
     overflow: 'hidden',
@@ -855,9 +863,9 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#12131A',
+    backgroundColor: 'transparent',
     borderBottomWidth: 1,
-    borderBottomColor: '#1E1E28',
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
   reelAvatar: {
     width: 44,
@@ -869,7 +877,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#1E1E28',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 6,
@@ -941,7 +949,7 @@ const styles = StyleSheet.create({
   winnerCard: {
     width: '100%',
     maxWidth: 300,
-    backgroundColor: '#15161F',
+    backgroundColor: 'rgba(21, 22, 31, 0.9)',
     borderRadius: cardRadius,
     borderWidth: 1.5,
     borderColor: '#FF5C00',
@@ -993,7 +1001,7 @@ const styles = StyleSheet.create({
     borderWidth: 2.5,
     borderColor: theme.primary,
     padding: 4,
-    backgroundColor: '#12131A',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     marginBottom: 12,
   },
   winnerAvatar: {
@@ -1005,7 +1013,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 36,
-    backgroundColor: '#1E1E28',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1101,11 +1109,7 @@ const styles = StyleSheet.create({
   followedRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.card,
     borderRadius: cardRadius,
-    borderWidth: 1,
-    borderColor: theme.border,
-    padding: 12,
   },
   followedAvatarContainer: {
     marginRight: 12,
@@ -1119,11 +1123,11 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#1E1E28',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   followedAvatarText: {
     color: theme.text,
@@ -1180,13 +1184,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   emptyFollowedContainer: {
-    backgroundColor: theme.card,
     borderRadius: cardRadius,
-    borderWidth: 1,
-    borderColor: theme.border,
-    padding: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginTop: 20,
   },
   emptyFollowedTitle: {

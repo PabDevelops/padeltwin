@@ -7,6 +7,7 @@ import { theme, cardRadius } from '@/constants/theme';
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
 import { BackHeader } from '@/components/BackHeader';
+import { GlassCard } from '@/components/GlassCard';
 
 export default function CountryLeagueScreen() {
   const { value } = useLocalSearchParams<{ value?: string }>();
@@ -23,7 +24,9 @@ export default function CountryLeagueScreen() {
       <View style={{ flex: 1, backgroundColor: theme.background }}>
         <BackHeader title="Country League" />
         <View style={styles.center}>
-          <Text style={styles.emptyText}>Add your country in your profile to see your national ranking.</Text>
+          <GlassCard style={{ padding: 24, alignSelf: 'center', width: '100%' }} contentStyle={{ alignItems: 'center' }}>
+            <Text style={styles.emptyText}>Add your country in your profile to see your national ranking.</Text>
+          </GlassCard>
         </View>
       </View>
     );
@@ -39,14 +42,14 @@ export default function CountryLeagueScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, gap: 8 }}>
+    <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, gap: 8, paddingBottom: 110 }}>
       <BackHeader title="Country League" />
       <Text style={styles.title}>{countryValue.toUpperCase()} LEAGUE</Text>
       <Text style={styles.subtitle}>
         Every pair in {countryValue} is here automatically — ranked by PS Score, grouped into divisions.
       </Text>
 
-      <View style={styles.leaderboardContainer}>
+      <GlassCard style={styles.leaderboardContainer} contentStyle={{ overflow: 'hidden' }}>
         {(pairs ?? []).length === 0 ? (
           <Text style={styles.emptyText}>No pairs from this country yet.</Text>
         ) : (
@@ -75,7 +78,7 @@ export default function CountryLeagueScreen() {
             );
           })
         )}
-      </View>
+      </GlassCard>
     </ScrollView>
   );
 }
@@ -86,10 +89,7 @@ const styles = StyleSheet.create({
   title: { color: theme.text, fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
   subtitle: { color: theme.textMuted, fontSize: 13, marginBottom: 8 },
   leaderboardContainer: {
-    backgroundColor: theme.card,
     borderRadius: cardRadius,
-    borderWidth: 1,
-    borderColor: theme.border,
     overflow: 'hidden',
   },
   divisionHeader: { backgroundColor: 'rgba(198, 255, 51, 0.1)', paddingHorizontal: 14, paddingVertical: 6 },
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: theme.border,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
   rowMe: { backgroundColor: 'rgba(198, 255, 51, 0.08)' },
   rankText: { width: 24, color: theme.textMuted, fontWeight: '800', fontSize: 13 },

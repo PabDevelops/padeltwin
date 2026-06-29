@@ -25,6 +25,9 @@ import { theme, cardRadius } from '@/constants/theme';
 import { ELO_PROVISIONAL_MATCHES } from '@/constants/elo';
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
+import { AuroraBackground } from '@/components/AuroraBackground';
+import { GlassCard } from '@/components/GlassCard';
+import { GlassButton } from '@/components/GlassButton';
 
 function didWin(result: MatchResultWithProfiles, userId: string) {
   const inTeamA = result.team_a_player1 === userId || result.team_a_player2 === userId;
@@ -267,31 +270,42 @@ export default function HomeScreen() {
   }
 
   return (
+    <AuroraBackground>
     <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.container}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.welcomeTag}>PADEL PERFORMANCE TRACKER</Text>
-        <Text style={styles.title}>HI{profile?.full_name ? `, ${profile.full_name.split(' ')[0].toUpperCase()}` : ''} 👋</Text>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greeting}>Hi,</Text>
+          <Text style={styles.userName}>{profile?.full_name ?? 'Player'}</Text>
+        </View>
+        <Pressable style={styles.profileBadge} onPress={() => router.push('/profile')}>
+          {profile?.avatar_url ? (
+            <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+              <Text style={styles.avatarPlaceholderText}>{(profile?.full_name ?? '?').slice(0, 1).toUpperCase()}</Text>
+            </View>
+          )}
+          <View style={styles.statusIndicator} />
+        </Pressable>
       </View>
 
       {/* Partner Requests Alert Notification */}
       {pendingRequestsCount > 0 && (
-        <Pressable 
-          style={({ pressed }) => [
-            styles.partnerAlertBanner,
-            pressed && { opacity: 0.95 }
-          ]}
-          onPress={() => router.push('/profile')}
-        >
-          <View style={styles.partnerAlertLeft}>
-            <Ionicons name="people" size={18} color={theme.secondary} />
-            <Text style={styles.partnerAlertText}>
-              ⚡ {pendingRequestsCount} PENDING PARTNER REQUEST{pendingRequestsCount > 1 ? 'S' : ''}
-            </Text>
-          </View>
-          <View style={styles.partnerAlertRight}>
-            <Text style={styles.partnerAlertActionText}>REVIEW</Text>
-            <Ionicons name="chevron-forward" size={14} color={theme.secondary} style={{ marginLeft: 2 }} />
-          </View>
+        <Pressable onPress={() => router.push('/profile')}>
+          {({ pressed }) => (
+            <GlassCard style={[styles.partnerAlertBanner, pressed && { opacity: 0.95 }]} contentStyle={styles.partnerAlertContent}>
+              <View style={styles.partnerAlertLeft}>
+                <Ionicons name="people" size={18} color={theme.secondary} />
+                <Text style={styles.partnerAlertText}>
+                  ⚡ {pendingRequestsCount} PENDING PARTNER REQUEST{pendingRequestsCount > 1 ? 'S' : ''}
+                </Text>
+              </View>
+              <View style={styles.partnerAlertRight}>
+                <Text style={styles.partnerAlertActionText}>REVIEW</Text>
+                <Ionicons name="chevron-forward" size={14} color={theme.secondary} style={{ marginLeft: 2 }} />
+              </View>
+            </GlassCard>
+          )}
         </Pressable>
       )}
 
@@ -299,60 +313,74 @@ export default function HomeScreen() {
       {upcomingLoading ? (
         <ActivityIndicator color={theme.primary} style={{ marginVertical: 10 }} />
       ) : nextMatch ? (
-        <Pressable
-          style={({ pressed }) => [
-            styles.nextMatchCard,
-            pressed && { opacity: 0.9 }
-          ]}
-          onPress={() => router.push(`/match/${nextMatch.id}`)}
-        >
-          <View style={styles.nextMatchHeader}>
-            <Text style={styles.nextMatchTag}>⚡ NEXT MATCH</Text>
-            <View style={[styles.gridBadge, { backgroundColor: 'rgba(255, 92, 0, 0.15)', marginTop: 0 }]}>
-              <Text style={[styles.gridBadgeText, { color: theme.primary }]}>CONFIRMED</Text>
-            </View>
-          </View>
-          <Text style={styles.nextMatchLocation}>{nextMatch.location}</Text>
-          <Text style={styles.nextMatchTime}>
-            📅 {new Date(nextMatch.date_time).toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short' }).toUpperCase()} • {new Date(nextMatch.date_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-          </Text>
-          <View style={styles.nextMatchFooter}>
-            <Text style={styles.nextMatchProbability}>
-              WIN PROBABILITY: <Text style={{ color: '#fff', fontWeight: '900' }}>{winProb}%</Text>
-            </Text>
-            <Text style={styles.nextMatchRosterText}>
-              PLAYERS: <Text style={{ color: '#fff', fontWeight: '900' }}>{(nextMatch.match_players?.length ?? 0)}/{(nextMatch.max_players ?? 4)} SIGNED UP</Text>
-            </Text>
-          </View>
+        <Pressable onPress={() => router.push(`/match/${nextMatch.id}`)}>
+          {({ pressed }) => (
+            <GlassCard style={[styles.nextMatchCard, pressed && { opacity: 0.9 }]}>
+              <View style={styles.nextMatchHeader}>
+                <Text style={styles.nextMatchTag}>⚡ NEXT MATCH</Text>
+                <View style={[styles.gridBadge, { backgroundColor: 'rgba(255, 92, 0, 0.15)', marginTop: 0 }]}>
+                  <Text style={[styles.gridBadgeText, { color: theme.primary }]}>CONFIRMED</Text>
+                </View>
+              </View>
+              <Text style={styles.nextMatchLocation}>{nextMatch.location}</Text>
+              <Text style={styles.nextMatchTime}>
+                📅 {new Date(nextMatch.date_time).toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short' }).toUpperCase()} • {new Date(nextMatch.date_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+              </Text>
+              <View style={styles.nextMatchFooter}>
+                <Text style={styles.nextMatchProbability}>
+                  WIN PROBABILITY: <Text style={{ color: '#fff', fontWeight: '900' }}>{winProb}%</Text>
+                </Text>
+                <Text style={styles.nextMatchRosterText}>
+                  PLAYERS: <Text style={{ color: '#fff', fontWeight: '900' }}>{(nextMatch.match_players?.length ?? 0)}/{(nextMatch.max_players ?? 4)} SIGNED UP</Text>
+                </Text>
+              </View>
+            </GlassCard>
+          )}
         </Pressable>
       ) : null}
 
-      {/* Main ELO Performance Widget */}
-      <View style={styles.eloPerformanceCard}>
-        <View style={styles.eloHeader}>
-          <Text style={styles.widgetTag}>CURRENT RANKING</Text>
-          <View style={styles.badgeOrange}>
-            <Text style={styles.badgeOrangeText}>PRO LEVEL</Text>
+      {/* PS Score Hero */}
+      <GlassCard style={styles.heroCard}>
+        <View style={styles.heroHeader}>
+          <View>
+            <Text style={styles.heroLabel}>PS SCORE (ELO)</Text>
+            <Text style={styles.eloScore}>{profile?.elo ?? 1200}</Text>
+          </View>
+          <View style={styles.rankBadge}>
+            <Ionicons name="trophy" size={16} color={theme.accent} />
+            <Text style={styles.rankBadgeText}>{isCalibrating ? 'NEW' : rankLabel}</Text>
           </View>
         </View>
-        <View style={styles.eloContent}>
-          <Text style={styles.eloHuge}>{profile?.elo ?? '1200'}</Text>
-          <Text style={styles.eloLabel}>PS SCORE</Text>
+
+        <View style={styles.divider} />
+
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Ionicons name="pulse-outline" size={18} color="rgba(255,255,255,0.5)" />
+            <Text style={styles.statVal}>{stats?.played ?? 0}</Text>
+            <Text style={styles.statLabel}>Matches</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Ionicons name="trending-up-outline" size={18} color="rgba(255,255,255,0.5)" />
+            <Text style={styles.statVal}>{stats?.winRate ?? 0}%</Text>
+            <Text style={styles.statLabel}>Win Rate</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Ionicons name="flash" size={18} color={theme.accent} />
+            <Text style={[styles.statVal, { color: theme.accent }]}>{streak > 0 ? `${streak}${streakType ?? 'W'}` : '—'}</Text>
+            <Text style={styles.statLabel}>Streak</Text>
+          </View>
         </View>
-        <View style={styles.chartSimulation}>
-          {/* Stylized telemetry bar chart representing ELO fluctuations */}
-          {chartBars.map((bar, index) => (
-            <Animated.View
-              key={index}
-              style={[styles.chartBar, { height: bar.height, backgroundColor: bar.color }]}
-            />
-          ))}
-        </View>
+      </GlassCard>
+
+      <View style={styles.actionContainer}>
+        <GlassButton title="FIND MATCH" variant="primary" onPress={() => router.push('/')} style={styles.actionBtn} />
+        <GlassButton title="CHALLENGE" variant="secondary" onPress={() => router.push('/create-match')} style={styles.actionBtn} />
       </View>
 
       {/* Stats Detail Grid */}
       <View style={styles.statsGrid}>
-        <View style={styles.gridCard}>
+        <GlassCard style={styles.gridCard} contentStyle={styles.gridCardContent}>
           <Text style={styles.gridCardLabel}>TOTAL MATCHES</Text>
           {statsLoading ? (
             <ActivityIndicator color={theme.primary} />
@@ -362,9 +390,9 @@ export default function HomeScreen() {
           <View style={[styles.gridBadge, { backgroundColor: matchesBadgeColor }]}>
             <Text style={[styles.gridBadgeText, { color: matchesBadgeTextColor }]}>{matchesBadgeText}</Text>
           </View>
-        </View>
+        </GlassCard>
 
-        <View style={styles.gridCard}>
+        <GlassCard style={styles.gridCard} contentStyle={styles.gridCardContent}>
           <Text style={styles.gridCardLabel}>WINNING RATE</Text>
           {statsLoading ? (
             <ActivityIndicator color={theme.primary} />
@@ -374,40 +402,40 @@ export default function HomeScreen() {
           <View style={[styles.gridBadge, { backgroundColor: winRateBadgeColor }]}>
             <Text style={[styles.gridBadgeText, { color: winRateBadgeTextColor }]}>{winRateBadgeText}</Text>
           </View>
-        </View>
+        </GlassCard>
       </View>
 
       {/* Performance Insights - Stats Grid Row 2 */}
       <View style={[styles.statsGrid, { marginTop: -4 }]}>
-        <View style={styles.gridCard}>
+        <GlassCard style={styles.gridCard} contentStyle={styles.gridCardContent}>
           <Text style={styles.gridCardLabel}>CURRENT STREAK</Text>
           {resultsLoading ? (
             <ActivityIndicator color={theme.primary} />
           ) : (
             <Text style={styles.gridCardValue}>{streak}{streakType ?? 'W'}</Text>
           )}
-          <View 
+          <View
             style={[
-              styles.gridBadge, 
-              { 
-                backgroundColor: streakType === 'W' ? 'rgba(0, 230, 118, 0.1)' : 'rgba(255, 59, 48, 0.1)' 
+              styles.gridBadge,
+              {
+                backgroundColor: streakType === 'W' ? 'rgba(0, 230, 118, 0.1)' : 'rgba(255, 59, 48, 0.1)'
               }
             ]}
           >
-            <Text 
+            <Text
               style={[
-                styles.gridBadgeText, 
-                { 
-                  color: streakType === 'W' ? theme.success : theme.danger 
+                styles.gridBadgeText,
+                {
+                  color: streakType === 'W' ? theme.success : theme.danger
                 }
               ]}
             >
               {streakType === 'W' ? '📈 WINNING STREAK' : '📉 ADJUSTING'}
             </Text>
           </View>
-        </View>
+        </GlassCard>
 
-        <View style={styles.gridCard}>
+        <GlassCard style={styles.gridCard} contentStyle={styles.gridCardContent}>
           <Text style={styles.gridCardLabel}>ZONE PERCENTILE</Text>
           {leaderboardLoading ? (
             <ActivityIndicator color={theme.primary} />
@@ -417,7 +445,7 @@ export default function HomeScreen() {
           <View style={[styles.gridBadge, { backgroundColor: percentileBadgeColor }]}>
             <Text style={[styles.gridBadgeText, { color: percentileBadgeTextColor }]}>{percentileBadgeText}</Text>
           </View>
-        </View>
+        </GlassCard>
       </View>
 
       <View style={styles.leaguesSectionHeader}>
@@ -428,27 +456,35 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.leagueTilesRow}>
-        <Pressable style={({ pressed }) => [styles.leagueTile, pressed && { opacity: 0.9 }]} onPress={() => router.push('/leagues' as any)}>
-          <View style={styles.leagueTileRankBadge}>
-            <MaterialCommunityIcons name="podium" size={18} color={theme.accent} />
-          </View>
-          <Text style={styles.leagueTileTitle}>LEAGUE</Text>
-          <Text style={styles.leagueTileSub} numberOfLines={1}>
-            Ranked by pair
-          </Text>
+        <Pressable style={{ flex: 1 }} onPress={() => router.push('/leagues' as any)}>
+          {({ pressed }) => (
+            <GlassCard style={[styles.leagueTile, pressed && { opacity: 0.9 }]} contentStyle={styles.leagueTileContent}>
+              <View style={styles.leagueTileRankBadge}>
+                <MaterialCommunityIcons name="podium" size={18} color={theme.accent} />
+              </View>
+              <Text style={styles.leagueTileTitle}>LEAGUE</Text>
+              <Text style={styles.leagueTileSub} numberOfLines={1}>
+                Ranked by pair
+              </Text>
+            </GlassCard>
+          )}
         </Pressable>
 
-        <Pressable style={({ pressed }) => [styles.leagueTile, pressed && { opacity: 0.9 }]} onPress={() => router.push('/club-leaderboard' as any)}>
-          <View style={styles.kopTileHeader}>
-            <MaterialCommunityIcons name="crown" size={26} color="#FFD700" />
-            <View style={styles.proTag}>
-              <Text style={styles.proTagText}>PRO</Text>
-            </View>
-          </View>
-          <Text style={styles.leagueTileTitle}>KOP</Text>
-          <Text style={styles.leagueTileSub} numberOfLines={1}>
-            {kopStatus ? `${kopStatus.crownedClubs.length} crown${kopStatus.crownedClubs.length === 1 ? '' : 's'} held` : 'No crowns yet'}
-          </Text>
+        <Pressable style={{ flex: 1 }} onPress={() => router.push('/club-leaderboard' as any)}>
+          {({ pressed }) => (
+            <GlassCard style={[styles.leagueTile, pressed && { opacity: 0.9 }]} contentStyle={styles.leagueTileContent}>
+              <View style={styles.kopTileHeader}>
+                <MaterialCommunityIcons name="crown" size={26} color="#FFD700" />
+                <View style={styles.proTag}>
+                  <Text style={styles.proTagText}>PRO</Text>
+                </View>
+              </View>
+              <Text style={styles.leagueTileTitle}>KOP</Text>
+              <Text style={styles.leagueTileSub} numberOfLines={1}>
+                {kopStatus ? `${kopStatus.crownedClubs.length} crown${kopStatus.crownedClubs.length === 1 ? '' : 's'} held` : 'No crowns yet'}
+              </Text>
+            </GlassCard>
+          )}
         </Pressable>
       </View>
 
@@ -459,7 +495,7 @@ export default function HomeScreen() {
         recentResults.slice(0, 5).map((r) => {
           const win = didWin(r, userId!);
           return (
-            <View key={r.id} style={styles.resultCard}>
+            <GlassCard key={r.id} style={styles.resultCard} contentStyle={{ padding: 16 }}>
               <View style={styles.resultRow}>
                 <View style={styles.opponentWrapper}>
                   <Text style={styles.vsTag}>VS</Text>
@@ -483,7 +519,7 @@ export default function HomeScreen() {
                 </View>
                 <Text style={styles.matchTypeTag}>DOUBLES MATCH</Text>
               </View>
-            </View>
+            </GlassCard>
           );
         })
       ) : (
@@ -494,7 +530,7 @@ export default function HomeScreen() {
       {feedLoading ? (
         <ActivityIndicator color={theme.primary} style={{ marginTop: 12 }} />
       ) : activityFeed && activityFeed.length > 0 ? (
-        <View style={styles.feedContainer}>
+        <GlassCard style={styles.feedContainer} contentStyle={{ paddingVertical: 4 }}>
           {activityFeed.map((item) => {
             let iconName: string;
             let avatarProfile: Profile | null | undefined;
@@ -556,7 +592,7 @@ export default function HomeScreen() {
               </View>
             );
           })}
-        </View>
+        </GlassCard>
       ) : suggestedFollows.length > 0 ? (
         <View style={{ marginBottom: 20 }}>
           <Text style={styles.emptyFeedSubtitle}>
@@ -564,7 +600,7 @@ export default function HomeScreen() {
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestedScroll}>
             {suggestedFollows.map((p) => (
-              <View key={p.id} style={styles.suggestedCard}>
+              <GlassCard key={p.id} style={styles.suggestedCard} contentStyle={{ padding: 10, alignItems: 'center' }}>
                 <Pressable onPress={() => router.push(`/player/${p.id}` as any)}>
                   {p.avatar_url ? (
                     <Image source={{ uri: p.avatar_url }} style={styles.suggestedAvatarImg} />
@@ -582,12 +618,12 @@ export default function HomeScreen() {
                 >
                   <Text style={styles.suggestedFollowButtonText}>FOLLOW</Text>
                 </Pressable>
-              </View>
+              </GlassCard>
             ))}
           </ScrollView>
         </View>
       ) : (
-        <View style={styles.emptyFeedContainer}>
+        <GlassCard style={styles.emptyFeedContainer} contentStyle={{ padding: 20, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="people-outline" size={32} color={theme.textMuted} style={{ marginBottom: 8 }} />
           <Text style={styles.emptyFeedTitle}>FOLLOW OTHER PLAYERS</Text>
           <Text style={styles.emptyFeedSubtitle}>
@@ -602,13 +638,13 @@ export default function HomeScreen() {
           >
             <Text style={styles.emptyFeedButtonText}>FIND PLAYERS</Text>
           </Pressable>
-        </View>
+        </GlassCard>
       )}
 
       {followedLeaderboard && followedLeaderboard.length > 1 && (
         <>
           <Text style={styles.sectionTitle}>RANKING AMONG FRIENDS</Text>
-          <View style={styles.leaderboardContainer}>
+          <GlassCard style={styles.leaderboardContainer} contentStyle={{ padding: 0 }}>
             {followedLeaderboard.map((p, index) => {
               const rank = index + 1;
               const isMe = p.id === userId;
@@ -634,7 +670,7 @@ export default function HomeScreen() {
                 </View>
               );
             })}
-          </View>
+          </GlassCard>
         </>
       )}
 
@@ -642,37 +678,31 @@ export default function HomeScreen() {
         <Text style={[styles.sectionTitle, { marginBottom: 0, fontSize: 18 }]}>LEARNING</Text>
       </View>
 
-      <Pressable
-        style={({ pressed }) => [styles.coachBanner, pressed && { opacity: 0.9 }]}
-        onPress={() => router.push('/coaches' as any)}
-      >
-        <View style={styles.coachBannerIcon}>
-          <Ionicons name="school" size={20} color={theme.accent} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.coachBannerTitle}>FIND A PADEL COACH</Text>
-          <Text style={styles.coachBannerSubtitle}>Book a lesson with a coach near you</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+      <Pressable onPress={() => router.push('/coaches' as any)}>
+        {({ pressed }) => (
+          <GlassCard style={[styles.coachBanner, pressed && { opacity: 0.9 }]} contentStyle={styles.coachBannerContent}>
+            <View style={styles.coachBannerIcon}>
+              <Ionicons name="school" size={20} color={theme.accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.coachBannerTitle}>FIND A PADEL COACH</Text>
+              <Text style={styles.coachBannerSubtitle}>Book a lesson with a coach near you</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+          </GlassCard>
+        )}
       </Pressable>
 
     </ScrollView>
+    </AuroraBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: { flex: 1, backgroundColor: theme.background },
+  scrollContainer: { flex: 1 },
   leagueTilesRow: { flexDirection: 'row', gap: 12 },
-  leagueTile: {
-    flex: 1,
-    backgroundColor: theme.card,
-    borderRadius: cardRadius,
-    borderWidth: 1,
-    borderColor: theme.border,
-    padding: 16,
-    gap: 8,
-    minHeight: 110,
-  },
+  leagueTile: { minHeight: 110 },
+  leagueTileContent: { padding: 16, gap: 8 },
   leagueTileRankBadge: {
     width: 36,
     height: 36,
@@ -687,38 +717,51 @@ const styles = StyleSheet.create({
   proTagText: { color: '#FFD700', fontWeight: '900', fontSize: 9, letterSpacing: 0.5 },
   leagueTileTitle: { fontFamily: 'Anton_400Regular', color: theme.text, fontSize: 18, marginTop: 4 },
   leagueTileSub: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
-  container: { padding: 20, gap: 16, paddingBottom: 32 },
-  headerContainer: { marginBottom: 4, marginTop: 12 },
-  welcomeTag: { fontSize: 10, fontWeight: '900', color: theme.primary, letterSpacing: 2, marginBottom: 4 },
-  title: { fontFamily: 'Coubra', fontSize: 28, fontWeight: '900', color: theme.text, letterSpacing: -0.5 },
-  eloPerformanceCard: {
-    backgroundColor: theme.card,
-    borderRadius: cardRadius,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: theme.border,
-    position: 'relative',
-    overflow: 'hidden',
+  container: { padding: 20, gap: 16, paddingBottom: 110 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, marginBottom: 4 },
+  greeting: { fontSize: 14, color: 'rgba(255,255,255,0.5)', fontWeight: '500' },
+  userName: { fontFamily: 'Coubra', fontSize: 22, fontWeight: '900', color: theme.text },
+  profileBadge: { position: 'relative' },
+  avatar: { width: 46, height: 46, borderRadius: 23, borderWidth: 1.5, borderColor: theme.accent },
+  avatarPlaceholder: { backgroundColor: theme.card, alignItems: 'center', justifyContent: 'center' },
+  avatarPlaceholderText: { color: theme.text, fontWeight: '900', fontSize: 16 },
+  statusIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    right: 2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: theme.accent,
+    borderWidth: 2,
+    borderColor: theme.background,
   },
-  eloHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  widgetTag: { fontSize: 10, fontWeight: '800', color: theme.textMuted, letterSpacing: 1 },
-  badgeOrange: { backgroundColor: 'rgba(255, 92, 0, 0.15)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  badgeOrangeText: { color: theme.primary, fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
-  eloContent: { marginTop: 14, marginBottom: 8 },
-  eloHuge: { fontSize: 44, fontWeight: '900', color: theme.text, letterSpacing: -1 },
-  eloLabel: { fontSize: 9, fontWeight: '800', color: theme.textMuted, letterSpacing: 1, marginTop: 2 },
-  chartSimulation: { flexDirection: 'row', alignItems: 'flex-end', gap: 6, height: 60, marginTop: 10, alignSelf: 'stretch', opacity: 0.8 },
-  chartBar: { flex: 1, backgroundColor: '#22242E', borderRadius: 3, minHeight: 4 },
+  heroCard: { position: 'relative' },
+  heroHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  heroLabel: { fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: '600', letterSpacing: 1 },
+  eloScore: { fontSize: 42, fontWeight: '900', color: theme.text, marginTop: 2, letterSpacing: -1 },
+  rankBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(198, 255, 51, 0.15)',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(198, 255, 51, 0.25)',
+  },
+  rankBadgeText: { color: theme.accent, fontSize: 12, fontWeight: '800' },
+  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 18 },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
+  statItem: { alignItems: 'center' },
+  statVal: { fontSize: 18, fontWeight: 'bold', color: theme.text, marginTop: 4 },
+  statLabel: { fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 2, fontWeight: '500' },
+  actionContainer: { flexDirection: 'row', gap: 12 },
+  actionBtn: { flex: 1 },
   statsGrid: { flexDirection: 'row', gap: 12 },
-  gridCard: {
-    flex: 1,
-    backgroundColor: theme.card,
-    borderRadius: cardRadius,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: theme.border,
-    alignItems: 'flex-start',
-  },
+  gridCard: { flex: 1 },
+  gridCardContent: { padding: 16, alignItems: 'flex-start' },
   gridCardLabel: { fontSize: 9, fontWeight: '900', color: theme.textMuted, letterSpacing: 1, marginBottom: 8 },
   gridCardValue: { fontSize: 24, fontWeight: '900', color: theme.text, letterSpacing: -0.5 },
   gridBadge: { marginTop: 8, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
@@ -746,17 +789,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   leagueCardName: { flex: 1, color: theme.text, fontWeight: '800', fontSize: 13, letterSpacing: 0.2 },
-  coachBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: theme.card,
-    borderRadius: cardRadius,
-    borderWidth: 1,
-    borderColor: theme.border,
-    padding: 14,
-    marginTop: 16,
-  },
+  coachBanner: { marginTop: 16 },
+  coachBannerContent: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
   coachBannerIcon: {
     width: 38,
     height: 38,
@@ -768,11 +802,7 @@ const styles = StyleSheet.create({
   coachBannerTitle: { color: theme.text, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
   coachBannerSubtitle: { color: theme.textMuted, fontSize: 11, marginTop: 2 },
   resultCard: { 
-    backgroundColor: theme.card, 
     borderRadius: cardRadius, 
-    padding: 16, 
-    borderWidth: 1, 
-    borderColor: theme.border 
   },
   resultRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   opponentWrapper: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 12 },
@@ -793,10 +823,7 @@ const styles = StyleSheet.create({
   matchTypeTag: { fontSize: 9, fontWeight: '900', color: theme.textMuted, letterSpacing: 0.5 },
   empty: { color: theme.textMuted, textAlign: 'center', marginTop: 8, fontSize: 13 },
   leaderboardContainer: {
-    backgroundColor: theme.card,
     borderRadius: cardRadius,
-    borderWidth: 1,
-    borderColor: theme.border,
     overflow: 'hidden',
   },
   leaderboardRow: {
@@ -813,13 +840,8 @@ const styles = StyleSheet.create({
   avatarLetter: { fontSize: 11, fontWeight: '900', color: theme.text },
   leaderboardName: { flex: 1, color: theme.text, fontWeight: '800', fontSize: 13, letterSpacing: 0.2 },
   leaderboardElo: { color: theme.text, fontWeight: '900', fontSize: 13 },
-  nextMatchCard: { 
-    backgroundColor: theme.card, 
-    borderRadius: cardRadius, 
-    padding: 16, 
-    borderWidth: 1, 
-    borderColor: theme.border, 
-    borderLeftWidth: 4, 
+  nextMatchCard: {
+    borderLeftWidth: 4,
     borderLeftColor: theme.primary,
     marginBottom: 4,
   },
@@ -884,17 +906,13 @@ const styles = StyleSheet.create({
     color: theme.primary,
     letterSpacing: 1.2,
   },
-  partnerAlertBanner: {
+  partnerAlertBanner: { borderColor: 'rgba(46, 157, 255, 0.25)', marginBottom: 16 },
+  partnerAlertContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(46, 157, 255, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(46, 157, 255, 0.25)',
-    borderRadius: cardRadius,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    marginBottom: 16,
   },
   partnerAlertLeft: {
     flexDirection: 'row',
@@ -919,11 +937,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   feedContainer: {
-    backgroundColor: theme.card,
     borderRadius: cardRadius,
-    borderWidth: 1,
-    borderColor: theme.border,
-    paddingVertical: 4,
     marginBottom: 20,
   },
   feedRow: {
@@ -1016,12 +1030,7 @@ const styles = StyleSheet.create({
   },
   suggestedCard: {
     width: 96,
-    backgroundColor: theme.card,
     borderRadius: cardRadius,
-    borderWidth: 1,
-    borderColor: theme.border,
-    padding: 10,
-    alignItems: 'center',
   },
   suggestedAvatarImg: {
     width: 40,
@@ -1080,13 +1089,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emptyFeedContainer: {
-    backgroundColor: theme.card,
     borderRadius: cardRadius,
-    borderWidth: 1,
-    borderColor: theme.border,
-    padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 20,
   },
   emptyFeedTitle: {
