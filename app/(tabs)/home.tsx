@@ -220,7 +220,7 @@ export default function HomeScreen() {
             <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
           ) : (
             <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <Text style={styles.avatarPlaceholderText}>{(profile?.full_name ?? '?').slice(0, 1).toUpperCase()}</Text>
+              <Image source={require('@/assets/images/icon.png')} style={styles.avatarPlaceholderLogo} resizeMode="contain" />
             </View>
           )}
           <View style={styles.statusIndicator} />
@@ -465,7 +465,7 @@ export default function HomeScreen() {
                     <Image source={{ uri: avatarProfile.avatar_url }} style={styles.feedAvatarImg} />
                   ) : (
                     <View style={styles.feedAvatarPlaceholder}>
-                      <Text style={styles.feedAvatarText}>{playerName.slice(0, 1).toUpperCase()}</Text>
+                      <Image source={require('@/assets/images/icon.png')} style={styles.feedAvatarPlaceholderLogo} resizeMode="contain" />
                     </View>
                   )}
                 </View>
@@ -506,7 +506,7 @@ export default function HomeScreen() {
                     <Image source={{ uri: p.avatar_url }} style={styles.suggestedAvatarImg} />
                   ) : (
                     <View style={styles.suggestedAvatarPlaceholder}>
-                      <Text style={styles.feedAvatarText}>{(p.full_name ?? '?').slice(0, 1).toUpperCase()}</Text>
+                      <Image source={require('@/assets/images/icon.png')} style={styles.suggestedAvatarPlaceholderLogo} resizeMode="contain" />
                     </View>
                   )}
                 </Pressable>
@@ -559,7 +559,7 @@ export default function HomeScreen() {
                 >
                   <Text style={[styles.rankText, rank <= 3 && styles.rankTextTop]}>{rank < 10 ? `0${rank}` : rank}</Text>
                   <View style={styles.playerAvatarPlaceholder}>
-                    <Text style={styles.avatarLetter}>{(p.full_name ?? '?').slice(0, 1).toUpperCase()}</Text>
+                    <Image source={require('@/assets/images/icon.png')} style={styles.avatarLetterLogo} resizeMode="contain" />
                   </View>
                   <Text style={styles.leaderboardName} numberOfLines={1}>
                     {isMe ? 'YOU' : (p.full_name ?? 'Player').toUpperCase()}
@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
   profileBadge: { position: 'relative' },
   avatar: { width: 46, height: 46, borderRadius: 23, borderWidth: 1.5, borderColor: theme.accent },
   avatarPlaceholder: { backgroundColor: theme.card, alignItems: 'center', justifyContent: 'center' },
-  avatarPlaceholderText: { color: theme.text, fontWeight: '900', fontSize: 16 },
+  avatarPlaceholderLogo: { width: 24, height: 24, opacity: 0.6 },
   statusIndicator: {
     position: 'absolute',
     bottom: 0,
@@ -739,7 +739,7 @@ const styles = StyleSheet.create({
   rankText: { fontSize: 13, fontWeight: '900', color: theme.textMuted, width: 24, marginRight: 8 },
   rankTextTop: { color: theme.primary },
   playerAvatarPlaceholder: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#22242E', alignItems: 'center', justifyContent: 'center', marginRight: 12, borderWidth: 1, borderColor: theme.border },
-  avatarLetter: { fontSize: 11, fontWeight: '900', color: theme.text },
+  avatarLetterLogo: { width: 16, height: 16, opacity: 0.5 },
   leaderboardName: { flex: 1, color: theme.text,  fontSize: 13, letterSpacing: 0.2 , textTransform: 'uppercase'},
   leaderboardElo: { color: theme.text, fontWeight: '900', fontSize: 13 },
   nextMatchCard: {
@@ -867,11 +867,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.border,
   },
-  feedAvatarText: {
-    color: theme.text,
-    fontSize: 12,
-    fontWeight: '900',
-  },
+  feedAvatarPlaceholderLogo: { width: 18, height: 18, opacity: 0.5 },
+  suggestedAvatarPlaceholderLogo: { width: 18, height: 18, opacity: 0.5 },
   feedInfo: {
     flex: 1,
     marginRight: 8,

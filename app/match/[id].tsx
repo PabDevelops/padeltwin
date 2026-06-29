@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
@@ -186,7 +186,11 @@ export default function MatchDetailScreen() {
           players.map((item, index) => (
             <View key={item.player_id} style={[styles.playerRow, index === players.length - 1 && { borderBottomWidth: 0 }]}>
               <View style={styles.playerAvatar}>
-                <Text style={styles.avatarText}>{(item.profiles?.full_name ?? '?').slice(0, 2).toUpperCase()}</Text>
+                {item.profiles?.avatar_url ? (
+                  <Image source={{ uri: item.profiles.avatar_url }} style={styles.avatarImage} />
+                ) : (
+                  <Image source={require('@/assets/images/icon.png')} style={styles.playerAvatarLogo} resizeMode="contain" />
+                )}
               </View>
               <View style={styles.playerInfo}>
                 <Text style={styles.playerName}>{item.profiles?.full_name ?? 'Player'}</Text>
@@ -473,7 +477,8 @@ const styles = StyleSheet.create({
   sectionHeader: { fontSize: 10,  color: theme.primary, letterSpacing: 1.5, marginBottom: 14, borderBottomWidth: 1, borderBottomColor: theme.border, paddingBottom: 6, textTransform: 'uppercase'},
   playerRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: theme.border },
   playerAvatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#22242E', alignItems: 'center', marginRight: 12, borderWidth: 1, borderColor: theme.border, justifyContent: 'center' },
-  avatarText: { fontSize: 10, color: theme.textMuted, fontWeight: '900' },
+  avatarImage: { width: '100%', height: '100%', borderRadius: 15 },
+  playerAvatarLogo: { width: 14, height: 14, opacity: 0.5 },
   playerInfo: { flex: 1 },
   playerName: { fontSize: 13,  color: theme.text, textTransform: 'uppercase', letterSpacing: 0.2},
   playerSub: { fontSize: 9, color: theme.textMuted, fontWeight: '900', marginTop: 2, letterSpacing: 0.5 },

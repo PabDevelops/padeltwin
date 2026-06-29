@@ -160,7 +160,7 @@ export default function PartnersScreen() {
               <Image source={{ uri: item.avatar_url }} style={styles.avatarImage} />
             ) : (
               <View style={styles.placeholderContainer}>
-                <Text style={styles.avatarPlaceholder}>{(item.full_name ?? '?').slice(0, 2).toUpperCase()}</Text>
+                <Image source={require('@/assets/images/icon.png')} style={styles.avatarPlaceholderLogo} resizeMode="contain" />
               </View>
             )}
             {item.looking_for_partner && (
@@ -254,7 +254,7 @@ export default function PartnersScreen() {
           <Image source={{ uri: item.avatar_url }} style={styles.reelAvatar} />
         ) : (
           <View style={styles.placeholderReelAvatar}>
-            <Text style={styles.reelAvatarText}>{(item.full_name ?? '?').slice(0, 2).toUpperCase()}</Text>
+            <Image source={require('@/assets/images/icon.png')} style={styles.reelAvatarLogo} resizeMode="contain" />
           </View>
         )}
         <Text style={styles.reelPlayerName} numberOfLines={1}>
@@ -345,9 +345,7 @@ export default function PartnersScreen() {
                       <Image source={{ uri: profile.avatar_url }} style={styles.avatarSide} />
                     ) : (
                       <View style={styles.avatarSidePlaceholder}>
-                        <Text style={styles.avatarSidePlaceholderText}>
-                          {(profile?.full_name ?? 'ME').slice(0, 2).toUpperCase()}
-                        </Text>
+                        <Image source={require('@/assets/images/icon.png')} style={styles.avatarSidePlaceholderLogo} resizeMode="contain" />
                       </View>
                     )}
                   </View>
@@ -428,9 +426,7 @@ export default function PartnersScreen() {
                       <Image source={{ uri: winner.avatar_url }} style={styles.winnerAvatar} />
                     ) : (
                       <View style={styles.winnerAvatarPlaceholder}>
-                        <Text style={styles.winnerAvatarPlaceholderText}>
-                          {(winner?.full_name ?? '?').slice(0, 2).toUpperCase()}
-                        </Text>
+                        <Image source={require('@/assets/images/icon.png')} style={styles.winnerAvatarPlaceholderLogo} resizeMode="contain" />
                       </View>
                     )}
                   </View>
@@ -531,9 +527,7 @@ export default function PartnersScreen() {
                       <Image source={{ uri: item.avatar_url }} style={styles.followedAvatar} />
                     ) : (
                       <View style={styles.followedAvatarPlaceholder}>
-                        <Text style={styles.followedAvatarText}>
-                          {(item.full_name ?? '?').slice(0, 2).toUpperCase()}
-                        </Text>
+                        <Image source={require('@/assets/images/icon.png')} style={styles.followedAvatarPlaceholderLogo} resizeMode="contain" />
                       </View>
                     )}
                   </View>
@@ -658,7 +652,7 @@ const styles = StyleSheet.create({
   },
   avatarImage: { width: '100%', height: '100%' },
   placeholderContainer: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
-  avatarPlaceholder: { color: theme.textMuted, fontSize: 20, fontWeight: '900', letterSpacing: 1 },
+  avatarPlaceholderLogo: { width: 40, height: 40, opacity: 0.5 },
   lookingBadge: {
     position: 'absolute',
     bottom: 0,
@@ -762,11 +756,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarSidePlaceholderText: {
-    color: theme.text,
-    fontSize: 18,
-    fontWeight: '900',
-  },
+  avatarSidePlaceholderLogo: { width: 36, height: 36, opacity: 0.6 },
   sidePlayerName: {
     fontSize: 11,
     
@@ -882,11 +872,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 6,
   },
-  reelAvatarText: {
-    color: theme.textMuted,
-    fontSize: 14,
-    fontWeight: '900',
-  },
+  reelAvatarLogo: { width: 24, height: 24, opacity: 0.5 },
   reelPlayerName: {
     fontSize: 10,
     
@@ -1017,11 +1003,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  winnerAvatarPlaceholderText: {
-    color: theme.text,
-    fontSize: 22,
-    fontWeight: '900',
-  },
+  winnerAvatarPlaceholderLogo: { width: 40, height: 40, opacity: 0.6 },
   winnerName: {
     fontSize: 15,
     
@@ -1129,11 +1111,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
-  followedAvatarText: {
-    color: theme.text,
-    fontSize: 14,
-    fontWeight: '900',
-  },
+  followedAvatarPlaceholderLogo: { width: 24, height: 24, opacity: 0.5 },
   followedInfo: {
     flex: 1,
     marginRight: 8,

@@ -31,7 +31,7 @@ export default function CoachesScreen() {
               <Image source={{ uri: coach.avatar_url }} style={styles.avatar} />
             ) : (
               <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarPlaceholderText}>{(coach.full_name ?? '?').slice(0, 1).toUpperCase()}</Text>
+                <Image source={require('@/assets/images/icon.png')} style={styles.avatarPlaceholderLogo} resizeMode="contain" />
               </View>
             )}
             <View style={{ flex: 1 }}>
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarPlaceholderText: { color: theme.textMuted, fontWeight: '800', fontSize: 16 },
+  avatarPlaceholderLogo: { width: 22, height: 22, opacity: 0.5 },
   coachName: { color: theme.text,  fontSize: 15 , textTransform: 'uppercase'},
   coachMeta: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
   featuredBadge: { backgroundColor: 'rgba(255, 92, 0, 0.15)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },

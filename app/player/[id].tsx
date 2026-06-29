@@ -248,7 +248,7 @@ export default function PlayerProfileScreen() {
             </ImageBackground>
           ) : (
             <View style={styles.bannerPlaceholder}>
-              <Text style={styles.bannerPlaceholderText}>{initials}</Text>
+              <Image source={require('@/assets/images/icon.png')} style={styles.bannerPlaceholderLogo} resizeMode="contain" />
               <View style={styles.bannerOverlay} />
             </View>
           )}
@@ -448,9 +448,7 @@ export default function PlayerProfileScreen() {
                       <Image source={{ uri: opponentAvatar }} style={styles.smallAvatar} />
                     ) : (
                       <View style={styles.smallAvatarPlaceholder}>
-                        <Text style={styles.smallAvatarPlaceholderText}>
-                          {opponentName.slice(0, 1).toUpperCase()}
-                        </Text>
+                        <Image source={require('@/assets/images/icon.png')} style={styles.smallAvatarPlaceholderLogo} resizeMode="contain" />
                       </View>
                     )}
                     
@@ -531,12 +529,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
   },
-  bannerPlaceholderText: {
-    fontSize: 72,
-    fontWeight: '900',
-    color: 'rgba(255, 255, 255, 0.15)',
-    letterSpacing: 2,
-  },
+  bannerPlaceholderLogo: { width: 100, height: 100, opacity: 0.2 },
   bannerOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.35)',
@@ -755,11 +748,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.border,
   },
-  smallAvatarPlaceholderText: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: theme.textMuted,
-  },
+  smallAvatarPlaceholderLogo: { width: 18, height: 18, opacity: 0.5 },
   cardInfoCol: {
     flex: 1,
   },

@@ -220,7 +220,7 @@ export default function ProfileScreen() {
             <Image source={{ uri: profile.avatar_url }} style={styles.avatarCircle} />
           ) : (
             <View style={styles.avatarCirclePlaceholder}>
-              <Text style={styles.avatarCirclePlaceholderText}>{initials}</Text>
+              <Image source={require('@/assets/images/icon.png')} style={styles.avatarCirclePlaceholderLogo} resizeMode="contain" />
             </View>
           )}
 
@@ -348,9 +348,7 @@ export default function ProfileScreen() {
                       <Image source={{ uri: opponentAvatar }} style={styles.smallAvatar} />
                     ) : (
                       <View style={styles.smallAvatarPlaceholder}>
-                        <Text style={styles.smallAvatarPlaceholderText}>
-                          {opponentName.slice(0, 1).toUpperCase()}
-                        </Text>
+                        <Image source={require('@/assets/images/icon.png')} style={styles.smallAvatarPlaceholderLogo} resizeMode="contain" />
                       </View>
                     )}
                     <View style={styles.cardInfoCol}>
@@ -823,7 +821,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarCirclePlaceholderText: { fontSize: 40, fontWeight: '900', color: theme.textMuted, letterSpacing: 1 },
+  avatarCirclePlaceholderLogo: { width: 64, height: 64, opacity: 0.5 },
   cameraBadge: {
     position: 'absolute',
     bottom: 0,
@@ -927,7 +925,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.border,
   },
-  smallAvatarPlaceholderText: { fontSize: 14, fontWeight: '800', color: theme.textMuted },
+  smallAvatarPlaceholderLogo: { width: 18, height: 18, opacity: 0.5 },
   cardInfoCol: { flex: 1 },
   cardOpponentName: { fontSize: 13,  color: theme.text , textTransform: 'uppercase'},
   cardRatingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },

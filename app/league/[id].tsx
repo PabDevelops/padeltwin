@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSession } from '@/lib/useSession';
@@ -97,7 +97,7 @@ export default function LeagueDetailScreen() {
               >
                 <Text style={[styles.rankText, isTop3 && styles.rankTextTop]}>{rank}</Text>
                 <View style={styles.avatarPlaceholder}>
-                  <Text style={styles.avatarLetter}>{(m.profiles?.full_name ?? '?').slice(0, 1).toUpperCase()}</Text>
+                  <Image source={require('@/assets/images/icon.png')} style={styles.avatarPlaceholderLogo} resizeMode="contain" />
                 </View>
                 <Text style={styles.playerName} numberOfLines={1}>
                   {(m.profiles?.full_name ?? 'Player').toUpperCase()} {isMe ? '(YOU)' : ''}
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarLetter: { color: theme.textMuted, fontWeight: '800', fontSize: 12 },
+  avatarPlaceholderLogo: { width: 16, height: 16, opacity: 0.5 },
   playerName: { flex: 1, color: theme.text,  fontSize: 12, letterSpacing: 0.2 , textTransform: 'uppercase'},
   playerElo: { color: theme.text, fontWeight: '900', fontSize: 13 },
   emptyText: { color: theme.textMuted, fontSize: 13, marginTop: 16 },

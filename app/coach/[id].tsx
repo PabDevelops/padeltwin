@@ -47,7 +47,7 @@ export default function CoachDetailScreen() {
           <Image source={{ uri: coach.avatar_url }} style={styles.avatar} />
         ) : (
           <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarPlaceholderText}>{initials}</Text>
+            <Image source={require('@/assets/images/icon.png')} style={styles.avatarPlaceholderLogo} resizeMode="contain" />
           </View>
         )}
         <View style={{ flex: 1 }}>
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarPlaceholderText: { color: theme.textMuted, fontWeight: '800', fontSize: 18 },
+  avatarPlaceholderLogo: { width: 28, height: 28, opacity: 0.5 },
   name: { color: theme.text, fontSize: 20, fontWeight: '900' },
   zone: { color: theme.textMuted, fontSize: 12, fontWeight: '700', marginTop: 2 },
   statsRow: {

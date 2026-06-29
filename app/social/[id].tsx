@@ -34,7 +34,7 @@ export default function SocialListScreen() {
                 <Image source={{ uri: p.avatar_url }} style={styles.avatarImage} />
               ) : (
                 <View style={styles.avatarPlaceholder}>
-                  <Text style={styles.avatarLetter}>{(p.full_name ?? '?').slice(0, 1).toUpperCase()}</Text>
+                  <Image source={require('@/assets/images/icon.png')} style={styles.avatarPlaceholderLogo} resizeMode="contain" />
                 </View>
               )}
               <View style={{ flex: 1 }}>
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarLetter: { color: theme.textMuted, fontWeight: '800', fontSize: 14 },
+  avatarPlaceholderLogo: { width: 18, height: 18, opacity: 0.5 },
   playerName: { color: theme.text,  fontSize: 14, letterSpacing: 0.2 , textTransform: 'uppercase'},
   playerLevel: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
   emptyText: { color: theme.textMuted, fontSize: 13, marginTop: 16 },
