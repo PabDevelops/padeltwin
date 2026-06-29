@@ -6,7 +6,7 @@ import { useCreateMatch, usePartnerRequests, useProfile } from '@/lib/queries';
 import { useSession } from '@/lib/useSession';
 import type { MatchMode, MatchVisibility, PartnerRequestWithProfiles } from '@/types/database';
 import { theme, buttonRadius, chipRadius } from '@/constants/theme';
-import { GlassCard } from '@/components/GlassCard';
+import { Card } from '@/components/Card';
 import { levelFromElo } from '@/lib/eloPlacement';
 
 function PulsingDot() {
@@ -155,7 +155,7 @@ export default function CreateMatchScreen() {
         <Text style={styles.subtitle}>Set up a match for other compatible athletes to join</Text>
       </View>
 
-      <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
+      <Card style={styles.section} contentStyle={{ padding: 16 }}>
         <Text style={styles.sectionHeader}>COURT LOGISTICS</Text>
 
         <Text style={styles.label}>LOCATION / COURT NAME</Text>
@@ -197,9 +197,9 @@ export default function CreateMatchScreen() {
         {showTimePicker && (
           <DateTimePicker value={timeValue ?? new Date()} mode="time" onChange={handleTimeChange} />
         )}
-      </GlassCard>
+      </Card>
 
-      <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
+      <Card style={styles.section} contentStyle={{ padding: 16 }}>
         <Text style={styles.sectionHeader}>MATCH PREFERENCES</Text>
 
         <Text style={styles.label}>GAME MODE</Text>
@@ -278,7 +278,7 @@ export default function CreateMatchScreen() {
             ? ' Madrid public feed: Anyone with a compatible level can find and join.'
             : 'Private roster: Only players you invite can join.'}
         </Text>
-      </GlassCard>
+      </Card>
 
       {error && <Text style={styles.error}>{error}</Text>}
 

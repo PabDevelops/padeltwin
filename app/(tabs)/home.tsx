@@ -29,8 +29,8 @@ import { theme, cardRadius } from '@/constants/theme';
 import { ELO_PROVISIONAL_MATCHES } from '@/constants/elo';
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
-import { GlassCard } from '@/components/GlassCard';
-import { GlassButton } from '@/components/GlassButton';
+import { Card } from '@/components/Card';
+import { AppButton } from '@/components/AppButton';
 
 function didWin(result: MatchResultWithProfiles, userId: string) {
   const inTeamA = result.team_a_player1 === userId || result.team_a_player2 === userId;
@@ -297,7 +297,7 @@ export default function HomeScreen() {
       {pendingRequestsCount > 0 && (
         <Pressable onPress={() => router.push('/profile')}>
           {({ pressed }) => (
-            <GlassCard style={[styles.partnerAlertBanner, pressed && { opacity: 0.95 }]} contentStyle={styles.partnerAlertContent}>
+            <Card style={[styles.partnerAlertBanner, pressed && { opacity: 0.95 }]} contentStyle={styles.partnerAlertContent}>
               <View style={styles.partnerAlertLeft}>
                 <Ionicons name="people" size={18} color={theme.secondary} />
                 <Text style={styles.partnerAlertText}>
@@ -308,7 +308,7 @@ export default function HomeScreen() {
                 <Text style={styles.partnerAlertActionText}>REVIEW</Text>
                 <Ionicons name="chevron-forward" size={14} color={theme.secondary} style={{ marginLeft: 2 }} />
               </View>
-            </GlassCard>
+            </Card>
           )}
         </Pressable>
       )}
@@ -319,7 +319,7 @@ export default function HomeScreen() {
       ) : nextMatch ? (
         <Pressable onPress={() => router.push(`/match/${nextMatch.id}`)}>
           {({ pressed }) => (
-            <GlassCard style={[styles.nextMatchCard, pressed && { opacity: 0.9 }]}>
+            <Card style={[styles.nextMatchCard, pressed && { opacity: 0.9 }]}>
               <View style={styles.nextMatchHeader}>
                 <Text style={styles.nextMatchTag}>⚡ NEXT MATCH</Text>
                 <View style={[styles.gridBadge, { backgroundColor: 'rgba(255, 92, 0, 0.15)', marginTop: 0 }]}>
@@ -338,7 +338,7 @@ export default function HomeScreen() {
                   PLAYERS: <Text style={{ color: '#fff', fontWeight: '900' }}>{(nextMatch.match_players?.length ?? 0)}/{(nextMatch.max_players ?? 4)} SIGNED UP</Text>
                 </Text>
               </View>
-            </GlassCard>
+            </Card>
           )}
         </Pressable>
       ) : null}
@@ -374,7 +374,7 @@ export default function HomeScreen() {
               })
             }]
           }}>
-            <GlassCard style={[styles.heroCard, { borderLeftWidth: 4, borderLeftColor: theme.primary, flex: 1 }]}>
+            <Card style={[styles.heroCard, { borderLeftWidth: 4, borderLeftColor: theme.primary, flex: 1 }]}>
               <View style={styles.heroHeader}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.heroLabel}>PS SCORE (LONG TERM)</Text>
@@ -447,7 +447,7 @@ export default function HomeScreen() {
                   Your Scrim Index is your form RIGHT NOW (1.0–10.0). It's based on your last 5 confirmed matches.
                 </Text>
               )}
-            </GlassCard>
+            </Card>
           </Animated.View>
 
           {/* Slide 2: Claude Code Style Dashboard */}
@@ -467,7 +467,7 @@ export default function HomeScreen() {
               })
             }]
           }}>
-            <GlassCard style={[styles.heroCard, { backgroundColor: '#111113', flex: 1 }]}>
+            <Card style={[styles.heroCard, { backgroundColor: '#111113', flex: 1 }]}>
               {/* Stat Blocks Grid */}
               <View style={styles.claudeStatsGrid}>
                 {/* Row 1 */}
@@ -521,7 +521,7 @@ export default function HomeScreen() {
                   </View>
                 ))}
               </View>
-            </GlassCard>
+            </Card>
           </Animated.View>
         </Animated.ScrollView>
         
@@ -574,7 +574,7 @@ export default function HomeScreen() {
       <View style={styles.leagueTilesRow}>
         <Pressable style={{ flex: 1 }} onPress={() => router.push('/leagues' as any)}>
           {({ pressed }) => (
-            <GlassCard style={[styles.leagueTile, pressed && { opacity: 0.9 }]} contentStyle={styles.leagueTileContent}>
+            <Card style={[styles.leagueTile, pressed && { opacity: 0.9 }]} contentStyle={styles.leagueTileContent}>
               <View style={styles.leagueTileRankBadge}>
                 <MaterialCommunityIcons name="podium" size={18} color={theme.accent} />
               </View>
@@ -582,13 +582,13 @@ export default function HomeScreen() {
               <Text style={styles.leagueTileSub} numberOfLines={1}>
                 Ranked by pair
               </Text>
-            </GlassCard>
+            </Card>
           )}
         </Pressable>
 
         <Pressable style={{ flex: 1 }} onPress={() => router.push('/club-leaderboard' as any)}>
           {({ pressed }) => (
-            <GlassCard style={[styles.leagueTile, pressed && { opacity: 0.9 }]} contentStyle={styles.leagueTileContent}>
+            <Card style={[styles.leagueTile, pressed && { opacity: 0.9 }]} contentStyle={styles.leagueTileContent}>
               <View style={styles.kopTileHeader}>
                 <MaterialCommunityIcons name="crown" size={26} color="#FFD700" />
                 <View style={styles.proTag}>
@@ -599,7 +599,7 @@ export default function HomeScreen() {
               <Text style={styles.leagueTileSub} numberOfLines={1}>
                 {kopStatus ? `${kopStatus.crownedClubs.length} crown${kopStatus.crownedClubs.length === 1 ? '' : 's'} held` : 'No crowns yet'}
               </Text>
-            </GlassCard>
+            </Card>
           )}
         </Pressable>
       </View>
@@ -612,7 +612,7 @@ export default function HomeScreen() {
           const win = didWin(r, userId!);
           return (
             <Pressable key={r.id} onPress={() => router.push(`/match/${r.match_id || r.id}` as any)} style={({pressed}) => [pressed && {opacity: 0.8}]}>
-            <GlassCard style={styles.resultCard} contentStyle={{ padding: 16 }}>
+            <Card style={styles.resultCard} contentStyle={{ padding: 16 }}>
               <View style={styles.resultRow}>
                 <View style={styles.opponentWrapper}>
                   <Text style={styles.vsTag}>VS</Text>
@@ -636,7 +636,7 @@ export default function HomeScreen() {
               </View>
               <Text style={styles.matchTypeTag}>DOUBLES MATCH</Text>
               </View>
-            </GlassCard>
+            </Card>
             </Pressable>
           );
         })
@@ -646,7 +646,7 @@ export default function HomeScreen() {
       {feedLoading ? (
         <ActivityIndicator color={theme.primary} style={{ marginTop: 12 }} />
       ) : activityFeed && activityFeed.length > 0 ? (
-        <GlassCard style={styles.feedContainer} contentStyle={{ paddingVertical: 4 }}>
+        <Card style={styles.feedContainer} contentStyle={{ paddingVertical: 4 }}>
           {activityFeed.map((item) => {
             let iconName: string;
             let avatarProfile: Profile | null | undefined;
@@ -708,7 +708,7 @@ export default function HomeScreen() {
               </View>
             );
           })}
-        </GlassCard>
+        </Card>
       ) : suggestedFollows.length > 0 ? (
         <View style={{ marginBottom: 20 }}>
           <Text style={styles.emptyFeedSubtitle}>
@@ -716,7 +716,7 @@ export default function HomeScreen() {
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestedScroll}>
             {suggestedFollows.map((p) => (
-              <GlassCard key={p.id} style={styles.suggestedCard} contentStyle={{ padding: 10, alignItems: 'center' }}>
+              <Card key={p.id} style={styles.suggestedCard} contentStyle={{ padding: 10, alignItems: 'center' }}>
                 <Pressable onPress={() => router.push(`/player/${p.id}` as any)}>
                   {p.avatar_url ? (
                     <Image source={{ uri: p.avatar_url }} style={styles.suggestedAvatarImg} />
@@ -734,12 +734,12 @@ export default function HomeScreen() {
                 >
                   <Text style={styles.suggestedFollowButtonText}>FOLLOW</Text>
                 </Pressable>
-              </GlassCard>
+              </Card>
             ))}
           </ScrollView>
         </View>
       ) : (
-        <GlassCard style={styles.emptyFeedContainer} contentStyle={{ padding: 20, alignItems: 'center', justifyContent: 'center' }}>
+        <Card style={styles.emptyFeedContainer} contentStyle={{ padding: 20, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="people-outline" size={32} color={theme.textMuted} style={{ marginBottom: 8 }} />
           <Text style={styles.emptyFeedTitle}>FOLLOW OTHER PLAYERS</Text>
           <Text style={styles.emptyFeedSubtitle}>
@@ -754,13 +754,13 @@ export default function HomeScreen() {
           >
             <Text style={styles.emptyFeedButtonText}>FIND PLAYERS</Text>
           </Pressable>
-        </GlassCard>
+        </Card>
       )}
 
       {followedLeaderboard && followedLeaderboard.length > 1 && (
         <>
           <Text style={styles.sectionTitle}>RANKING AMONG FRIENDS</Text>
-          <GlassCard style={styles.leaderboardContainer} contentStyle={{ padding: 0 }}>
+          <Card style={styles.leaderboardContainer} contentStyle={{ padding: 0 }}>
             {followedLeaderboard.map((p, index) => {
               const rank = index + 1;
               const isMe = p.id === userId;
@@ -786,7 +786,7 @@ export default function HomeScreen() {
                 </View>
               );
             })}
-          </GlassCard>
+          </Card>
         </>
       )}
 
@@ -796,7 +796,7 @@ export default function HomeScreen() {
 
       <Pressable onPress={() => router.push('/coaches' as any)}>
         {({ pressed }) => (
-          <GlassCard style={[styles.coachBanner, pressed && { opacity: 0.9 }]} contentStyle={styles.coachBannerContent}>
+          <Card style={[styles.coachBanner, pressed && { opacity: 0.9 }]} contentStyle={styles.coachBannerContent}>
             <View style={styles.coachBannerIcon}>
               <Ionicons name="school" size={20} color={theme.accent} />
             </View>
@@ -805,7 +805,7 @@ export default function HomeScreen() {
               <Text style={styles.coachBannerSubtitle}>Book a lesson with a coach near you</Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
-          </GlassCard>
+          </Card>
         )}
       </Pressable>
 

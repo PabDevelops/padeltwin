@@ -11,7 +11,7 @@ import { theme, buttonRadius, cardRadius, chipRadius } from '@/constants/theme';
 import { LEVEL_LABELS } from '@/constants/levels';
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
-import { GlassCard } from '@/components/GlassCard';
+import { Card } from '@/components/Card';
 
 const REEL_ITEM_HEIGHT = 120;
 
@@ -148,7 +148,7 @@ export default function PartnersScreen() {
     };
 
     return (
-      <GlassCard style={styles.card} contentStyle={{ padding: 12 }}>
+      <Card style={styles.card} contentStyle={{ padding: 12 }}>
         <Pressable 
           style={({ pressed }) => [
             pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }
@@ -230,7 +230,7 @@ export default function PartnersScreen() {
             </Text>
           </Pressable>
         </Pressable>
-      </GlassCard>
+      </Card>
     );
   }
 
@@ -335,7 +335,7 @@ export default function PartnersScreen() {
               </Text>
             </View>
           ) : (
-            <GlassCard style={styles.slotConsole} contentStyle={{ padding: 20, alignItems: 'stretch' }}>
+            <Card style={styles.slotConsole} contentStyle={{ padding: 20, alignItems: 'stretch' }}>
               {/* VS Split Display */}
               <View style={styles.slotVisualRow}>
                 {/* Left Side: You */}
@@ -400,7 +400,7 @@ export default function PartnersScreen() {
                   CANDIDATES IN POOL: <Text style={{ color: theme.primary, fontWeight: '900' }}>{candidates.length}</Text>
                 </Text>
               </View>
-            </GlassCard>
+            </Card>
           )}
 
           {/* Winner Reveal Modal Overlay */}
@@ -514,7 +514,7 @@ export default function PartnersScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ gap: 10, paddingBottom: 110 }}
             renderItem={({ item }) => (
-              <GlassCard style={styles.followedRow} contentStyle={{ padding: 12, flexDirection: 'row', alignItems: 'center' }}>
+              <Card style={styles.followedRow} contentStyle={{ padding: 12, flexDirection: 'row', alignItems: 'center' }}>
                 <Pressable 
                   style={({ pressed }) => [
                     { flex: 1, flexDirection: 'row', alignItems: 'center' },
@@ -564,11 +564,11 @@ export default function PartnersScreen() {
                     <Text style={styles.unfollowButtonText}>UNFOLLOW</Text>
                   </Pressable>
                 </Pressable>
-              </GlassCard>
+              </Card>
             )}
           />
         ) : (
-          <GlassCard style={styles.emptyFollowedContainer} contentStyle={{ padding: 30, alignItems: 'center', justifyContent: 'center' }}>
+          <Card style={styles.emptyFollowedContainer} contentStyle={{ padding: 30, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="people-outline" size={48} color={theme.textMuted} style={{ marginBottom: 12 }} />
             <Text style={styles.emptyFollowedTitle}>YOU'RE NOT FOLLOWING ANYONE YET</Text>
             <Text style={styles.emptyFollowedDesc}>
@@ -583,7 +583,7 @@ export default function PartnersScreen() {
             >
               <Text style={styles.emptyFollowedBtnText}>DISCOVER PLAYERS</Text>
             </Pressable>
-          </GlassCard>
+          </Card>
         )
       )}
     </View>

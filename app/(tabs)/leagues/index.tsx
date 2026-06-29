@@ -5,7 +5,7 @@ import { useSession } from '@/lib/useSession';
 import { useProfile, useMyPairs, useMyKopStatus } from '@/lib/queries';
 import { divisionFromPairElo } from '@/lib/pairDivisions';
 import { theme, cardRadius, chipRadius } from '@/constants/theme';
-import { GlassCard } from '@/components/GlassCard';
+import { Card } from '@/components/Card';
 
 export default function LeaguesScreen() {
   const router = useRouter();
@@ -21,7 +21,7 @@ export default function LeaguesScreen() {
   if (!activePair) {
     return (
       <View style={styles.emptyContainer}>
-        <GlassCard style={{ padding: 24, alignSelf: 'center', width: '100%' }} contentStyle={{ alignItems: 'center' }}>
+        <Card style={{ padding: 24, alignSelf: 'center', width: '100%' }} contentStyle={{ alignItems: 'center' }}>
           <Ionicons name="people-outline" size={36} color={theme.textMuted} style={{ marginBottom: 10 }} />
           <Text style={styles.emptyTitle}>Leagues are for ranked pairs</Text>
           <Text style={styles.emptyText}>
@@ -31,7 +31,7 @@ export default function LeaguesScreen() {
           <Pressable style={styles.emptyBtn} onPress={() => router.push('/pairs' as any)}>
             <Text style={styles.emptyBtnText}>DECLARE A PAIR</Text>
           </Pressable>
-        </GlassCard>
+        </Card>
       </View>
     );
   }
@@ -43,7 +43,7 @@ export default function LeaguesScreen() {
         another country's league too? Declare another pair there (up to your pair limit).
       </Text>
 
-      <GlassCard style={styles.pairBanner} contentStyle={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 14 }}>
+      <Card style={styles.pairBanner} contentStyle={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 14 }}>
         <View style={{ flex: 1 }}>
           <Text style={styles.pairBannerText}>
             Playing as: {activePair.player_a?.full_name ?? 'You'} & {activePair.player_b?.full_name ?? 'Partner'}
@@ -51,9 +51,9 @@ export default function LeaguesScreen() {
           <Text style={styles.pairBannerDivision}>{divisionFromPairElo(activePair.elo)}</Text>
         </View>
         <Text style={styles.pairBannerElo}>{activePair.elo} PS</Text>
-      </GlassCard>
+      </Card>
 
-      <GlassCard style={styles.card}>
+      <Card style={styles.card}>
         <Pressable
           style={({ pressed }) => [
             { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 },
@@ -70,9 +70,9 @@ export default function LeaguesScreen() {
           </View>
           <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
         </Pressable>
-      </GlassCard>
+      </Card>
 
-      <GlassCard style={styles.card}>
+      <Card style={styles.card}>
         <Pressable
           style={({ pressed }) => [
             { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 },
@@ -97,7 +97,7 @@ export default function LeaguesScreen() {
           </View>
           <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
         </Pressable>
-      </GlassCard>
+      </Card>
     </ScrollView>
   );
 }

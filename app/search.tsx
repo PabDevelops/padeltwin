@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { Profile } from '@/types/database';
 import { theme } from '@/constants/theme';
-import { GlassCard } from '@/components/GlassCard';
+import { Card } from '@/components/Card';
 import { CoachBadge } from '@/components/CoachBadge';
 
 export default function SearchScreen() {
@@ -64,7 +64,7 @@ export default function SearchScreen() {
         renderItem={({ item }) => (
           <Pressable onPress={() => router.push(`/player/${item.id}` as any)}>
             {({ pressed }) => (
-              <GlassCard style={[styles.userCard, pressed && { opacity: 0.8 }]} contentStyle={styles.userCardContent}>
+              <Card style={[styles.userCard, pressed && { opacity: 0.8 }]} contentStyle={styles.userCardContent}>
                 {item.avatar_url ? (
                   <Image source={{ uri: item.avatar_url }} style={styles.avatar} />
                 ) : (
@@ -84,7 +84,7 @@ export default function SearchScreen() {
                 <View style={styles.eloBadge}>
                   <Text style={styles.eloText}>PS {item.elo || 1200}</Text>
                 </View>
-              </GlassCard>
+              </Card>
             )}
           </Pressable>
         )}

@@ -1,13 +1,13 @@
 import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { theme } from '@/constants/theme';
 
-interface GlassCardProps {
+interface CardProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
 }
 
-export function GlassCard({ children, style, contentStyle }: GlassCardProps) {
+export function Card({ children, style, contentStyle }: CardProps) {
   return (
     <View style={[styles.container, style]}>
       <View style={[styles.content, contentStyle]}>{children}</View>

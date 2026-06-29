@@ -11,7 +11,7 @@ import {
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
 import { theme, cardRadius, chipRadius } from '@/constants/theme';
-import { GlassCard } from '@/components/GlassCard';
+import { Card } from '@/components/Card';
 
 const FREE_CLUB_LIMIT = 1;
 const PRO_CLUB_LIMIT = 5;
@@ -49,11 +49,11 @@ export default function ClubLeaderboardScreen() {
   if (!activePair) {
     return (
       <View style={styles.center}>
-        <GlassCard style={{ padding: 24, alignSelf: 'center', width: '100%' }} contentStyle={{ alignItems: 'center' }}>
+        <Card style={{ padding: 24, alignSelf: 'center', width: '100%' }} contentStyle={{ alignItems: 'center' }}>
           <Text style={styles.emptyText}>
             KOP is contested by ranked pairs — declare a fixed pair first to compete for a club's crown.
           </Text>
-        </GlassCard>
+        </Card>
       </View>
     );
   }
@@ -100,7 +100,7 @@ export default function ClubLeaderboardScreen() {
       ) : !activeClub ? null : !leaderboard || leaderboard.length === 0 ? (
         <Text style={styles.emptyText}>No pairs have joined this club yet — be the first to claim the crown.</Text>
       ) : (
-        <GlassCard style={styles.leaderboardContainer} contentStyle={{ overflow: 'hidden' }}>
+        <Card style={styles.leaderboardContainer} contentStyle={{ overflow: 'hidden' }}>
           {leaderboard.map((pair, index) => {
             const rank = index + 1;
             const isMine = pair.id === activePair.id;
@@ -127,7 +127,7 @@ export default function ClubLeaderboardScreen() {
               </View>
             );
           })}
-        </GlassCard>
+        </Card>
       )}
     </ScrollView>
   );

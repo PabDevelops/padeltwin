@@ -7,7 +7,7 @@ import { useSession } from '@/lib/useSession';
 import type { MatchWithPlayers, PlayerLevel } from '@/types/database';
 import { theme, cardRadius, chipRadius } from '@/constants/theme';
 import { LEVELS, LEVEL_LABELS } from '@/constants/levels';
-import { GlassCard } from '@/components/GlassCard';
+import { Card } from '@/components/Card';
 
 const DATE_RANGE_OPTIONS: { value: MatchDateRange; label: string }[] = [
   { value: 'today', label: 'TODAY' },
@@ -244,7 +244,7 @@ export default function MatchSearchScreen() {
     const emptySlots = Math.max(0, maxPlayers - joinedCount);
 
     return (
-      <GlassCard style={styles.card} contentStyle={{ padding: 0, flexDirection: 'row' }}>
+      <Card style={styles.card} contentStyle={{ padding: 0, flexDirection: 'row' }}>
         <Pressable 
           style={({ pressed }) => [
             { flex: 1, flexDirection: 'row' },
@@ -303,7 +303,7 @@ export default function MatchSearchScreen() {
             </View>
           </View>
         </Pressable>
-      </GlassCard>
+      </Card>
     );
   }
 

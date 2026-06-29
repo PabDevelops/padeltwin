@@ -7,7 +7,7 @@ import { theme, cardRadius } from '@/constants/theme';
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
 import { BackHeader } from '@/components/BackHeader';
-import { GlassCard } from '@/components/GlassCard';
+import { Card } from '@/components/Card';
 
 export default function CountryLeagueScreen() {
   const { value } = useLocalSearchParams<{ value?: string }>();
@@ -24,9 +24,9 @@ export default function CountryLeagueScreen() {
       <View style={{ flex: 1, backgroundColor: theme.background }}>
         <BackHeader title="Country League" />
         <View style={styles.center}>
-          <GlassCard style={{ padding: 24, alignSelf: 'center', width: '100%' }} contentStyle={{ alignItems: 'center' }}>
+          <Card style={{ padding: 24, alignSelf: 'center', width: '100%' }} contentStyle={{ alignItems: 'center' }}>
             <Text style={styles.emptyText}>Add your country in your profile to see your national ranking.</Text>
-          </GlassCard>
+          </Card>
         </View>
       </View>
     );
@@ -49,7 +49,7 @@ export default function CountryLeagueScreen() {
         Every pair in {countryValue} is here automatically — ranked by PS Score, grouped into divisions.
       </Text>
 
-      <GlassCard style={styles.leaderboardContainer} contentStyle={{ overflow: 'hidden' }}>
+      <Card style={styles.leaderboardContainer} contentStyle={{ overflow: 'hidden' }}>
         {(pairs ?? []).length === 0 ? (
           <Text style={styles.emptyText}>No pairs from this country yet.</Text>
         ) : (
@@ -78,7 +78,7 @@ export default function CountryLeagueScreen() {
             );
           })
         )}
-      </GlassCard>
+      </Card>
     </ScrollView>
   );
 }

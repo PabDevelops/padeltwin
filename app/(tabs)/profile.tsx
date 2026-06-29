@@ -51,7 +51,7 @@ import { theme, buttonRadius, cardRadius, chipRadius } from '@/constants/theme';
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
 import { VerifiedLocation } from '@/components/VerifiedLocation';
-import { GlassCard } from '@/components/GlassCard';
+import { Card } from '@/components/Card';
 import { useVisualTheme } from '@/lib/ThemeContext';
 
 function didWin(result: MatchResultWithProfiles, userId: string) {
@@ -300,12 +300,12 @@ export default function ProfileScreen() {
         )}
 
         {/* STATS */}
-        <GlassCard style={styles.psScoreHero} contentStyle={{ alignItems: 'center', paddingVertical: 20 }}>
+        <Card style={styles.psScoreHero} contentStyle={{ alignItems: 'center', paddingVertical: 20 }}>
           <Text style={styles.psScoreHeroValue}>{profile.elo}</Text>
           <Text style={styles.psScoreHeroLabel}>PS SCORE</Text>
-        </GlassCard>
+        </Card>
 
-        <GlassCard style={styles.statsCardContainer} contentStyle={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 10 }}>
+        <Card style={styles.statsCardContainer} contentStyle={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 10 }}>
           {statsLoading ? (
             <ActivityIndicator color={theme.accent} />
           ) : (
@@ -321,13 +321,13 @@ export default function ProfileScreen() {
               </View>
             </>
           )}
-        </GlassCard>
+        </Card>
 
         {/* RECORDS */}
         {recordItems.length > 0 && (
           <>
             <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Personal records</Text>
-            <GlassCard style={styles.recordsCardContainer} contentStyle={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 10 }}>
+            <Card style={styles.recordsCardContainer} contentStyle={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 10 }}>
               {recordItems.map((item, index) => (
                 <View key={item.label} style={styles.recordItem}>
                   {index > 0 && <View style={styles.statDivider} />}
@@ -338,7 +338,7 @@ export default function ProfileScreen() {
                   </View>
                 </View>
               ))}
-            </GlassCard>
+            </Card>
           </>
         )}
 
@@ -388,7 +388,7 @@ export default function ProfileScreen() {
 
                 return (
                   <Pressable key={r.id} onPress={() => router.push(`/match/${r.match_id || r.id}` as any)} style={({pressed}) => [pressed && {opacity: 0.8}]}>
-                  <GlassCard style={styles.horizontalReviewCard} contentStyle={{ padding: 14 }}>
+                  <Card style={styles.horizontalReviewCard} contentStyle={{ padding: 14 }}>
                     <View style={styles.cardHeaderRow}>
                       {opponentAvatar ? (
                         <Image source={{ uri: opponentAvatar }} style={styles.smallAvatar} />
@@ -413,7 +413,7 @@ export default function ProfileScreen() {
                         </View>
                       </View>
                     </View>
-                  </GlassCard>
+                  </Card>
                   </Pressable>
                 );
               });
@@ -422,7 +422,7 @@ export default function ProfileScreen() {
         )}
 
         {/* ACHIEVEMENTS */}
-        <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
+        <Card style={styles.section} contentStyle={{ padding: 16 }}>
           <Text style={styles.sectionHeader}>MY ACHIEVEMENTS</Text>
           {achievementsLoading ? (
             <ActivityIndicator color={theme.accent} />
@@ -446,10 +446,10 @@ export default function ProfileScreen() {
           ) : (
             <Text style={styles.helperText}>Play matches and win games to unlock exclusive player badges!</Text>
           )}
-        </GlassCard>
+        </Card>
 
         {/* ATHLETE DETAILS */}
-        <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
+        <Card style={styles.section} contentStyle={{ padding: 16 }}>
           <Text style={styles.sectionHeader}>ATHLETE DETAILS</Text>
 
           <Text style={styles.label}>NAME</Text>
@@ -478,10 +478,10 @@ export default function ProfileScreen() {
             <Text style={styles.duoQueueLinkArrow}>{'>'}</Text>
           </Pressable>
 
-        </GlassCard>
+        </Card>
 
         {/* KOP STATUS */}
-        <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
+        <Card style={styles.section} contentStyle={{ padding: 16 }}>
           <Text style={styles.sectionHeader}>KOP STATUS</Text>
           <Text style={styles.helperText}>
             KOP is contested by your ranked pair, not solo — join a club's board from the KOP tab.
@@ -513,9 +513,9 @@ export default function ProfileScreen() {
             onBlur={() => setFocusedInput(null)}
           />
           <Text style={styles.helperText}>Shown on your profile — doesn't by itself enter you into KOP.</Text>
-        </GlassCard>
+        </Card>
 
-        <GlassCard style={styles.section} contentStyle={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 }}>
+        <Card style={styles.section} contentStyle={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 }}>
           <View style={{ flex: 1, marginRight: 16 }}>
             <Text style={[styles.label, { marginTop: 0 }]}>PARTNER SEARCH</Text>
             <Text style={styles.helperText}>Make profile visible in the matchmaking pool.</Text>
@@ -526,7 +526,7 @@ export default function ProfileScreen() {
             trackColor={{ true: theme.accent, false: theme.border }}
             thumbColor={lookingForPartner ? theme.secondary : '#7F7F8F'}
           />
-        </GlassCard>
+        </Card>
 
         <Pressable
           style={({ pressed }) => [
@@ -545,7 +545,7 @@ export default function ProfileScreen() {
         </Pressable>
 
         {profile.coach_status === 'approved' ? (
-          <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
+          <Card style={styles.section} contentStyle={{ padding: 16 }}>
             <Text style={styles.sectionHeader}>COACH LISTING</Text>
             <Text style={styles.helperText}>
               You're listed in the coach directory. {leads && leads.length > 0 ? `${leads.length} lesson request${leads.length > 1 ? 's' : ''} received.` : 'No requests yet.'}
@@ -587,24 +587,24 @@ export default function ProfileScreen() {
             >
               <Text style={{ color: theme.danger, fontWeight: '800', fontSize: 11 }}>STOP COACHING</Text>
             </Pressable>
-          </GlassCard>
+          </Card>
         ) : profile.coach_status === 'pending' ? (
-          <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
+          <Card style={styles.section} contentStyle={{ padding: 16 }}>
             <Text style={styles.sectionHeader}>COACH APPLICATION</Text>
             <Text style={styles.helperText}>
               Your application is under review. We'll list you in the coach directory once it's approved.
             </Text>
-          </GlassCard>
+          </Card>
         ) : !profile.is_pro ? (
-          <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
+          <Card style={styles.section} contentStyle={{ padding: 16 }}>
             <Text style={styles.sectionHeader}>ARE YOU A PADEL COACH?</Text>
             <Text style={styles.helperText}>
               Listing as a coach is a Pro feature. Upgrade to Pro to apply for a spot in the coach directory.
             </Text>
             <Text style={[styles.label, { color: theme.textMuted, marginTop: 10 }]}>PRO REQUIRED</Text>
-          </GlassCard>
+          </Card>
         ) : (
-          <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
+          <Card style={styles.section} contentStyle={{ padding: 16 }}>
             <Pressable
               style={({ pressed }) => [pressed && { opacity: 0.9 }]}
               onPress={() => setCoachModalVisible(true)}
@@ -613,14 +613,14 @@ export default function ProfileScreen() {
               <Text style={styles.helperText}>Apply to be listed in the coach directory and get lesson requests from players near you. Subject to review.</Text>
               <Text style={[styles.label, { color: theme.accent, marginTop: 10 }]}>APPLY TO BECOME A COACH →</Text>
             </Pressable>
-          </GlassCard>
+          </Card>
         )}
 
         {pendingReceived.length > 0 && (
           <View style={styles.partnersSection}>
             <Text style={styles.sectionTitle}>PARTNER REQUESTS</Text>
             {pendingReceived.map((r) => (
-              <GlassCard key={r.id} style={styles.requestCard} contentStyle={{ padding: 16 }}>
+              <Card key={r.id} style={styles.requestCard} contentStyle={{ padding: 16 }}>
                 <Text style={styles.requestName}>{otherProfile(r)?.full_name ?? 'Player'}</Text>
                 <View style={styles.requestActions}>
                   <Pressable
@@ -636,7 +636,7 @@ export default function ProfileScreen() {
                     <Text style={styles.smallButtonText}>DECLINE</Text>
                   </Pressable>
                 </View>
-              </GlassCard>
+              </Card>
             ))}
           </View>
         )}
@@ -645,7 +645,7 @@ export default function ProfileScreen() {
           <View style={styles.partnersSection}>
             <Text style={styles.sectionTitle}>MY PARTNERS</Text>
             {accepted.map((r) => (
-              <GlassCard key={r.id} style={styles.partnerRequestCard}>
+              <Card key={r.id} style={styles.partnerRequestCard}>
                 <Pressable
                   style={({ pressed }) => [
                     { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
@@ -683,12 +683,12 @@ export default function ProfileScreen() {
                     </Pressable>
                   </View>
                 </Pressable>
-              </GlassCard>
+              </Card>
             ))}
           </View>
         )}
 
-        <GlassCard style={styles.section} contentStyle={{ padding: 16 }}>
+        <Card style={styles.section} contentStyle={{ padding: 16 }}>
           <Text style={styles.sectionHeader}>PRIVACY & SAFETY</Text>
 
           <Pressable onPress={() => router.push('/privacy' as any)}>
@@ -734,10 +734,10 @@ export default function ProfileScreen() {
           >
             <Text style={{ color: theme.danger, fontWeight: '800', fontSize: 11, letterSpacing: 0.5 }}>DELETE MY ACCOUNT</Text>
           </Pressable>
-        </GlassCard>
+        </Card>
 
         {/* DANGER ZONE - DEV ONLY */}
-        <GlassCard style={[styles.section, { borderColor: theme.danger, borderWidth: 1 }]} contentStyle={{ padding: 16 }}>
+        <Card style={[styles.section, { borderColor: theme.danger, borderWidth: 1 }]} contentStyle={{ padding: 16 }}>
           <Text style={[styles.sectionHeader, { color: theme.danger, borderBottomColor: 'rgba(255,59,48,0.2)' }]}>DEV DANGER ZONE</Text>
           <Text style={styles.helperText}>
             Development tools to manage your testing data.
@@ -793,7 +793,7 @@ export default function ProfileScreen() {
               <Text style={{ color: theme.accent, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 }}>INJECT MOCK DATA</Text>
             )}
           </Pressable>
-        </GlassCard>
+        </Card>
       </View>
 
       <Modal visible={coachModalVisible} transparent animationType="fade" onRequestClose={() => setCoachModalVisible(false)}>

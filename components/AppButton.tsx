@@ -1,9 +1,8 @@
-import { Platform, StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
-import { BlurView } from 'expo-blur';
+import { StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { useVisualTheme } from '@/lib/ThemeContext';
 import { theme } from '@/constants/theme';
 
-interface GlassButtonProps {
+interface AppButtonProps {
   onPress: () => void;
   title: string;
   variant?: 'primary' | 'secondary';
@@ -12,7 +11,7 @@ interface GlassButtonProps {
   icon?: React.ReactNode;
 }
 
-export function GlassButton({ onPress, title, variant = 'primary', style, textStyle, icon }: GlassButtonProps) {
+export function AppButton({ onPress, title, variant = 'primary', style, textStyle, icon }: AppButtonProps) {
   const { visualTheme } = useVisualTheme();
 
   if (visualTheme === 'brutalist') {
@@ -54,8 +53,6 @@ export function GlassButton({ onPress, title, variant = 'primary', style, textSt
 
   return (
     <TouchableOpacity style={[styles.secondaryButton, style]} onPress={onPress} activeOpacity={0.7}>
-      {Platform.OS !== 'web' ? <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} /> : null}
-      <View style={styles.secondaryGlassOverlay} />
       <View style={[styles.content, { paddingVertical: 14 }]}>
         {icon && <View style={styles.iconContainer}>{icon}</View>}
         <Text style={[styles.secondaryText, textStyle]}>{title}</Text>
@@ -84,16 +81,11 @@ const styles = StyleSheet.create({
   secondaryButton: {
     borderRadius: 30,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderColor: theme.border,
+    backgroundColor: theme.card,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Platform.select({
-      web: { backdropFilter: 'blur(15px)', WebkitBackdropFilter: 'blur(15px)' } as any,
-    }),
   },
-  secondaryGlassOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255, 255, 255, 0.02)' },
   secondaryText: { fontFamily: 'Anton_400Regular', color: '#FFFFFF', fontSize: 16, letterSpacing: 0.5 },
   brutalistPrimaryShadow: {
     backgroundColor: '#000000',
