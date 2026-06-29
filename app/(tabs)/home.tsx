@@ -276,8 +276,8 @@ export default function HomeScreen() {
     }
   }
 
-  // Activity heatmap (12 weeks x 7 days) built from real match dates
-  const heatmapCols = 12;
+  // Activity heatmap (20 weeks x 7 days) built from real match dates
+  const heatmapCols = 20;
   const heatmapRows = 7;
   const contributionGrid = Array.from({ length: heatmapRows }, (_, rIdx) =>
     Array.from({ length: heatmapCols }, (_, cIdx) => ({ id: `${rIdx}-${cIdx}`, active: false, intensity: 1 }))
@@ -353,7 +353,7 @@ export default function HomeScreen() {
       ) : null}
 
       {/* PS Score Hero Carousel */}
-      <View style={{ marginBottom: 8, height: 410 }}>
+      <View style={{ marginBottom: 8, height: 300 }}>
         <Animated.ScrollView 
           horizontal 
           pagingEnabled 
@@ -874,9 +874,9 @@ const styles = StyleSheet.create({
   claudeStatLabel: { fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: '600', marginBottom: 4 },
   claudeStatValue: { fontSize: 16, color: '#FFF', fontWeight: '800', fontFamily: 'Anton_400Regular' },
   
-  claudeHeatmapContainer: { paddingHorizontal: 4, paddingBottom: 6, gap: 4 },
-  claudeHeatmapRow: { flexDirection: 'row', gap: 4 },
-  claudeHeatmapCell: { flex: 1, aspectRatio: 1, backgroundColor: '#1C1C1F', borderRadius: 3, borderWidth: 1, borderColor: '#2A2A2E' },
+  claudeHeatmapContainer: { paddingHorizontal: 4, paddingBottom: 6, gap: 3 },
+  claudeHeatmapRow: { flexDirection: 'row', gap: 3 },
+  claudeHeatmapCell: { width: 10, height: 10, backgroundColor: '#1C1C1F', borderRadius: 2, borderWidth: 1, borderColor: '#2A2A2E' },
   claudeHeatmapCellActive: { backgroundColor: '#006d32', borderColor: '#006d32' },
   claudeHeatmapCellActiveHigh: { backgroundColor: '#39d353', borderColor: '#39d353', shadowColor: '#39d353', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 2, elevation: 2 },
 
