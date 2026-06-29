@@ -1,7 +1,6 @@
 import { Redirect, Tabs, useRouter } from 'expo-router';
 import React from 'react';
 import { Platform, View, Pressable, Text, StyleSheet } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -9,6 +8,7 @@ import { theme } from '@/constants/theme';
 import { useSession } from '@/lib/useSession';
 import { useProfile } from '@/lib/queries';
 import { supabase } from '@/lib/supabase';
+import { TopNavigation } from '@/components/TopNavigation';
 
 function CustomTabBar({ state, descriptors, navigation, bottomInset }: any) {
   const router = useRouter();
@@ -59,10 +59,8 @@ function CustomTabBar({ state, descriptors, navigation, bottomInset }: any) {
   const isKopFocused = currentRouteName === 'club-leaderboard';
 
   return (
-    <View style={[styles.tabBarWrapper, { bottom: bottomInset + 16 }]}>
+    <View style={[styles.tabBarWrapper, { paddingBottom: bottomInset }]}>
       <View style={styles.tabBarContainer}>
-        <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
-
         {/* Tab Buttons */}
         <View style={styles.buttonsContainer}>
         {homeRoute && renderRouteButton(homeRoute)}
@@ -105,13 +103,13 @@ export default function TabLayout() {
   return (
     <Tabs
       tabBar={(props) => <CustomTabBar {...props} bottomInset={bottomInset} />}
-      screenOptions={{
-        headerShown: false,
+      screenOptions={({ route }) => ({
+        headerShown: true,
+        header: () => <TopNavigation routeName={route.name} />,
         sceneStyle: {
-          paddingTop: insets.top,
           backgroundColor: theme.background,
         },
-      }}
+      })}
     >
       <Tabs.Screen name="home" />
       <Tabs.Screen name="index" />
@@ -128,38 +126,30 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabBarWrapper: {
     position: 'absolute',
-    left: 20,
-    right: 20,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: theme.nav,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.35,
-        shadowRadius: 16,
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
       },
       android: {
-        elevation: 6,
-      },
-      web: {
-        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)',
+        elevation: 8,
       },
     }),
   },
   tabBarContainer: {
-    borderRadius: 32,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    overflow: 'hidden',
-    backgroundColor: Platform.select({
-      ios: 'rgba(15, 16, 22, 0.4)',
-      android: 'rgba(15, 16, 22, 0.85)',
-      web: 'rgba(15, 16, 22, 0.65)',
-      default: 'rgba(15, 16, 22, 0.75)',
-    }),
+    backgroundColor: 'transparent',
   },
   buttonsContainer: {
     flexDirection: 'row',
-    height: 68,
+    height: 60,
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 6,
@@ -180,7 +170,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   activeIconWrapper: {
-    backgroundColor: 'rgba(198, 255, 51, 0.12)',
-    borderColor: 'rgba(198, 255, 51, 0.25)',
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
   },
 });

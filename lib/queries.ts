@@ -68,6 +68,100 @@ export function useUpdateProfile() {
   });
 }
 
+export function useResetStats() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { error: err1 } = await supabase.from('match_results').delete().or(`team_a_player1.eq.${userId},team_a_player2.eq.${userId},team_b_player1.eq.${userId},team_b_player2.eq.${userId}`);
+      if (err1) throw err1;
+      const { error: err2 } = await supabase.from('match_players').delete().eq('player_id', userId);
+      if (err2) throw err2;
+      const { error: err3 } = await supabase.from('profiles').update({ elo: 1200 }).eq('id', userId);
+      if (err3) throw err3;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(); // Nuke all caches to force clean reload
+    },
+  });
+}
+
+export function useInjectMockData() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      // 1. Fetch 3 random other profiles to play against
+      const { data: others } = await supabase.from('profiles').select('id').neq('id', userId).limit(3);
+      if (!others || others.length < 3) throw new Error('Need at least 3 other registered users in the database to generate matches.');
+      
+      const p2 = others[0].id;
+      const p3 = others[1].id;
+      const p4 = others[2].id;
+
+      // 2. Generate 5 historical matches (Win, Loss, Win, Win, Loss)
+      for (let i = 0; i < 5; i++) {
+        const didWin = i !== 1 && i !== 4; // Wins on 0, 2, 3
+        const date = new Date();
+        date.setDate(date.getDate() - (i * 2)); // Spread out over the last 10 days
+        
+        // Create match
+        const { data: match, error: matchErr } = await supabase.from('matches').insert({
+          created_by: userId,
+          date_time: date.toISOString(),
+          location: 'Mock Padel Club',
+          level: 'intermedio',
+          mode: 'pair',
+          status: 'completed',
+          visibility: 'open'
+        }).select().single();
+        if (matchErr) throw matchErr;
+
+        if (match) {
+          // Join players
+          const { error: mpErr } = await supabase.from('match_players').insert([
+            { match_id: match.id, player_id: userId },
+            { match_id: match.id, player_id: p2 },
+            { match_id: match.id, player_id: p3 },
+            { match_id: match.id, player_id: p4 },
+          ]);
+          if (mpErr) throw mpErr;
+
+          // Submit result
+          const { error: mrErr } = await supabase.from('match_results').insert({
+            match_id: match.id,
+            team_a_player1: userId,
+            team_a_player2: p2,
+            team_b_player1: p3,
+            team_b_player2: p4,
+            winner: didWin ? 'a' : 'b',
+            status: 'confirmed',
+            recorded_by: userId,
+            confirmed_by: p3,
+            created_at: date.toISOString(),
+            sets: [{ a: didWin ? 6 : 4, b: didWin ? 4 : 6 }, { a: didWin ? 6 : 2, b: didWin ? 2 : 6 }]
+          });
+          if (mrErr) throw mrErr;
+          
+          // Generate an achievement randomly
+          if (i === 0) {
+            const { error: achErr } = await supabase.from('achievements').insert({
+              profile_id: userId,
+              type: 'first_match',
+              created_at: date.toISOString()
+            });
+            if (achErr) throw achErr;
+          }
+        }
+      }
+
+      // Update elo roughly
+      await supabase.from('profiles').update({ elo: 1350 }).eq('id', userId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(); // Nuke all caches to force clean reload
+    },
+  });
+}
+
 export type MatchDateRange = "today" | "week" | "weekend";
 
 // Bounds are computed from "now" (not the start of today) so a filter never
@@ -797,7 +891,7 @@ export function useActivityFeed(userId: string | undefined, limit = 20) {
 
       return merged.map((item) => {
         const itemVibs = (vibs ?? []).filter((v) => v.item_id === item.id && v.item_type === item.kind);
-        return { ...item, vibCount: itemVibs.length, vibbedByMe: itemVibs.some((v) => v.profile_id === userId) };
+        return { ...item, vibCount: itemVibs.length, vibbedByMe: itemVibs.some((v) => v.profile_id === userId) } as FeedItem;
       });
     },
     enabled: !!userId,

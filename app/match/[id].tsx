@@ -6,7 +6,7 @@ import { captureRef } from 'react-native-view-shot';
 import { useMatch, useJoinMatch, useLeaveMatch, useMatchResult, useRecordMatchResult, useConfirmMatchResult, useDisputeMatchResult } from '@/lib/queries';
 import { useSession } from '@/lib/useSession';
 import { MatchShareCard } from '@/components/MatchShareCard';
-import type { MatchPlayer, PlayerLevel, Profile, SetScore, Team } from '@/types/database';
+import type { MatchPlayer, MatchResultWithProfiles, PlayerLevel, Profile, SetScore, Team } from '@/types/database';
 import { theme, buttonRadius, cardRadius } from '@/constants/theme';
 import { LEVEL_LABELS } from '@/constants/levels';
 
@@ -14,8 +14,47 @@ export default function MatchDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useSession();
   const userId = session?.user.id;
-  const { data: match, isLoading } = useMatch(id);
-  const { data: existingResult, isLoading: resultLoading } = useMatchResult(id);
+  const isMock = typeof id === 'string' && id.startsWith('mock');
+
+  const { data: realMatch, isLoading: matchLoading } = useMatch(isMock ? undefined : id);
+  const { data: realResult, isLoading: resultLoading } = useMatchResult(isMock ? undefined : id);
+
+  const match = isMock ? {
+    id: id,
+    created_by: userId,
+    date_time: new Date().toISOString(),
+    location: 'Premier Padel Center, Madrid',
+    level: 'intermedio',
+    mode: 'pair',
+    status: 'completed',
+    visibility: 'open',
+    max_players: 4,
+    match_players: [
+      { player_id: userId, profiles: { full_name: 'You (Mock Player)', level: 'intermedio', elo: 1350 } },
+      { player_id: 'mock2', profiles: { full_name: 'Alejandro Galán', level: 'avanzado', elo: 1950, avatar_url: 'https://i.pravatar.cc/150?u=a' } },
+      { player_id: 'mock3', profiles: { full_name: 'Arturo Coello', level: 'avanzado', elo: 1980, avatar_url: 'https://i.pravatar.cc/150?u=b' } },
+      { player_id: 'mock4', profiles: { full_name: 'Juan Lebrón', level: 'avanzado', elo: 1900, avatar_url: 'https://i.pravatar.cc/150?u=c' } }
+    ]
+  } : realMatch;
+
+  const existingResult = isMock ? {
+    id: 'mock-res',
+    match_id: id,
+    team_a_player1: userId,
+    team_a_player2: 'mock2',
+    team_b_player1: 'mock3',
+    team_b_player2: 'mock4',
+    winner: 'a',
+    status: 'confirmed',
+    recorded_by: userId,
+    confirmed_by: 'mock3',
+    created_at: new Date().toISOString(),
+    sets: [{ a: 6, b: 4 }, { a: 6, b: 2 }],
+    team_a_player1_profile: { full_name: 'You' },
+    team_a_player2_profile: { full_name: 'A. Galán' },
+    team_b_player1_profile: { full_name: 'A. Coello' },
+    team_b_player2_profile: { full_name: 'J. Lebrón' }
+  } : realResult;
   const joinMatch = useJoinMatch();
   const leaveMatch = useLeaveMatch();
   const recordResult = useRecordMatchResult();
@@ -44,7 +83,7 @@ export default function MatchDetailScreen() {
   const [winner, setWinner] = useState<Team | null>(null);
   const [resultError, setResultError] = useState<string | null>(null);
 
-  if (isLoading || !match || resultLoading) {
+  if ((matchLoading && !isMock) || !match || (resultLoading && !isMock)) {
     return (
       <View style={styles.center}>
         <ActivityIndicator />
@@ -52,7 +91,7 @@ export default function MatchDetailScreen() {
     );
   }
 
-  const players: (MatchPlayer & { profiles: Profile | null })[] = match.match_players ?? [];
+  const players = (match.match_players ?? []) as (MatchPlayer & { profiles: Profile | null })[];
   const isJoined = players.some((p) => p.player_id === userId);
   const isFull = players.length >= match.max_players;
   const matchId = match.id;
@@ -428,7 +467,7 @@ export default function MatchDetailScreen() {
     </ScrollView>
     {existingResult && (
       <View style={styles.offscreenCard} pointerEvents="none">
-        <MatchShareCard ref={shareCardRef} result={existingResult} />
+        <MatchShareCard ref={shareCardRef} result={existingResult as MatchResultWithProfiles} />
       </View>
     )}
     </>

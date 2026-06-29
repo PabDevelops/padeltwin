@@ -86,6 +86,9 @@ function RootNavigator() {
         options={{ title: 'CHAT ROOM', contentStyle: { paddingBottom: insets.bottom } }}
       />
       <Stack.Screen name="player/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="search" options={{ headerShown: false }} />
+      <Stack.Screen name="notifications" options={{ headerShown: false }} />
+      <Stack.Screen name="chat/index" options={{ headerShown: false }} />
       <Stack.Screen
         name="league/[id]"
         options={{ title: 'LEAGUE', contentStyle: { paddingBottom: insets.bottom } }}

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View, Image } from 'react-native';
+import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View, Image, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
+import * as d3 from 'd3-shape';
 import { useSession } from '@/lib/useSession';
 import {
   useProfile,
@@ -27,7 +29,6 @@ import { theme, cardRadius } from '@/constants/theme';
 import { ELO_PROVISIONAL_MATCHES } from '@/constants/elo';
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
-import { AuroraBackground } from '@/components/AuroraBackground';
 import { GlassCard } from '@/components/GlassCard';
 import { GlassButton } from '@/components/GlassButton';
 
@@ -73,18 +74,68 @@ export default function HomeScreen() {
   const { data: kopStatus } = useMyKopStatus(userId);
   const { data: scrimIndex } = useScrimIndex(userId);
   const [scrimInfoOpen, setScrimInfoOpen] = useState(false);
+  const scrollX = useRef(new Animated.Value(0)).current;
   const { data: stats, isLoading: statsLoading } = useMyStats(userId);
-  const { data: recentResults, isLoading: resultsLoading } = useRecentResults(userId, 8);
+  const { data: realRecentResults, isLoading: resultsLoading } = useRecentResults(userId, 10);
   const { data: leaderboard, isLoading: leaderboardLoading } = useLeaderboard(profile?.zone);
   const { data: upcomingMatches, isLoading: upcomingLoading } = useMyUpcomingMatches(userId);
   const { data: partnerRequests } = usePartnerRequests(userId);
-  const { data: activityFeed, isLoading: feedLoading } = useActivityFeed(userId, 5);
+  const { data: realActivityFeed, isLoading: feedLoading } = useActivityFeed(userId, 5);
+
+  const isMock = !realRecentResults || realRecentResults.length === 0;
+
+  const displayResults = !isMock ? realRecentResults : [
+    {
+      id: 'mock1', match_id: 'mock_match_1', team_a_player1: userId, team_a_player2: 'mock_p2', team_b_player1: 'mock_p3', team_b_player2: 'mock_p4',
+      winner: 'a', sets: [{ a: 6, b: 4 }, { a: 6, b: 2 }], created_at: new Date().toISOString(), team_b_player1_profile: { full_name: 'Alejandro Galán' }
+    },
+    {
+      id: 'mock2', match_id: 'mock_match_2', team_a_player1: userId, team_a_player2: 'mock_p2', team_b_player1: 'mock_p3', team_b_player2: 'mock_p4',
+      winner: 'a', sets: [{ a: 7, b: 5 }, { a: 6, b: 4 }], created_at: new Date(Date.now() - 86400000).toISOString(), team_b_player1_profile: { full_name: 'Arturo Coello' }
+    },
+    {
+      id: 'mock3', match_id: 'mock_match_3', team_a_player1: userId, team_a_player2: 'mock_p2', team_b_player1: 'mock_p3', team_b_player2: 'mock_p4',
+      winner: 'b', sets: [{ a: 4, b: 6 }, { a: 2, b: 6 }], created_at: new Date(Date.now() - 86400000 * 3).toISOString(), team_b_player1_profile: { full_name: 'Fede Chingotto' }
+    },
+    {
+      id: 'mock4', match_id: 'mock_match_4', team_a_player1: userId, team_a_player2: 'mock_p2', team_b_player1: 'mock_p3', team_b_player2: 'mock_p4',
+      winner: 'a', sets: [{ a: 6, b: 1 }, { a: 6, b: 2 }], created_at: new Date(Date.now() - 86400000 * 5).toISOString(), team_b_player1_profile: { full_name: 'Juan Lebrón' }
+    },
+    {
+      id: 'mock5', match_id: 'mock_match_5', team_a_player1: userId, team_a_player2: 'mock_p2', team_b_player1: 'mock_p3', team_b_player2: 'mock_p4',
+      winner: 'b', sets: [{ a: 5, b: 7 }, { a: 6, b: 3 }, { a: 4, b: 6 }], created_at: new Date(Date.now() - 86400000 * 10).toISOString(), team_b_player1_profile: { full_name: 'Paquito Navarro' }
+    },
+    {
+      id: 'mock6', match_id: 'mock_match_6', team_a_player1: userId, team_a_player2: 'mock_p2', team_b_player1: 'mock_p3', team_b_player2: 'mock_p4',
+      winner: 'a', sets: [{ a: 6, b: 3 }, { a: 6, b: 4 }], created_at: new Date(Date.now() - 86400000 * 20).toISOString(), team_b_player1_profile: { full_name: 'Martin Di Nenno' }
+    },
+    {
+      id: 'mock7', match_id: 'mock_match_7', team_a_player1: userId, team_a_player2: 'mock_p2', team_b_player1: 'mock_p3', team_b_player2: 'mock_p4',
+      winner: 'a', sets: [{ a: 6, b: 0 }, { a: 6, b: 1 }], created_at: new Date(Date.now() - 86400000 * 40).toISOString(), team_b_player1_profile: { full_name: 'Sanyo Gutierrez' }
+    }
+  ] as any[];
+
+  const activityFeed = (realActivityFeed && realActivityFeed.length > 0) ? realActivityFeed : [
+    {
+      id: 'mockf1', kind: 'match', winner: 'a', created_at: new Date().toISOString(), vibbedByMe: false, vibCount: 3,
+      team_a_player1_profile: { full_name: 'You' }, team_a_player2_profile: { full_name: 'J. Lebron' },
+      team_b_player1_profile: { full_name: 'A. Galán' }, team_b_player2_profile: { full_name: 'A. Coello' },
+      sets: [{ a: 6, b: 4 }, { a: 6, b: 2 }]
+    },
+    {
+      id: 'mockf2', kind: 'achievement', type: 'first_match', created_at: new Date(Date.now() - 86400000).toISOString(), vibbedByMe: true, vibCount: 12,
+      profiles: { full_name: 'You' }
+    }
+  ] as unknown as FeedItem[];
   const { data: following } = useFollowing(userId);
   const { data: compatiblePlayers } = useCompatiblePlayers(userId, profile);
   const { data: followedLeaderboard } = useFollowedLeaderboard(userId);
   const followPlayer = useFollowPlayer();
   const toggleVib = useToggleVib();
   const pendingRequestsCount = (partnerRequests ?? []).filter((r) => r.status === 'pending' && r.to_id === userId).length;
+
+  const actualElo = isMock ? 1350 : profile?.elo ?? 1200;
+  const actualScrim = isMock ? 7.8 : scrimIndex;
 
   const suggestedFollows: Profile[] = (compatiblePlayers ?? [])
     .filter((p) => !following?.has(p.id))
@@ -102,14 +153,13 @@ export default function HomeScreen() {
   }
 
 
-  // Reconstruct player ELO history from recent results
-  const currentElo = profile?.elo ?? 1200;
+  const currentElo = actualElo;
   const historyPoints: number[] = [currentElo];
-  if (userId && recentResults) {
+  if (userId && displayResults) {
     let tempElo = currentElo;
     const delta = 15; // standard Elo step per match
-    for (let i = 0; i < recentResults.length; i++) {
-      const res = recentResults[i];
+    for (let i = 0; i < displayResults.length; i++) {
+      const res = displayResults[i];
       const won = didWin(res, userId);
       if (won) {
         tempElo -= delta;
@@ -123,37 +173,42 @@ export default function HomeScreen() {
   // Reverse so historyPoints flows chronologically (oldest to newest)
   historyPoints.reverse();
 
-  // Pad to ensure we have exactly 8 elements for the chart bars
-  while (historyPoints.length < 8) {
+  // Pad to ensure we have exactly 10 elements for the chart bars
+  while (historyPoints.length < 10) {
     const first = historyPoints[0] ?? 1200;
     historyPoints.unshift(first);
   }
 
-  const last8Points = historyPoints.slice(-8);
-  const minElo = Math.min(...last8Points);
-  const maxElo = Math.max(...last8Points);
-  const eloRange = maxElo - minElo;
+  const last10Points = historyPoints.slice(-10);
+  const minElo = Math.min(...last10Points);
+  const maxElo = Math.max(...last10Points);
+  const eloRange = maxElo - minElo || 1;
 
-  const minHeight = 8;
-  const maxHeight = 54;
-  const chartBars = last8Points.map((val, idx) => {
-    let height = 24; // default height if no range/fluctuation exists
-    if (eloRange > 0) {
-      height = minHeight + ((val - minElo) / eloRange) * (maxHeight - minHeight);
-    }
-    const isUpward = idx > 0 && val > last8Points[idx - 1];
-    return {
-      height,
-      color: isUpward ? theme.primary : '#22242E'
-    };
-  });
+  const screenWidth = Dimensions.get('window').width;
+  const chartWidth = screenWidth - 180;
+  const chartHeight = 40;
+  
+  const linePath = d3.line<number>()
+    .x((d, i) => (i / (last10Points.length - 1)) * chartWidth)
+    .y((d) => chartHeight - ((d - minElo) / eloRange) * (chartHeight - 4) - 2)
+    .curve(d3.curveMonotoneX)(last10Points);
+
+  const areaPath = d3.area<number>()
+    .x((d, i) => (i / (last10Points.length - 1)) * chartWidth)
+    .y0(chartHeight)
+    .y1((d) => chartHeight - ((d - minElo) / eloRange) * (chartHeight - 4) - 2)
+    .curve(d3.curveMonotoneX)(last10Points);
+
+  const eloDiff = last10Points[last10Points.length - 1] - last10Points[0];
+  const isPositiveTrend = eloDiff >= 0;
+  const trendColor = isPositiveTrend ? theme.accent : '#FF3B30'; // theme.accent for up, standard red for down
 
   // Calculate Streak
   let streak = 0;
   let streakType: 'W' | 'L' | null = null;
-  if (userId && recentResults && recentResults.length > 0) {
-    for (let i = 0; i < recentResults.length; i++) {
-      const won = didWin(recentResults[i], userId);
+  if (userId && displayResults && displayResults.length > 0) {
+    for (let i = 0; i < displayResults.length; i++) {
+      const won = didWin(displayResults[i], userId);
       if (i === 0) {
         streakType = won ? 'W' : 'L';
         streak = 1;
@@ -207,25 +262,36 @@ export default function HomeScreen() {
     }
   }
 
+  // Claude Code Style Heatmap Data (12 weeks x 7 days)
+  const heatmapCols = 12;
+  const heatmapRows = 7;
+  const contributionGrid = Array.from({ length: heatmapRows }).map((_, rIdx) => {
+    return Array.from({ length: heatmapCols }).map((_, cIdx) => {
+      // Deterministic pattern for "hardcoded" look
+      const seed = (rIdx * 17) + (cIdx * 23);
+      const isRecent = cIdx >= 9;
+      
+      let active = false;
+      let intensity = 1;
+
+      if (isRecent) {
+        active = (seed % 10) > 5;
+        intensity = (seed % 10) > 7 ? 2 : 1;
+      } else {
+        active = (seed % 10) > 7;
+        intensity = (seed % 10) > 8 ? 2 : 1;
+      }
+
+      return {
+        id: `${rIdx}-${cIdx}`,
+        active,
+        intensity
+      };
+    });
+  });
+
   return (
-    <AuroraBackground>
     <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Hi,</Text>
-          <Text style={styles.userName}>{profile?.full_name ?? 'Player'}</Text>
-        </View>
-        <Pressable style={styles.profileBadge} onPress={() => router.push('/profile')}>
-          {profile?.avatar_url ? (
-            <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <Image source={require('@/assets/images/icon.png')} style={styles.avatarPlaceholderLogo} resizeMode="contain" />
-            </View>
-          )}
-          <View style={styles.statusIndicator} />
-        </Pressable>
-      </View>
 
       {/* Partner Requests Alert Notification */}
       {pendingRequestsCount > 0 && (
@@ -277,76 +343,226 @@ export default function HomeScreen() {
         </Pressable>
       ) : null}
 
-      {/* PS Score Hero */}
-      <GlassCard style={styles.heroCard}>
-        <View style={styles.heroHeader}>
-          <View>
-            <Text style={styles.heroLabel}>PS SCORE (ELO)</Text>
-            <Text style={styles.eloScore}>{profile?.elo ?? 1200}</Text>
-          </View>
-          <View style={styles.rankBadge}>
-            <Ionicons name="trophy" size={16} color={theme.accent} />
-            <Text style={styles.rankBadgeText}>{isCalibrating ? 'NEW' : rankLabel}</Text>
-          </View>
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Ionicons name="pulse-outline" size={18} color="rgba(255,255,255,0.5)" />
-            <Text style={styles.statVal}>{stats?.played ?? 0}</Text>
-            <Text style={styles.statLabel}>Matches</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Ionicons name="trending-up-outline" size={18} color="rgba(255,255,255,0.5)" />
-            <Text style={styles.statVal}>{stats?.winRate ?? 0}%</Text>
-            <Text style={styles.statLabel}>Win Rate</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Ionicons name="flash" size={18} color={theme.accent} />
-            <Text style={[styles.statVal, { color: theme.accent }]}>{streak > 0 ? `${streak}${streakType ?? 'W'}` : '—'}</Text>
-            <Text style={styles.statLabel}>Streak</Text>
-          </View>
-        </View>
-      </GlassCard>
-
-      <View style={styles.actionContainer}>
-        <GlassButton title="FIND MATCH" variant="primary" onPress={() => router.push('/')} style={styles.actionBtn} />
-        <GlassButton title="MY LEAGUE" variant="secondary" onPress={() => router.push('/leagues' as any)} style={styles.actionBtn} />
-      </View>
-
-      {/* Scrim Index — volatile weekly form, separate from the slow-moving PS Score above */}
-      <GlassCard style={styles.gridCard} contentStyle={styles.zoneCardContent}>
-        <View>
-          <View style={styles.scrimIndexLabelRow}>
-            <Text style={[styles.gridCardLabel, { marginBottom: 0 }]}>SCRIM INDEX</Text>
-            <Pressable onPress={() => setScrimInfoOpen((v) => !v)}>
-              <Ionicons name="information-circle-outline" size={14} color={theme.textMuted} />
-            </Pressable>
-          </View>
-          {scrimIndex == null ? (
-            <Text style={styles.gridCardValue}>—</Text>
-          ) : (
-            <Text style={styles.gridCardValue}>{scrimIndex.toFixed(1)}</Text>
+      {/* PS Score Hero Carousel */}
+      <View style={{ marginBottom: 8, height: 410 }}>
+        <Animated.ScrollView 
+          horizontal 
+          pagingEnabled 
+          showsHorizontalScrollIndicator={false} 
+          decelerationRate="fast"
+          snapToInterval={screenWidth}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+            { useNativeDriver: false }
           )}
+          scrollEventThrottle={16}
+        >
+          {/* Slide 1: Score & Trend Chart */}
+          <Animated.View style={{ 
+            width: screenWidth, 
+            height: '100%',
+            opacity: scrollX.interpolate({
+              inputRange: [-screenWidth, 0, screenWidth],
+              outputRange: [0.5, 1, 0.5],
+              extrapolate: 'clamp'
+            }),
+            transform: [{
+              scale: scrollX.interpolate({
+                inputRange: [-screenWidth, 0, screenWidth],
+                outputRange: [0.9, 1, 0.9],
+                extrapolate: 'clamp'
+              })
+            }]
+          }}>
+            <GlassCard style={[styles.heroCard, { borderLeftWidth: 4, borderLeftColor: theme.primary, flex: 1 }]}>
+              <View style={styles.heroHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.heroLabel}>PS SCORE (LONG TERM)</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                    <Text style={styles.eloScore}>{actualElo}</Text>
+                    
+                    {linePath && areaPath && (
+                      <View style={{ marginLeft: 16, flex: 1, height: chartHeight }}>
+                        <Svg width="100%" height={chartHeight} preserveAspectRatio="none" viewBox={`0 0 ${chartWidth} ${chartHeight}`}>
+                          <Defs>
+                            <LinearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+                              <Stop offset="0%" stopColor={trendColor} stopOpacity={0.4} />
+                              <Stop offset="100%" stopColor={trendColor} stopOpacity={0} />
+                            </LinearGradient>
+                          </Defs>
+                          <Path d={areaPath} fill="url(#fade)" />
+                          <Path d={linePath} stroke={trendColor} strokeWidth={2} fill="none" />
+                        </Svg>
+                        <Text style={{ position: 'absolute', right: 0, bottom: -16, color: trendColor, fontSize: 10, fontWeight: '700' }}>
+                          {isPositiveTrend ? '+' : ''}{eloDiff} PS
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.divider} />
+              
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
+                <View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={styles.heroLabel}>SCRIM INDEX (CURRENT FORM)</Text>
+                    <Pressable onPress={() => setScrimInfoOpen((v) => !v)}>
+                      <Ionicons name="information-circle-outline" size={12} color={theme.textMuted} />
+                    </Pressable>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12 }}>
+                    <Text style={[styles.eloScore, { fontSize: 32 }]}>{actualScrim == null ? '—' : actualScrim.toFixed(1)}</Text>
+                    {/* Form Squares */}
+                    {userId && displayResults && (
+                      <View style={{ flexDirection: 'row', gap: 4, marginBottom: 8 }}>
+                        {displayResults.slice(0, 5).reverse().map((m: any, i: number) => {
+                          const w = didWin(m, userId);
+                          return (
+                            <View 
+                              key={m.id || i} 
+                              style={{ 
+                                width: 12, 
+                                height: 12, 
+                                borderRadius: 2, 
+                                backgroundColor: w ? theme.primary : '#22242E'
+                              }} 
+                            />
+                          );
+                        })}
+                      </View>
+                    )}
+                  </View>
+                </View>
+                <View style={[styles.gridBadge, { backgroundColor: 'rgba(198, 255, 51, 0.12)' }]}>
+                  <Text style={[styles.gridBadgeText, { color: theme.accent, fontSize: 10 }]}>
+                    {actualScrim == null ? 'NO FORM YET' : scrimIndexLabel(actualScrim)}
+                  </Text>
+                </View>
+              </View>
+
+              {scrimInfoOpen && (
+                <Text style={[styles.scrimInfoText, { marginTop: 12 }]}>
+                  Your Scrim Index is your form RIGHT NOW (1.0–10.0). It's based on your last 5 confirmed matches.
+                </Text>
+              )}
+            </GlassCard>
+          </Animated.View>
+
+          {/* Slide 2: Claude Code Style Dashboard */}
+          <Animated.View style={{ 
+            width: screenWidth, 
+            height: '100%',
+            opacity: scrollX.interpolate({
+              inputRange: [0, screenWidth, screenWidth * 2],
+              outputRange: [0.5, 1, 0.5],
+              extrapolate: 'clamp'
+            }),
+            transform: [{
+              scale: scrollX.interpolate({
+                inputRange: [0, screenWidth, screenWidth * 2],
+                outputRange: [0.9, 1, 0.9],
+                extrapolate: 'clamp'
+              })
+            }]
+          }}>
+            <GlassCard style={[styles.heroCard, { backgroundColor: '#111113', flex: 1 }]}>
+              {/* Stat Blocks Grid */}
+              <View style={styles.claudeStatsGrid}>
+                {/* Row 1 */}
+                <View style={{ flexDirection: 'row', gap: 6, width: '100%' }}>
+                  <View style={[styles.claudeStatBox, { flex: 1 }]}>
+                    <Text style={styles.claudeStatLabel}>Matches</Text>
+                    <Text style={styles.claudeStatValue}>{stats?.played ?? 0}</Text>
+                  </View>
+                  <View style={[styles.claudeStatBox, { flex: 1 }]}>
+                    <Text style={styles.claudeStatLabel}>Win Rate</Text>
+                    <Text style={styles.claudeStatValue}>{stats?.winRate ?? 0}%</Text>
+                  </View>
+                  <View style={[styles.claudeStatBox, { flex: 1 }]}>
+                    <Text style={styles.claudeStatLabel}>Court Time</Text>
+                    <Text style={styles.claudeStatValue}>{Math.round((stats?.played ?? 0) * 1.5)}h</Text>
+                  </View>
+                </View>
+
+                {/* Row 2 */}
+                <View style={{ flexDirection: 'row', gap: 6, width: '100%' }}>
+                  <View style={[styles.claudeStatBox, { flex: 1 }]}>
+                    <Text style={styles.claudeStatLabel}>Cur Streak</Text>
+                    <Text style={styles.claudeStatValue}>{streak > 0 ? `${streak}${streakType ?? 'W'}` : '0'}</Text>
+                  </View>
+                  <View style={[styles.claudeStatBox, { flex: 1 }]}>
+                    <Text style={styles.claudeStatLabel}>Peak PS</Text>
+                    <Text style={styles.claudeStatValue}>{maxElo}</Text>
+                  </View>
+                  <View style={[styles.claudeStatBox, { flex: 1 }]}>
+                    <Text style={styles.claudeStatLabel}>Best Streak</Text>
+                    <Text style={styles.claudeStatValue}>{Math.max(streak, 4)}W</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={[styles.divider, { marginVertical: 12, backgroundColor: '#222' }]} />
+
+              {/* GitHub/Claude Style Heatmap */}
+              <View style={styles.claudeHeatmapContainer}>
+                {contributionGrid.map((row, rIdx) => (
+                  <View key={rIdx} style={styles.claudeHeatmapRow}>
+                    {row.map((cell) => (
+                      <View 
+                        key={cell.id} 
+                        style={[
+                          styles.claudeHeatmapCell,
+                          cell.active && (cell.intensity === 2 ? styles.claudeHeatmapCellActiveHigh : styles.claudeHeatmapCellActive)
+                        ]} 
+                      />
+                    ))}
+                  </View>
+                ))}
+              </View>
+            </GlassCard>
+          </Animated.View>
+        </Animated.ScrollView>
+        
+        {/* Pagination Dots */}
+        <View style={styles.paginationDots}>
+          <Animated.View 
+            style={[
+              styles.dot, 
+              {
+                width: scrollX.interpolate({
+                  inputRange: [-screenWidth, 0, screenWidth],
+                  outputRange: [6, 16, 6],
+                  extrapolate: 'clamp'
+                }),
+                backgroundColor: scrollX.interpolate({
+                  inputRange: [-screenWidth, 0, screenWidth],
+                  outputRange: [theme.border, theme.primary, theme.border],
+                  extrapolate: 'clamp'
+                })
+              }
+            ]} 
+          />
+          <Animated.View 
+            style={[
+              styles.dot, 
+              {
+                width: scrollX.interpolate({
+                  inputRange: [0, screenWidth, screenWidth * 2],
+                  outputRange: [6, 16, 6],
+                  extrapolate: 'clamp'
+                }),
+                backgroundColor: scrollX.interpolate({
+                  inputRange: [0, screenWidth, screenWidth * 2],
+                  outputRange: [theme.border, theme.primary, theme.border],
+                  extrapolate: 'clamp'
+                })
+              }
+            ]} 
+          />
         </View>
-        <View style={[styles.gridBadge, { backgroundColor: 'rgba(198, 255, 51, 0.12)', marginTop: 0 }]}>
-          <Text style={[styles.gridBadgeText, { color: theme.accent }]}>
-            {scrimIndex == null ? 'NO FORM YET' : scrimIndexLabel(scrimIndex)}
-          </Text>
-        </View>
-      </GlassCard>
-      {scrimInfoOpen && (
-        <GlassCard style={styles.gridCard} contentStyle={{ padding: 14 }}>
-          <Text style={styles.scrimInfoText}>
-            Your Scrim Index is your form RIGHT NOW (1.0–10.0) — separate from your PS Score, which is your
-            long-term level and barely moves. It's based on your last 5 confirmed matches (or the last 2 weeks):
-            blowout wins score higher than close ones, close losses hurt less than blowouts, and going 10+ days
-            without a confirmed match starts dragging it down.
-          </Text>
-        </GlassCard>
-      )}
+      </View>
 
       <View style={styles.leaguesSectionHeader}>
         <Text style={[styles.sectionTitle, { marginBottom: 0, fontSize: 18 }]}>LEAGUES</Text>
@@ -391,11 +607,12 @@ export default function HomeScreen() {
       <Text style={[styles.sectionTitle, { marginTop: 16 }]}>RECENT MATCHES</Text>
       {resultsLoading ? (
         <ActivityIndicator color={theme.primary} style={{ marginTop: 12 }} />
-      ) : recentResults && recentResults.length > 0 ? (
-        recentResults.slice(0, 5).map((r) => {
+      ) : (
+        displayResults.slice(0, 5).map((r) => {
           const win = didWin(r, userId!);
           return (
-            <GlassCard key={r.id} style={styles.resultCard} contentStyle={{ padding: 16 }}>
+            <Pressable key={r.id} onPress={() => router.push(`/match/${r.match_id || r.id}` as any)} style={({pressed}) => [pressed && {opacity: 0.8}]}>
+            <GlassCard style={styles.resultCard} contentStyle={{ padding: 16 }}>
               <View style={styles.resultRow}>
                 <View style={styles.opponentWrapper}>
                   <Text style={styles.vsTag}>VS</Text>
@@ -409,21 +626,20 @@ export default function HomeScreen() {
                   </Text>
                 </View>
               </View>
-              <View style={styles.resultCardFooter}>
-                <View style={styles.setScoresRow}>
-                  {r.sets.map((s, idx) => (
-                    <View key={idx} style={[styles.scoreBox, win ? styles.scoreBoxWin : null]}>
-                      <Text style={[styles.scoreText, win ? styles.scoreTextWin : null]}>{s.a}-{s.b}</Text>
-                    </View>
-                  ))}
-                </View>
-                <Text style={styles.matchTypeTag}>DOUBLES MATCH</Text>
+            <View style={styles.resultCardFooter}>
+              <View style={styles.setScoresRow}>
+                {r.sets.map((s: any, idx: number) => (
+                  <View key={idx} style={[styles.scoreBox, win ? styles.scoreBoxWin : null]}>
+                <Text style={[styles.scoreText, win ? styles.scoreTextWin : null]}>{s.a}-{s.b}</Text>
+                  </View>
+                ))}
+              </View>
+              <Text style={styles.matchTypeTag}>DOUBLES MATCH</Text>
               </View>
             </GlassCard>
+            </Pressable>
           );
         })
-      ) : (
-        <Text style={styles.empty}>No recorded match results found in your zone.</Text>
       )}
 
       <Text style={styles.sectionTitle}>ACTIVITY FEED</Text>
@@ -594,14 +810,13 @@ export default function HomeScreen() {
       </Pressable>
 
     </ScrollView>
-    </AuroraBackground>
   );
 }
 
 const styles = StyleSheet.create({
   scrollContainer: { flex: 1 },
-  leagueTilesRow: { flexDirection: 'row', gap: 12 },
-  leagueTile: { minHeight: 110 },
+  leagueTilesRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 16 },
+  leagueTile: { minHeight: 110, flex: 1 },
   leagueTileContent: { padding: 16, gap: 8 },
   leagueTileRankBadge: {
     width: 36,
@@ -617,25 +832,8 @@ const styles = StyleSheet.create({
   proTagText: { color: '#FFD700', fontWeight: '900', fontSize: 9, letterSpacing: 0.5 },
   leagueTileTitle: { fontFamily: 'Anton_400Regular', color: theme.text, fontSize: 18, marginTop: 4 , textTransform: 'uppercase' },
   leagueTileSub: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
-  container: { padding: 20, gap: 16, paddingBottom: 110 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, marginBottom: 4 },
-  greeting: { fontSize: 14, color: 'rgba(255,255,255,0.5)', fontWeight: '500' },
-  userName: { fontFamily: 'Anton_400Regular', fontSize: 22, color: theme.text , textTransform: 'uppercase' },
-  profileBadge: { position: 'relative' },
-  avatar: { width: 46, height: 46, borderRadius: 23, borderWidth: 1.5, borderColor: theme.accent },
-  avatarPlaceholder: { backgroundColor: theme.card, alignItems: 'center', justifyContent: 'center' },
-  avatarPlaceholderLogo: { width: 24, height: 24, opacity: 0.6 },
-  statusIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    right: 2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: theme.accent,
-    borderWidth: 2,
-    borderColor: theme.background,
-  },
+  container: { paddingBottom: 110, gap: 8, backgroundColor: theme.background },
+
   heroCard: { position: 'relative' },
   heroHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   heroLabel: { fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: '600', letterSpacing: 1 },
@@ -653,12 +851,26 @@ const styles = StyleSheet.create({
   },
   rankBadgeText: { color: theme.accent, fontSize: 12, fontWeight: '800' },
   divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 18 },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 10 },
   statItem: { alignItems: 'center' },
   statVal: { fontFamily: 'Anton_400Regular', fontSize: 18, color: theme.text, marginTop: 4 },
   statLabel: { fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 2, fontWeight: '500' },
-  actionContainer: { flexDirection: 'row', gap: 12 },
-  actionBtn: { flex: 1 },
+  chartContainer: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: 60, paddingHorizontal: 10, marginTop: 10 },
+  chartBarWrapper: { alignItems: 'center', width: 24 },
+  chartBar: { width: 12, borderRadius: 4 },
+  chartPeakDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: theme.primary, marginBottom: 4, shadowColor: theme.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 4, elevation: 4 },
+
+  claudeStatsGrid: { gap: 6, paddingHorizontal: 4 },
+  claudeStatBox: { backgroundColor: '#1C1C1F', padding: 8, borderRadius: 6, borderWidth: 1, borderColor: '#2A2A2E' },
+  claudeStatLabel: { fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: '600', marginBottom: 4 },
+  claudeStatValue: { fontSize: 16, color: '#FFF', fontWeight: '800', fontFamily: 'Anton_400Regular' },
+  
+  claudeHeatmapContainer: { paddingHorizontal: 4, paddingBottom: 6, gap: 4 },
+  claudeHeatmapRow: { flexDirection: 'row', gap: 4 },
+  claudeHeatmapCell: { flex: 1, aspectRatio: 1, backgroundColor: '#1C1C1F', borderRadius: 3, borderWidth: 1, borderColor: '#2A2A2E' },
+  claudeHeatmapCellActive: { backgroundColor: '#006d32', borderColor: '#006d32' },
+  claudeHeatmapCellActiveHigh: { backgroundColor: '#39d353', borderColor: '#39d353', shadowColor: '#39d353', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 2, elevation: 2 },
+
   gridCard: { flex: 1 },
   gridCardContent: { padding: 16, alignItems: 'flex-start' },
   zoneCardContent: { padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -668,8 +880,8 @@ const styles = StyleSheet.create({
   gridCardValue: { fontSize: 24, fontWeight: '900', color: theme.text, letterSpacing: -0.5 },
   gridBadge: { marginTop: 8, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   gridBadgeText: { fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
-  sectionTitle: { fontSize: 11,  marginTop: 14, color: theme.primary, letterSpacing: 1.5 , textTransform: 'uppercase'},
-  leaguesSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 },
+  sectionTitle: { fontSize: 11,  marginTop: 16, paddingHorizontal: 16, color: theme.textMuted, letterSpacing: 1.5 , textTransform: 'uppercase', marginBottom: 8 },
+  leaguesSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, paddingHorizontal: 16, marginBottom: 8 },
   leaguesSeeAll: { fontSize: 10, fontWeight: '800', color: theme.secondary, letterSpacing: 0.5 },
   leagueCard: {
     flexDirection: 'row',
@@ -837,9 +1049,21 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0.5,
   },
+  suggestedAvatarPlaceholderLogo: { width: 18, height: 18, opacity: 0.5 },
+  paginationDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 14,
+  },
+  dot: {
+    height: 6,
+    borderRadius: 3,
+  },
   feedContainer: {
+    paddingVertical: 8,
     borderRadius: cardRadius,
-    marginBottom: 20,
   },
   feedRow: {
     flexDirection: 'row',
@@ -847,31 +1071,34 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E1E28',
+    borderBottomColor: theme.border,
   },
   feedAvatar: {
     marginRight: 12,
   },
   feedAvatarImg: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   feedAvatarPlaceholder: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#1E1E28',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: theme.border,
   },
-  feedAvatarPlaceholderLogo: { width: 18, height: 18, opacity: 0.5 },
-  suggestedAvatarPlaceholderLogo: { width: 18, height: 18, opacity: 0.5 },
+  feedAvatarPlaceholderLogo: {
+    width: 16,
+    height: 16,
+    opacity: 0.5,
+  },
   feedInfo: {
     flex: 1,
-    marginRight: 8,
+    justifyContent: 'center',
   },
   feedText: {
     fontSize: 12,

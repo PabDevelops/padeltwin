@@ -40,6 +40,8 @@ import {
   useMyKopStatus,
   useScrimIndex,
   scrimIndexLabel,
+  useResetStats,
+  useInjectMockData,
 } from '@/lib/queries';
 import { ACHIEVEMENT_LABELS, ACHIEVEMENT_ICONS } from '@/constants/achievements';
 import { supabase } from '@/lib/supabase';
@@ -99,6 +101,8 @@ export default function ProfileScreen() {
   const { data: blockedProfiles } = useBlockedProfiles(userId);
   const unblockUser = useUnblockUser();
   const deleteAccount = useDeleteAccount();
+  const resetStats = useResetStats();
+  const injectMockData = useInjectMockData();
   const applyToCoach = useApplyToCoach();
   const stopCoaching = useStopCoaching();
   const { data: leads, isLoading: leadsLoading } = useMyCoachLeads(profile?.coach_status === 'approved' ? userId : undefined);
@@ -345,47 +349,76 @@ export default function ProfileScreen() {
 
         {resultsLoading ? (
           <ActivityIndicator color={theme.accent} style={{ marginBottom: 12 }} />
-        ) : recentResults && recentResults.length > 0 ? (
+        ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-            {recentResults.map((r) => {
-              const win = didWin(r, userId);
-              const opponent = opponentProfile(r, userId);
-              const opponentName = opponent?.full_name ?? 'Padel Player';
-              const opponentAvatar = opponent?.avatar_url;
-              const scoreString = r.sets.map((s) => `${s.a}-${s.b}`).join(', ');
+            {(() => {
+              const displayResults = recentResults && recentResults.length > 0 
+                ? recentResults 
+                : [
+                    {
+                      id: 'mock1',
+                      team_a_player1: userId,
+                      team_a_player2: 'mock_p2',
+                      team_b_player1: 'mock_p3',
+                      team_b_player2: 'mock_p4',
+                      winner: 'a',
+                      sets: [{ a: 6, b: 4 }, { a: 6, b: 2 }],
+                      created_at: new Date().toISOString(),
+                      team_b_player1_profile: { full_name: 'Alejandro Galán' }
+                    },
+                    {
+                      id: 'mock2',
+                      team_a_player1: userId,
+                      team_a_player2: 'mock_p2',
+                      team_b_player1: 'mock_p3',
+                      team_b_player2: 'mock_p4',
+                      winner: 'b',
+                      sets: [{ a: 4, b: 6 }, { a: 2, b: 6 }],
+                      created_at: new Date(Date.now() - 86400000).toISOString(),
+                      team_b_player1_profile: { full_name: 'Arturo Coello' }
+                    }
+                  ] as any[];
 
-              return (
-                <GlassCard key={r.id} style={styles.horizontalReviewCard} contentStyle={{ padding: 14 }}>
-                  <View style={styles.cardHeaderRow}>
-                    {opponentAvatar ? (
-                      <Image source={{ uri: opponentAvatar }} style={styles.smallAvatar} />
-                    ) : (
-                      <View style={styles.smallAvatarPlaceholder}>
-                        <Image source={require('@/assets/images/icon.png')} style={styles.smallAvatarPlaceholderLogo} resizeMode="contain" />
-                      </View>
-                    )}
-                    <View style={styles.cardInfoCol}>
-                      <Text style={styles.cardOpponentName} numberOfLines={1}>
-                        vs {opponentName}
-                      </Text>
-                      <View style={styles.cardRatingRow}>
-                        <Ionicons name="trophy" size={11} color={theme.accent} style={{ marginRight: 4 }} />
-                        <Text style={styles.cardResultText}>
-                          {win ? 'Won' : 'Lost'} {scoreString}
+              return displayResults.map((r) => {
+                const win = didWin(r, userId!);
+                const opponent = opponentProfile(r, userId!);
+                const opponentName = opponent?.full_name ?? 'Padel Player';
+                const opponentAvatar = opponent?.avatar_url;
+                const scoreString = r.sets.map((s: any) => `${s.a}-${s.b}`).join(', ');
+
+                return (
+                  <Pressable key={r.id} onPress={() => router.push(`/match/${r.match_id || r.id}` as any)} style={({pressed}) => [pressed && {opacity: 0.8}]}>
+                  <GlassCard style={styles.horizontalReviewCard} contentStyle={{ padding: 14 }}>
+                    <View style={styles.cardHeaderRow}>
+                      {opponentAvatar ? (
+                        <Image source={{ uri: opponentAvatar }} style={styles.smallAvatar} />
+                      ) : (
+                        <View style={styles.smallAvatarPlaceholder}>
+                          <Image source={require('@/assets/images/icon.png')} style={styles.smallAvatarPlaceholderLogo} resizeMode="contain" />
+                        </View>
+                      )}
+                      <View style={styles.cardInfoCol}>
+                        <Text style={styles.cardOpponentName} numberOfLines={1}>
+                          vs {opponentName}
                         </Text>
-                        <Text style={styles.cardTimeText}>
-                          {'  '}•{'  '}
-                          {formatRelativeTime(r.created_at)}
-                        </Text>
+                        <View style={styles.cardRatingRow}>
+                          <Ionicons name="trophy" size={11} color={theme.accent} style={{ marginRight: 4 }} />
+                          <Text style={styles.cardResultText}>
+                            {win ? 'Won' : 'Lost'} {scoreString}
+                          </Text>
+                          <Text style={styles.cardTimeText}>
+                            {'  '}•{'  '}
+                            {formatRelativeTime(r.created_at)}
+                          </Text>
+                        </View>
                       </View>
                     </View>
-                  </View>
-                </GlassCard>
-              );
-            })}
+                  </GlassCard>
+                  </Pressable>
+                );
+              });
+            })()}
           </ScrollView>
-        ) : (
-          <Text style={styles.emptyText}>No match results recorded yet — play one and record the result.</Text>
         )}
 
         {/* ACHIEVEMENTS */}
@@ -700,6 +733,65 @@ export default function ProfileScreen() {
             }
           >
             <Text style={{ color: theme.danger, fontWeight: '800', fontSize: 11, letterSpacing: 0.5 }}>DELETE MY ACCOUNT</Text>
+          </Pressable>
+        </GlassCard>
+
+        {/* DANGER ZONE - DEV ONLY */}
+        <GlassCard style={[styles.section, { borderColor: theme.danger, borderWidth: 1 }]} contentStyle={{ padding: 16 }}>
+          <Text style={[styles.sectionHeader, { color: theme.danger, borderBottomColor: 'rgba(255,59,48,0.2)' }]}>DEV DANGER ZONE</Text>
+          <Text style={styles.helperText}>
+            Development tools to manage your testing data.
+          </Text>
+          
+          <Pressable
+            style={({ pressed }) => [
+              { marginTop: 16, backgroundColor: 'rgba(255,59,48,0.1)', padding: 12, borderRadius: 8, alignItems: 'center' },
+              pressed && { opacity: 0.7 }
+            ]}
+            onPress={() => {
+              Alert.alert(
+                'Hard Reset Data?',
+                'This will wipe all your match history and reset your ELO to 1200.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { 
+                    text: 'RESET', 
+                    style: 'destructive',
+                    onPress: () => userId && resetStats.mutate(userId, {
+                      onSuccess: () => Alert.alert('Success', 'Your stats have been reset to 1200.'),
+                      onError: (err: any) => Alert.alert('Error', err.message)
+                    })
+                  }
+                ]
+              )
+            }}
+          >
+            {resetStats.isPending ? (
+              <ActivityIndicator color={theme.danger} />
+            ) : (
+              <Text style={{ color: theme.danger, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 }}>HARD RESET MY STATS</Text>
+            )}
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              { marginTop: 8, backgroundColor: 'rgba(198, 255, 51, 0.15)', padding: 12, borderRadius: 8, alignItems: 'center' },
+              pressed && { opacity: 0.7 }
+            ]}
+            onPress={() => {
+              if (userId) {
+                injectMockData.mutate(userId, {
+                  onSuccess: () => Alert.alert('Success', 'Mock data has been injected into your profile!'),
+                  onError: (err: any) => Alert.alert('Error', err.message)
+                });
+              }
+            }}
+          >
+            {injectMockData.isPending ? (
+              <ActivityIndicator color={theme.accent} />
+            ) : (
+              <Text style={{ color: theme.accent, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 }}>INJECT MOCK DATA</Text>
+            )}
           </Pressable>
         </GlassCard>
       </View>
