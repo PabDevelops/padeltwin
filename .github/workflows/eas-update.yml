@@ -1,0 +1,33 @@
+name: EAS Update
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: 'EAS Update channel'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - preview
+          - production
+      message:
+        description: 'Update message'
+        required: false
+        default: 'Manual OTA update'
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - run: npx eas-cli update --channel "${{ inputs.channel }}" --message "${{ inputs.message }}" --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
