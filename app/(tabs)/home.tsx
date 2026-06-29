@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -17,6 +17,8 @@ import {
   useToggleVib,
   useFollowedLeaderboard,
   useMyKopStatus,
+  useScrimIndex,
+  scrimIndexLabel,
   type FeedItem,
 } from '@/lib/queries';
 import { ACHIEVEMENT_LABELS, ACHIEVEMENT_ICONS } from '@/constants/achievements';
@@ -69,6 +71,8 @@ export default function HomeScreen() {
   const userId = session?.user.id;
   const { data: profile } = useProfile(userId);
   const { data: kopStatus } = useMyKopStatus(userId);
+  const { data: scrimIndex } = useScrimIndex(userId);
+  const [scrimInfoOpen, setScrimInfoOpen] = useState(false);
   const { data: stats, isLoading: statsLoading } = useMyStats(userId);
   const { data: recentResults, isLoading: resultsLoading } = useRecentResults(userId, 8);
   const { data: leaderboard, isLoading: leaderboardLoading } = useLeaderboard(profile?.zone);
@@ -181,48 +185,8 @@ export default function HomeScreen() {
     }
   }
 
-  // Dynamic Badges configuration
-  // 1. Total Matches Badge
   const playedCount = stats?.played ?? 0;
   const isCalibrating = playedCount < ELO_PROVISIONAL_MATCHES;
-
-  let matchesBadgeText = '💤 INACTIVE';
-  let matchesBadgeColor = 'rgba(110, 112, 126, 0.1)';
-  let matchesBadgeTextColor = theme.textMuted;
-  if (playedCount > 0 && playedCount < ELO_PROVISIONAL_MATCHES) {
-    matchesBadgeText = '🌱 STARTING';
-    matchesBadgeColor = 'rgba(46, 157, 255, 0.1)';
-    matchesBadgeTextColor = theme.secondary;
-  } else if (playedCount >= 5 && playedCount < 15) {
-    matchesBadgeText = '🔥 ACTIVE';
-    matchesBadgeColor = 'rgba(46, 157, 255, 0.1)';
-    matchesBadgeTextColor = theme.secondary;
-  } else if (playedCount >= 15) {
-    matchesBadgeText = '⚡ VETERAN';
-    matchesBadgeColor = 'rgba(255, 92, 0, 0.15)';
-    matchesBadgeTextColor = theme.primary;
-  }
-
-  // 2. Win Rate Badge
-  const winRate = stats?.winRate ?? 0;
-  let winRateBadgeText = '⚔️ CONTENDING';
-  let winRateBadgeColor = 'rgba(110, 112, 126, 0.1)';
-  let winRateBadgeTextColor = theme.textMuted;
-  if (playedCount > 0) {
-    if (winRate >= 60) {
-      winRateBadgeText = '🏆 DOMINATING';
-      winRateBadgeColor = 'rgba(0, 230, 118, 0.1)';
-      winRateBadgeTextColor = theme.success;
-    } else if (winRate >= 45) {
-      winRateBadgeText = '⚖️ BALANCED';
-      winRateBadgeColor = 'rgba(46, 157, 255, 0.1)';
-      winRateBadgeTextColor = theme.secondary;
-    } else {
-      winRateBadgeText = '⚠️ CHALLENGED';
-      winRateBadgeColor = 'rgba(255, 92, 0, 0.1)';
-      winRateBadgeTextColor = theme.primary;
-    }
-  }
 
   // 3. Zone Percentile Badge
   let percentileBadgeText = '⚓ CHALLENGER';
@@ -373,80 +337,57 @@ export default function HomeScreen() {
         </View>
       </GlassCard>
 
-      <View style={styles.actionContainer}>
-        <GlassButton title="FIND MATCH" variant="primary" onPress={() => router.push('/')} style={styles.actionBtn} />
-        <GlassButton title="CHALLENGE" variant="secondary" onPress={() => router.push('/create-match')} style={styles.actionBtn} />
-      </View>
-
-      {/* Stats Detail Grid */}
-      <View style={styles.statsGrid}>
-        <GlassCard style={styles.gridCard} contentStyle={styles.gridCardContent}>
-          <Text style={styles.gridCardLabel}>TOTAL MATCHES</Text>
-          {statsLoading ? (
-            <ActivityIndicator color={theme.primary} />
-          ) : (
-            <Text style={styles.gridCardValue}>{stats?.played ?? 0}</Text>
-          )}
-          <View style={[styles.gridBadge, { backgroundColor: matchesBadgeColor }]}>
-            <Text style={[styles.gridBadgeText, { color: matchesBadgeTextColor }]}>{matchesBadgeText}</Text>
-          </View>
-        </GlassCard>
-
-        <GlassCard style={styles.gridCard} contentStyle={styles.gridCardContent}>
-          <Text style={styles.gridCardLabel}>WINNING RATE</Text>
-          {statsLoading ? (
-            <ActivityIndicator color={theme.primary} />
-          ) : (
-            <Text style={styles.gridCardValue}>{stats?.winRate ?? 0}%</Text>
-          )}
-          <View style={[styles.gridBadge, { backgroundColor: winRateBadgeColor }]}>
-            <Text style={[styles.gridBadgeText, { color: winRateBadgeTextColor }]}>{winRateBadgeText}</Text>
-          </View>
-        </GlassCard>
-      </View>
-
-      {/* Performance Insights - Stats Grid Row 2 */}
-      <View style={[styles.statsGrid, { marginTop: -4 }]}>
-        <GlassCard style={styles.gridCard} contentStyle={styles.gridCardContent}>
-          <Text style={styles.gridCardLabel}>CURRENT STREAK</Text>
-          {resultsLoading ? (
-            <ActivityIndicator color={theme.primary} />
-          ) : (
-            <Text style={styles.gridCardValue}>{streak}{streakType ?? 'W'}</Text>
-          )}
-          <View
-            style={[
-              styles.gridBadge,
-              {
-                backgroundColor: streakType === 'W' ? 'rgba(0, 230, 118, 0.1)' : 'rgba(255, 59, 48, 0.1)'
-              }
-            ]}
-          >
-            <Text
-              style={[
-                styles.gridBadgeText,
-                {
-                  color: streakType === 'W' ? theme.success : theme.danger
-                }
-              ]}
-            >
-              {streakType === 'W' ? '📈 WINNING STREAK' : '📉 ADJUSTING'}
-            </Text>
-          </View>
-        </GlassCard>
-
-        <GlassCard style={styles.gridCard} contentStyle={styles.gridCardContent}>
+      {/* Zone Percentile — the one stat the hero card above doesn't already show */}
+      <GlassCard style={styles.gridCard} contentStyle={styles.zoneCardContent}>
+        <View>
           <Text style={styles.gridCardLabel}>ZONE PERCENTILE</Text>
           {leaderboardLoading ? (
             <ActivityIndicator color={theme.primary} />
           ) : (
             <Text style={styles.gridCardValue}>{rankLabel}</Text>
           )}
-          <View style={[styles.gridBadge, { backgroundColor: percentileBadgeColor }]}>
-            <Text style={[styles.gridBadgeText, { color: percentileBadgeTextColor }]}>{percentileBadgeText}</Text>
-          </View>
-        </GlassCard>
+        </View>
+        <View style={[styles.gridBadge, { backgroundColor: percentileBadgeColor, marginTop: 0 }]}>
+          <Text style={[styles.gridBadgeText, { color: percentileBadgeTextColor }]}>{percentileBadgeText}</Text>
+        </View>
+      </GlassCard>
+
+      <View style={styles.actionContainer}>
+        <GlassButton title="FIND MATCH" variant="primary" onPress={() => router.push('/')} style={styles.actionBtn} />
+        <GlassButton title="MY LEAGUE" variant="secondary" onPress={() => router.push('/leagues' as any)} style={styles.actionBtn} />
       </View>
+
+      {/* Scrim Index — volatile weekly form, separate from the slow-moving PS Score above */}
+      <GlassCard style={styles.gridCard} contentStyle={styles.zoneCardContent}>
+        <View>
+          <View style={styles.scrimIndexLabelRow}>
+            <Text style={[styles.gridCardLabel, { marginBottom: 0 }]}>SCRIM INDEX</Text>
+            <Pressable onPress={() => setScrimInfoOpen((v) => !v)}>
+              <Ionicons name="information-circle-outline" size={14} color={theme.textMuted} />
+            </Pressable>
+          </View>
+          {scrimIndex == null ? (
+            <Text style={styles.gridCardValue}>—</Text>
+          ) : (
+            <Text style={styles.gridCardValue}>{scrimIndex.toFixed(1)}</Text>
+          )}
+        </View>
+        <View style={[styles.gridBadge, { backgroundColor: 'rgba(198, 255, 51, 0.12)', marginTop: 0 }]}>
+          <Text style={[styles.gridBadgeText, { color: theme.accent }]}>
+            {scrimIndex == null ? 'NO FORM YET' : scrimIndexLabel(scrimIndex)}
+          </Text>
+        </View>
+      </GlassCard>
+      {scrimInfoOpen && (
+        <GlassCard style={styles.gridCard} contentStyle={{ padding: 14 }}>
+          <Text style={styles.scrimInfoText}>
+            Your Scrim Index is your form RIGHT NOW (1.0–10.0) — separate from your PS Score, which is your
+            long-term level and barely moves. It's based on your last 5 confirmed matches (or the last 2 weeks):
+            blowout wins score higher than close ones, close losses hurt less than blowouts, and going 10+ days
+            without a confirmed match starts dragging it down.
+          </Text>
+        </GlassCard>
+      )}
 
       <View style={styles.leaguesSectionHeader}>
         <Text style={[styles.sectionTitle, { marginBottom: 0, fontSize: 18 }]}>LEAGUES</Text>
@@ -759,9 +700,11 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 2, fontWeight: '500' },
   actionContainer: { flexDirection: 'row', gap: 12 },
   actionBtn: { flex: 1 },
-  statsGrid: { flexDirection: 'row', gap: 12 },
   gridCard: { flex: 1 },
   gridCardContent: { padding: 16, alignItems: 'flex-start' },
+  zoneCardContent: { padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  scrimIndexLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 },
+  scrimInfoText: { color: theme.textMuted, fontSize: 12, lineHeight: 18 },
   gridCardLabel: { fontSize: 9, fontWeight: '900', color: theme.textMuted, letterSpacing: 1, marginBottom: 8 },
   gridCardValue: { fontSize: 24, fontWeight: '900', color: theme.text, letterSpacing: -0.5 },
   gridBadge: { marginTop: 8, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
