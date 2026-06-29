@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarPlaceholderText: { color: theme.textMuted, fontWeight: '800', fontSize: 16 },
-  coachName: { color: theme.text, fontWeight: '800', fontSize: 15 },
+  coachName: { color: theme.text,  fontSize: 15 , textTransform: 'uppercase'},
   coachMeta: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
   featuredBadge: { backgroundColor: 'rgba(255, 92, 0, 0.15)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   featuredBadgeText: { color: theme.accent, fontSize: 8, fontWeight: '900', letterSpacing: 0.5 },

@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
   center: { flex: 1, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center' },
   content: { padding: 20, gap: 8 },
-  leagueName: { color: theme.text, fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
+  leagueName: { color: theme.text, fontSize: 24,  letterSpacing: -0.5 , textTransform: 'uppercase'},
   codeCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   },
   codeLabel: { color: theme.textMuted, fontSize: 9, fontWeight: '800', letterSpacing: 1 },
   codeValue: { color: theme.accent, fontSize: 20, fontWeight: '900', letterSpacing: 2, marginTop: 4 },
-  sectionTitle: { fontSize: 11, fontWeight: '900', marginTop: 20, color: theme.accent, letterSpacing: 1.5 },
+  sectionTitle: { fontSize: 11,  marginTop: 20, color: theme.accent, letterSpacing: 1.5 , textTransform: 'uppercase'},
   leaderboardContainer: {
     backgroundColor: theme.card,
     borderRadius: cardRadius,
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarLetter: { color: theme.textMuted, fontWeight: '800', fontSize: 12 },
-  playerName: { flex: 1, color: theme.text, fontWeight: '800', fontSize: 12, letterSpacing: 0.2 },
+  playerName: { flex: 1, color: theme.text,  fontSize: 12, letterSpacing: 0.2 , textTransform: 'uppercase'},
   playerElo: { color: theme.text, fontWeight: '900', fontSize: 13 },
   emptyText: { color: theme.textMuted, fontSize: 13, marginTop: 16 },
   dangerButton: {

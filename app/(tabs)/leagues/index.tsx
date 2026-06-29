@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardName: { color: theme.text, fontWeight: '800', fontSize: 14 },
+  cardName: { color: theme.text,  fontSize: 14 , textTransform: 'uppercase'},
   cardSub: { color: theme.textMuted, fontSize: 12, marginTop: 2 },
   emptyContainer: { flex: 1, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center', padding: 28 },
   emptyTitle: { color: theme.text, fontWeight: '900', fontSize: 16, marginBottom: 8, textAlign: 'center' },

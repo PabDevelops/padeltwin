@@ -58,7 +58,7 @@ export default function SocialListScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
   content: { padding: 20, gap: 8 },
-  title: { color: theme.text, fontSize: 20, fontWeight: '900', letterSpacing: -0.3 },
+  title: { color: theme.text, fontSize: 20,  letterSpacing: -0.3 , textTransform: 'uppercase'},
   listContainer: {
     backgroundColor: theme.card,
     borderRadius: cardRadius,
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarLetter: { color: theme.textMuted, fontWeight: '800', fontSize: 14 },
-  playerName: { color: theme.text, fontWeight: '800', fontSize: 14, letterSpacing: 0.2 },
+  playerName: { color: theme.text,  fontSize: 14, letterSpacing: 0.2 , textTransform: 'uppercase'},
   playerLevel: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
   emptyText: { color: theme.textMuted, fontSize: 13, marginTop: 16 },
 });

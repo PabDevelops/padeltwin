@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
   center: { flex: 1, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center', padding: 24 },
   content: { padding: 20, gap: 4, paddingBottom: 110 },
-  title: { fontFamily: 'Anton_400Regular', color: theme.text, fontSize: 24, letterSpacing: 0.5 },
+  title: { fontFamily: 'Anton_400Regular', color: theme.text, fontSize: 24, letterSpacing: 0.5 , textTransform: 'uppercase' },
   subtitle: { color: theme.accent, fontWeight: '800', fontSize: 13, marginBottom: 8 },
   clubChipsRow: { flexDirection: 'row', gap: 8, marginBottom: 8, flexWrap: 'wrap' },
   clubChip: { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', borderRadius: chipRadius, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: 'rgba(255, 255, 255, 0.04)' },
@@ -174,6 +174,6 @@ const styles = StyleSheet.create({
   leaderboardRowChampion: { backgroundColor: 'rgba(198,255,51,0.1)' },
   rankText: { color: theme.textMuted, fontWeight: '900', fontSize: 13, width: 24 },
   rankTextTop: { color: theme.accent },
-  leaderboardName: { flex: 1, color: theme.text, fontWeight: '800', fontSize: 12, letterSpacing: 0.3 },
+  leaderboardName: { flex: 1, color: theme.text,  fontSize: 12, letterSpacing: 0.3 , textTransform: 'uppercase'},
   leaderboardElo: { color: theme.text, fontWeight: '900', fontSize: 13 },
 });

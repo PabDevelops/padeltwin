@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 24, backgroundColor: 'transparent' },
   headerContainer: { marginBottom: 16, marginTop: 12 },
   tagline: { fontSize: 10, fontWeight: '900', color: theme.primary, letterSpacing: 2, marginBottom: 4 },
-  title: { fontSize: 28, fontWeight: '900', color: theme.text, letterSpacing: -0.5 },
+  title: { fontSize: 28,  color: theme.text, letterSpacing: -0.5 , textTransform: 'uppercase'},
   
   // Tab Selector styles
   tabSelector: {
@@ -668,7 +668,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   lookingBadgeText: { color: '#fff', fontSize: 8, fontWeight: '900', textAlign: 'center', letterSpacing: 1 },
-  cardTitle: { fontSize: 13, fontWeight: '900', color: theme.text, textTransform: 'uppercase', letterSpacing: 0.2 },
+  cardTitle: { fontSize: 13,  color: theme.text, textTransform: 'uppercase', letterSpacing: 0.2},
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
   levelBadge: { color: theme.textMuted, fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
   elo: { color: theme.text, fontSize: 11, fontWeight: '900' },
@@ -769,12 +769,12 @@ const styles = StyleSheet.create({
   },
   sidePlayerName: {
     fontSize: 11,
-    fontWeight: '900',
+    
     color: theme.text,
     width: '100%',
     textAlign: 'center',
     marginBottom: 6,
-  },
+   textTransform: 'uppercase'},
   sideBadge: {
     backgroundColor: 'rgba(46, 157, 255, 0.12)',
     borderWidth: 1,
@@ -889,11 +889,11 @@ const styles = StyleSheet.create({
   },
   reelPlayerName: {
     fontSize: 10,
-    fontWeight: '900',
+    
     color: '#FFF',
     width: '90%',
     textAlign: 'center',
-  },
+   textTransform: 'uppercase'},
   reelPlayerLevel: {
     fontSize: 8,
     color: theme.textMuted,
@@ -1024,10 +1024,10 @@ const styles = StyleSheet.create({
   },
   winnerName: {
     fontSize: 15,
-    fontWeight: '900',
+    
     color: '#FFF',
     marginBottom: 8,
-  },
+   textTransform: 'uppercase'},
   winnerStatsRow: {
     flexDirection: 'row',
     gap: 8,
@@ -1141,10 +1141,9 @@ const styles = StyleSheet.create({
   followedName: {
     color: theme.text,
     fontSize: 14,
-    fontWeight: '900',
+    
     textTransform: 'uppercase',
-    letterSpacing: 0.2,
-  },
+    letterSpacing: 0.2,},
   followedMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',

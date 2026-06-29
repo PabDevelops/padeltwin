@@ -88,7 +88,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flexGrow: 1, justifyContent: 'center', padding: 20, backgroundColor: theme.background },
   headerContainer: { alignItems: 'center', marginBottom: 28, width: '100%' },
-  tagline: { fontSize: 10, fontWeight: '900', color: theme.primary, letterSpacing: 2, marginBottom: 8, textTransform: 'uppercase' },
+  tagline: { fontSize: 10,  color: theme.primary, letterSpacing: 2, marginBottom: 8, textTransform: 'uppercase'},
   title: {
     fontFamily: 'Coubra',
     fontSize: 44,
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   },
   subtitle: { fontSize: 13, color: theme.textMuted, marginTop: 4, textAlign: 'center', fontWeight: '700' },
   form: { gap: 14 },
-  label: { fontSize: 9, fontWeight: '900', color: theme.textMuted, letterSpacing: 1.5, textTransform: 'uppercase' },
+  label: { fontSize: 9,  color: theme.textMuted, letterSpacing: 1.5, textTransform: 'uppercase'},
   input: {
     borderWidth: 1,
     borderColor: theme.border,
@@ -135,8 +135,8 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.5,
   },
-  buttonText: { color: theme.onAccent, fontSize: 14, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.8 },
-  error: { color: theme.danger, fontWeight: '700', fontSize: 12, textAlign: 'center', textTransform: 'uppercase' },
+  buttonText: { color: theme.onAccent, fontSize: 14,  textTransform: 'uppercase', letterSpacing: 0.8},
+  error: { color: theme.danger,  fontSize: 12, textAlign: 'center', textTransform: 'uppercase'},
   link: { textAlign: 'center', marginTop: 28, color: theme.textMuted, fontSize: 13, fontWeight: '700' },
   linkHighlight: { color: theme.primary, fontWeight: '900' },
 });

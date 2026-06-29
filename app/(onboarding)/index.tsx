@@ -92,12 +92,7 @@ export default function OnboardingScreen() {
     }
   }
 
-  function handleFinish() {
-    if (!userId) return;
-    if (!zone || !country) {
-      setLocationError('Verify your location to continue — this keeps City/Country rankings honest.');
-      return;
-    }
+function finishOnboarding(userId: string) {
     setLocationError(null);
     updateProfile.mutate(
       {
@@ -120,6 +115,19 @@ export default function OnboardingScreen() {
         onSuccess: () => router.replace('/(tabs)'),
       }
     );
+  }
+
+  function handleFinish() {
+    if (!userId) return;
+    // GPS and the manual fallback both go through VerifiedLocation, but if
+    // neither works right now (no signal, denied permission, unknown place),
+    // don't block signup — let them finish and verify from Profile later.
+    finishOnboarding(userId);
+  }
+
+  function handleSkipLocation() {
+    if (!userId) return;
+    finishOnboarding(userId);
   }
 
   return (
@@ -311,7 +319,8 @@ export default function OnboardingScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionHeader}>LOCATION</Text>
         <Text style={styles.helperText}>
-          Verified by GPS, not typed in — this is what keeps City/Country rankings fair for everyone.
+          Verified by GPS (or a place name if GPS isn't available) — this is what keeps City/Country rankings fair
+          for everyone.
         </Text>
         <View style={{ marginTop: 10 }}>
           <VerifiedLocation
@@ -322,6 +331,7 @@ export default function OnboardingScreen() {
               setCountry(loc.country);
               setLocationError(null);
             }}
+            onSkip={!zone || !country ? handleSkipLocation : undefined}
           />
         </View>
         {locationError && <Text style={styles.locationErrorText}>{locationError}</Text>}
@@ -363,8 +373,8 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: { padding: 20, gap: 20, backgroundColor: theme.background },
   headerContainer: { marginBottom: 8, marginTop: 12 },
-  tagline: { fontSize: 10, fontWeight: '900', color: theme.primary, letterSpacing: 2, marginBottom: 6, textTransform: 'uppercase' },
-  title: { fontSize: 32, fontWeight: '900', color: theme.text, textTransform: 'uppercase', letterSpacing: -0.5 },
+  tagline: { fontSize: 10,  color: theme.primary, letterSpacing: 2, marginBottom: 6, textTransform: 'uppercase'},
+  title: { fontSize: 32,  color: theme.text, textTransform: 'uppercase', letterSpacing: -0.5},
   subtitle: { color: theme.textMuted, fontSize: 13, marginTop: 4, lineHeight: 18, fontWeight: '700' },
   avatarPicker: {
     alignSelf: 'center',
@@ -390,8 +400,8 @@ const styles = StyleSheet.create({
   avatarPlaceholderPlus: { fontSize: 24, fontWeight: 'bold', color: theme.primary, marginBottom: 2 },
   avatarPlaceholderText: { color: theme.textMuted, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
   section: { backgroundColor: theme.card, borderRadius: cardRadius, padding: 16, borderWidth: 1, borderColor: theme.border },
-  sectionHeader: { fontSize: 10, fontWeight: '900', color: theme.primary, letterSpacing: 1.5, marginBottom: 12, borderBottomWidth: 1, borderBottomColor: theme.border, paddingBottom: 6, textTransform: 'uppercase' },
-  label: { fontSize: 9, fontWeight: '900', color: theme.textMuted, letterSpacing: 1, marginBottom: 6, textTransform: 'uppercase' },
+  sectionHeader: { fontSize: 10,  color: theme.primary, letterSpacing: 1.5, marginBottom: 12, borderBottomWidth: 1, borderBottomColor: theme.border, paddingBottom: 6, textTransform: 'uppercase'},
+  label: { fontSize: 9,  color: theme.textMuted, letterSpacing: 1, marginBottom: 6, textTransform: 'uppercase'},
   helperText: { color: theme.textMuted, marginTop: 6, fontSize: 11, lineHeight: 15, fontWeight: '700' },
   input: { 
     borderWidth: 1, 
@@ -445,5 +455,5 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.5,
   },
-  buttonText: { color: theme.onAccent, fontSize: 14, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.8 },
+  buttonText: { color: theme.onAccent, fontSize: 14,  textTransform: 'uppercase', letterSpacing: 0.8},
 });

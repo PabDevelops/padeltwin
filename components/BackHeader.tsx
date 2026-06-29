@@ -25,5 +25,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { color: theme.text, fontSize: 13, fontWeight: '900', letterSpacing: 0.5, textTransform: 'uppercase' },
+  title: { color: theme.text, fontSize: 13,  letterSpacing: 0.5, textTransform: 'uppercase'},
 });

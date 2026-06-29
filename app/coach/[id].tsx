@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   statValue: { color: theme.text, fontSize: 18, fontWeight: '900' },
   statLabel: { color: theme.textMuted, fontSize: 9, fontWeight: '800', letterSpacing: 0.8, marginTop: 4 },
   section: { backgroundColor: theme.card, borderRadius: cardRadius, borderWidth: 1, borderColor: theme.border, padding: 16 },
-  sectionTitle: { color: theme.accent, fontSize: 11, fontWeight: '900', letterSpacing: 1, marginBottom: 8 },
+  sectionTitle: { color: theme.accent, fontSize: 11,  letterSpacing: 1, marginBottom: 8 , textTransform: 'uppercase'},
   bodyText: { color: theme.text, fontSize: 13, lineHeight: 19 },
   contactButton: {
     flexDirection: 'row',
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   contactButtonText: { color: theme.onAccent, fontWeight: '800', fontSize: 13, letterSpacing: 0.5 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalCard: { width: '100%', backgroundColor: theme.card, borderRadius: 20, padding: 20, borderWidth: 1, borderColor: theme.border },
-  modalTitle: { color: theme.text, fontWeight: '900', fontSize: 12, letterSpacing: 1, marginBottom: 14 },
+  modalTitle: { color: theme.text,  fontSize: 12, letterSpacing: 1, marginBottom: 14 , textTransform: 'uppercase'},
   modalInput: {
     borderWidth: 1,
     borderColor: theme.border,

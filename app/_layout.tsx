@@ -10,6 +10,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { theme } from '@/constants/theme';
 import { useSession } from '@/lib/useSession';
 import { usePushNotifications } from '@/lib/usePushNotifications';
+import { applyGlobalFont } from '@/lib/globalFont';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -44,6 +45,8 @@ export default function RootLayout() {
     return null;
   }
 
+  applyGlobalFont('Anton_400Regular');
+
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
@@ -73,44 +76,44 @@ function RootNavigator() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
         name="match/[id]"
-        options={{ title: 'Match Detail', contentStyle: { paddingBottom: insets.bottom } }}
+        options={{ title: 'MATCH DETAIL', contentStyle: { paddingBottom: insets.bottom } }}
       />
       <Stack.Screen
         name="chat/[requestId]"
-        options={{ title: 'Chat Room', contentStyle: { paddingBottom: insets.bottom } }}
+        options={{ title: 'CHAT ROOM', contentStyle: { paddingBottom: insets.bottom } }}
       />
       <Stack.Screen name="player/[id]" options={{ headerShown: false }} />
       <Stack.Screen
         name="league/[id]"
-        options={{ title: 'League', contentStyle: { paddingBottom: insets.bottom } }}
+        options={{ title: 'LEAGUE', contentStyle: { paddingBottom: insets.bottom } }}
       />
       <Stack.Screen
         name="coaches/index"
-        options={{ title: 'Coaches', contentStyle: { paddingBottom: insets.bottom } }}
+        options={{ title: 'COACHES', contentStyle: { paddingBottom: insets.bottom } }}
       />
       <Stack.Screen
         name="coach/[id]"
-        options={{ title: 'Coach', contentStyle: { paddingBottom: insets.bottom } }}
+        options={{ title: 'COACH', contentStyle: { paddingBottom: insets.bottom } }}
       />
       <Stack.Screen
         name="social/[id]"
-        options={{ title: 'Players', contentStyle: { paddingBottom: insets.bottom } }}
+        options={{ title: 'PLAYERS', contentStyle: { paddingBottom: insets.bottom } }}
       />
       <Stack.Screen
         name="privacy"
-        options={{ title: 'Privacy Policy', contentStyle: { paddingBottom: insets.bottom } }}
+        options={{ title: 'PRIVACY POLICY', contentStyle: { paddingBottom: insets.bottom } }}
       />
       <Stack.Screen
         name="tournaments/index"
-        options={{ title: 'Tournaments', contentStyle: { paddingBottom: insets.bottom } }}
+        options={{ title: 'TOURNAMENTS', contentStyle: { paddingBottom: insets.bottom } }}
       />
       <Stack.Screen
         name="tournaments/[id]"
-        options={{ title: 'Tournament', contentStyle: { paddingBottom: insets.bottom } }}
+        options={{ title: 'TOURNAMENT', contentStyle: { paddingBottom: insets.bottom } }}
       />
       <Stack.Screen
         name="pairs/index"
-        options={{ title: 'My Pairs', contentStyle: { paddingBottom: insets.bottom } }}
+        options={{ title: 'MY PAIRS', contentStyle: { paddingBottom: insets.bottom } }}
       />
       <Stack.Screen name="+not-found" />
     </Stack>

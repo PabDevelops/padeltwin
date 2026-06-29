@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   eloPillText: { fontSize: 13, fontWeight: '900', color: theme.text },
   eloPillLabel: { fontSize: 9, fontWeight: '800', color: theme.success, letterSpacing: 0.5 },
   tagline: { fontSize: 11, fontWeight: '800', color: theme.secondary, letterSpacing: 2, marginBottom: 4 },
-  title: { fontSize: 28, fontWeight: '900', color: theme.text, textTransform: 'uppercase', letterSpacing: -0.5 },
+  title: { fontSize: 28,  color: theme.text, textTransform: 'uppercase', letterSpacing: -0.5},
   subtitle: { color: theme.textMuted, fontSize: 14, marginTop: 4, lineHeight: 20 },
   section: { borderRadius: 16 },
   sectionHeader: { fontSize: 12, fontWeight: '800', color: theme.secondary, letterSpacing: 1.5, marginBottom: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.08)', paddingBottom: 6 },
@@ -382,6 +382,6 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.5,
   },
-  buttonText: { color: theme.onAccent, fontSize: 16, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  buttonText: { color: theme.onAccent, fontSize: 16,  textTransform: 'uppercase', letterSpacing: 0.5},
   error: { color: theme.danger, fontWeight: '600', fontSize: 14, textAlign: 'center', marginTop: 8 },
 });

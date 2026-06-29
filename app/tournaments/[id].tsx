@@ -195,10 +195,10 @@ export default function TournamentDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
-  title: { color: theme.text, fontSize: 22, fontWeight: '900' },
+  title: { color: theme.text, fontSize: 22,  textTransform: 'uppercase'},
   subtitle: { color: theme.textMuted, fontSize: 13, marginTop: 4 },
   section: { backgroundColor: theme.card, borderRadius: cardRadius, borderWidth: 1, borderColor: theme.border, padding: 16, gap: 8 },
-  sectionTitle: { color: theme.accent, fontWeight: '900', fontSize: 12, letterSpacing: 0.5, marginBottom: 4 },
+  sectionTitle: { color: theme.accent,  fontSize: 12, letterSpacing: 0.5, marginBottom: 4 , textTransform: 'uppercase'},
   helperText: { color: theme.textMuted, fontSize: 12, lineHeight: 18 },
   participantText: { color: theme.text, fontSize: 13 },
   participantTextMine: { color: theme.accent, fontWeight: '800' },

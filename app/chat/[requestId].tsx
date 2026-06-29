@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   },
   bubbleTextMine: { color: theme.onAccent, fontSize: 14, fontWeight: '700', lineHeight: 18, letterSpacing: 0.2 },
   bubbleTextOther: { color: theme.text, fontSize: 14, fontWeight: '700', lineHeight: 18, letterSpacing: 0.2 },
-  empty: { textAlign: 'center', color: theme.textMuted, marginTop: 40, fontSize: 11, fontWeight: '900', letterSpacing: 1.5, textTransform: 'uppercase' },
+  empty: { textAlign: 'center', color: theme.textMuted, marginTop: 40, fontSize: 11,  letterSpacing: 1.5, textTransform: 'uppercase'},
   inputRow: { 
     flexDirection: 'row', 
     gap: 10, 
@@ -159,9 +159,8 @@ const styles = StyleSheet.create({
   },
   sendButtonText: { 
     color: '#0B0C10', 
-    fontWeight: '900', 
+     
     fontSize: 11,
     letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
+    textTransform: 'uppercase',},
 });

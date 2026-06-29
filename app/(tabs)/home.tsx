@@ -188,33 +188,7 @@ export default function HomeScreen() {
   const playedCount = stats?.played ?? 0;
   const isCalibrating = playedCount < ELO_PROVISIONAL_MATCHES;
 
-  // 3. Zone Percentile Badge
-  let percentileBadgeText = '⚓ CHALLENGER';
-  let percentileBadgeColor = 'rgba(110, 112, 126, 0.1)';
-  let percentileBadgeTextColor = theme.textMuted;
-  if (isCalibrating) {
-    percentileBadgeText = '⚓ CALIBRATING';
-  } else if (leaderboard && profile) {
-    const userIdx = leaderboard.findIndex((p) => p.id === userId);
-    const topElo = leaderboard[0]?.elo ?? 1500;
-    const userElo = profile.elo ?? 1200;
-    const ratio = userElo / topElo;
-    if (userIdx !== -1 && userIdx < 3) {
-      percentileBadgeText = '👑 ELITE';
-      percentileBadgeColor = 'rgba(255, 92, 0, 0.15)';
-      percentileBadgeTextColor = theme.primary;
-    } else if (ratio >= 0.85) {
-      percentileBadgeText = '🎯 ADVANCED';
-      percentileBadgeColor = 'rgba(255, 92, 0, 0.1)';
-      percentileBadgeTextColor = theme.primary;
-    } else if (ratio >= 0.70) {
-      percentileBadgeText = '🛡️ COMPETITIVE';
-      percentileBadgeColor = 'rgba(46, 157, 255, 0.1)';
-      percentileBadgeTextColor = theme.secondary;
-    }
-  }
-
-  // Calculate Zone Percentile or Rank Label
+  // Rank Label (used by the trophy badge in the PS Score hero)
   let rankLabel = "TOP 25%";
   if (isCalibrating) {
     rankLabel = "UNRANKED";
@@ -334,21 +308,6 @@ export default function HomeScreen() {
             <Text style={[styles.statVal, { color: theme.accent }]}>{streak > 0 ? `${streak}${streakType ?? 'W'}` : '—'}</Text>
             <Text style={styles.statLabel}>Streak</Text>
           </View>
-        </View>
-      </GlassCard>
-
-      {/* Zone Percentile — the one stat the hero card above doesn't already show */}
-      <GlassCard style={styles.gridCard} contentStyle={styles.zoneCardContent}>
-        <View>
-          <Text style={styles.gridCardLabel}>ZONE PERCENTILE</Text>
-          {leaderboardLoading ? (
-            <ActivityIndicator color={theme.primary} />
-          ) : (
-            <Text style={styles.gridCardValue}>{rankLabel}</Text>
-          )}
-        </View>
-        <View style={[styles.gridBadge, { backgroundColor: percentileBadgeColor, marginTop: 0 }]}>
-          <Text style={[styles.gridBadgeText, { color: percentileBadgeTextColor }]}>{percentileBadgeText}</Text>
         </View>
       </GlassCard>
 
@@ -656,12 +615,12 @@ const styles = StyleSheet.create({
   kopTileHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   proTag: { backgroundColor: 'rgba(255, 215, 0, 0.15)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3 },
   proTagText: { color: '#FFD700', fontWeight: '900', fontSize: 9, letterSpacing: 0.5 },
-  leagueTileTitle: { fontFamily: 'Anton_400Regular', color: theme.text, fontSize: 18, marginTop: 4 },
+  leagueTileTitle: { fontFamily: 'Anton_400Regular', color: theme.text, fontSize: 18, marginTop: 4 , textTransform: 'uppercase' },
   leagueTileSub: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
   container: { padding: 20, gap: 16, paddingBottom: 110 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, marginBottom: 4 },
   greeting: { fontSize: 14, color: 'rgba(255,255,255,0.5)', fontWeight: '500' },
-  userName: { fontFamily: 'Coubra', fontSize: 22, fontWeight: '900', color: theme.text },
+  userName: { fontFamily: 'Anton_400Regular', fontSize: 22, color: theme.text , textTransform: 'uppercase' },
   profileBadge: { position: 'relative' },
   avatar: { width: 46, height: 46, borderRadius: 23, borderWidth: 1.5, borderColor: theme.accent },
   avatarPlaceholder: { backgroundColor: theme.card, alignItems: 'center', justifyContent: 'center' },
@@ -680,7 +639,7 @@ const styles = StyleSheet.create({
   heroCard: { position: 'relative' },
   heroHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   heroLabel: { fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: '600', letterSpacing: 1 },
-  eloScore: { fontSize: 42, fontWeight: '900', color: theme.text, marginTop: 2, letterSpacing: -1 },
+  eloScore: { fontFamily: 'Anton_400Regular', fontSize: 42, color: theme.text, marginTop: 2, letterSpacing: -1 },
   rankBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -696,7 +655,7 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 18 },
   statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
   statItem: { alignItems: 'center' },
-  statVal: { fontSize: 18, fontWeight: 'bold', color: theme.text, marginTop: 4 },
+  statVal: { fontFamily: 'Anton_400Regular', fontSize: 18, color: theme.text, marginTop: 4 },
   statLabel: { fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 2, fontWeight: '500' },
   actionContainer: { flexDirection: 'row', gap: 12 },
   actionBtn: { flex: 1 },
@@ -709,7 +668,7 @@ const styles = StyleSheet.create({
   gridCardValue: { fontSize: 24, fontWeight: '900', color: theme.text, letterSpacing: -0.5 },
   gridBadge: { marginTop: 8, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   gridBadgeText: { fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
-  sectionTitle: { fontSize: 11, fontWeight: '900', marginTop: 14, color: theme.primary, letterSpacing: 1.5 },
+  sectionTitle: { fontSize: 11,  marginTop: 14, color: theme.primary, letterSpacing: 1.5 , textTransform: 'uppercase'},
   leaguesSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 },
   leaguesSeeAll: { fontSize: 10, fontWeight: '800', color: theme.secondary, letterSpacing: 0.5 },
   leagueCard: {
@@ -731,7 +690,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  leagueCardName: { flex: 1, color: theme.text, fontWeight: '800', fontSize: 13, letterSpacing: 0.2 },
+  leagueCardName: { flex: 1, color: theme.text,  fontSize: 13, letterSpacing: 0.2 , textTransform: 'uppercase'},
   coachBanner: { marginTop: 16 },
   coachBannerContent: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
   coachBannerIcon: {
@@ -742,7 +701,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  coachBannerTitle: { color: theme.text, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
+  coachBannerTitle: { color: theme.text,  fontSize: 12, letterSpacing: 0.5 , textTransform: 'uppercase'},
   coachBannerSubtitle: { color: theme.textMuted, fontSize: 11, marginTop: 2 },
   resultCard: { 
     borderRadius: cardRadius, 
@@ -781,7 +740,7 @@ const styles = StyleSheet.create({
   rankTextTop: { color: theme.primary },
   playerAvatarPlaceholder: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#22242E', alignItems: 'center', justifyContent: 'center', marginRight: 12, borderWidth: 1, borderColor: theme.border },
   avatarLetter: { fontSize: 11, fontWeight: '900', color: theme.text },
-  leaderboardName: { flex: 1, color: theme.text, fontWeight: '800', fontSize: 13, letterSpacing: 0.2 },
+  leaderboardName: { flex: 1, color: theme.text,  fontSize: 13, letterSpacing: 0.2 , textTransform: 'uppercase'},
   leaderboardElo: { color: theme.text, fontWeight: '900', fontSize: 13 },
   nextMatchCard: {
     borderLeftWidth: 4,
@@ -802,11 +761,10 @@ const styles = StyleSheet.create({
   },
   nextMatchLocation: {
     fontSize: 15, 
-    fontWeight: '900', 
+     
     color: theme.text, 
     textTransform: 'uppercase',
-    letterSpacing: 0.2
-  },
+    letterSpacing: 0.2},
   nextMatchTime: { 
     fontSize: 12, 
     fontWeight: '700', 
@@ -924,8 +882,8 @@ const styles = StyleSheet.create({
   },
   feedPlayerName: {
     color: theme.text,
-    fontWeight: '900',
-  },
+    
+   textTransform: 'uppercase'},
   feedLabelSeparator: {
     color: theme.borderActive,
     fontWeight: '900',
@@ -994,11 +952,11 @@ const styles = StyleSheet.create({
   },
   suggestedName: {
     fontSize: 10,
-    fontWeight: '900',
+    
     color: theme.text,
     marginBottom: 2,
     textAlign: 'center',
-  },
+   textTransform: 'uppercase'},
   suggestedMeta: {
     fontSize: 9,
     color: theme.textMuted,

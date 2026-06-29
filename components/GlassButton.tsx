@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  primaryText: { color: '#0B0C10', fontSize: 16, fontWeight: 'bold', letterSpacing: 0.5 },
+  primaryText: { fontFamily: 'Anton_400Regular', color: '#0B0C10', fontSize: 16, letterSpacing: 0.5 },
   secondaryButton: {
     borderRadius: 30,
     borderWidth: 1,
@@ -64,5 +64,5 @@ const styles = StyleSheet.create({
     }),
   },
   secondaryGlassOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255, 255, 255, 0.02)' },
-  secondaryText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600', letterSpacing: 0.5 },
+  secondaryText: { fontFamily: 'Anton_400Regular', color: '#FFFFFF', fontSize: 16, letterSpacing: 0.5 },
 });

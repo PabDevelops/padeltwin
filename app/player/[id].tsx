@@ -636,11 +636,11 @@ const styles = StyleSheet.create({
   },
   playerName: {
     fontSize: 26,
-    fontWeight: '800',
+    
     color: theme.text,
     letterSpacing: -0.5,
     textAlign: 'center',
-  },
+   textTransform: 'uppercase'},
   locationSub: {
     fontSize: 11,
     fontWeight: '700',
@@ -667,8 +667,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statHugeText: {
+    fontFamily: 'Anton_400Regular',
     fontSize: 22,
-    fontWeight: '800',
     color: theme.text,
     letterSpacing: -0.5,
   },
@@ -712,9 +712,9 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '800',
+    
     color: theme.text,
-  },
+   textTransform: 'uppercase'},
   seeAllBtn: {
     fontSize: 12,
     fontWeight: '700',
@@ -765,9 +765,9 @@ const styles = StyleSheet.create({
   },
   cardOpponentName: {
     fontSize: 13,
-    fontWeight: '800',
+    
     color: theme.text,
-  },
+   textTransform: 'uppercase'},
   cardRatingRow: {
     flexDirection: 'row',
     alignItems: 'center',

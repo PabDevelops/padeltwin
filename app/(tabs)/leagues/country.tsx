@@ -86,7 +86,7 @@ export default function CountryLeagueScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
   center: { flex: 1, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  title: { color: theme.text, fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
+  title: { color: theme.text, fontSize: 22,  letterSpacing: -0.5 , textTransform: 'uppercase'},
   subtitle: { color: theme.textMuted, fontSize: 13, marginBottom: 8 },
   leaderboardContainer: {
     borderRadius: cardRadius,
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   rowMe: { backgroundColor: 'rgba(198, 255, 51, 0.08)' },
   rankText: { width: 24, color: theme.textMuted, fontWeight: '800', fontSize: 13 },
   rankTextTop: { color: theme.accent },
-  pairName: { flex: 1, color: theme.text, fontWeight: '800', fontSize: 12, letterSpacing: 0.2 },
+  pairName: { flex: 1, color: theme.text,  fontSize: 12, letterSpacing: 0.2 , textTransform: 'uppercase'},
   pairElo: { color: theme.text, fontWeight: '900', fontSize: 13 },
   emptyText: { color: theme.textMuted, fontSize: 13, textAlign: 'center', padding: 16, lineHeight: 18 },
 });

@@ -627,7 +627,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tagline: { fontSize: 10, fontWeight: '900', color: theme.primary, letterSpacing: 2, marginBottom: 4 },
-  title: { fontSize: 28, fontWeight: '900', color: theme.text, letterSpacing: -0.5 },
+  title: { fontSize: 28,  color: theme.text, letterSpacing: -0.5 , textTransform: 'uppercase'},
   
   // Tab selector styles
   tabSelector: {
@@ -738,7 +738,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardTitle: { fontSize: 15, fontWeight: '900', color: theme.text, flex: 1, marginRight: 8, textTransform: 'uppercase', letterSpacing: 0.2 },
+  cardTitle: { fontSize: 15,  color: theme.text, flex: 1, marginRight: 8, textTransform: 'uppercase', letterSpacing: 0.2},
   modeBadge: { 
     backgroundColor: 'rgba(255, 255, 255, 0.05)', 
     borderWidth: 1, 
@@ -967,13 +967,12 @@ const styles = StyleSheet.create({
   },
   lolSubtitle: {
     fontSize: 11,
-    fontWeight: '900',
+    
     color: theme.primary,
     textAlign: 'center',
     letterSpacing: 1.5,
     marginTop: 2,
-    textTransform: 'uppercase',
-  },
+    textTransform: 'uppercase',},
   lolDivider: {
     height: 1,
     backgroundColor: 'rgba(255, 92, 0, 0.25)',

@@ -62,6 +62,6 @@ const styles = StyleSheet.create({
   content: { padding: 20, gap: 16 },
   updated: { color: theme.textMuted, fontSize: 11, fontWeight: '700' },
   section: { backgroundColor: theme.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.border },
-  sectionTitle: { color: theme.accent, fontSize: 12, fontWeight: '900', letterSpacing: 0.5, marginBottom: 8 },
+  sectionTitle: { color: theme.accent, fontSize: 12,  letterSpacing: 0.5, marginBottom: 8 , textTransform: 'uppercase'},
   body: { color: theme.text, fontSize: 13, lineHeight: 20 },
 });
