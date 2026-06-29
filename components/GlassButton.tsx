@@ -1,5 +1,7 @@
 import { Platform, StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { useVisualTheme } from '@/lib/ThemeContext';
+import { theme } from '@/constants/theme';
 
 interface GlassButtonProps {
   onPress: () => void;
@@ -11,6 +13,34 @@ interface GlassButtonProps {
 }
 
 export function GlassButton({ onPress, title, variant = 'primary', style, textStyle, icon }: GlassButtonProps) {
+  const { visualTheme } = useVisualTheme();
+
+  if (visualTheme === 'brutalist') {
+    if (variant === 'primary') {
+      return (
+        <TouchableOpacity style={[styles.brutalistPrimaryShadow, style]} onPress={onPress} activeOpacity={0.9}>
+          <View style={styles.brutalistPrimaryButton}>
+            <View style={styles.content}>
+              {icon && <View style={styles.iconContainer}>{icon}</View>}
+              <Text style={[styles.primaryText, textStyle]}>{title}</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <TouchableOpacity style={[styles.brutalistSecondaryShadow, style]} onPress={onPress} activeOpacity={0.9}>
+        <View style={styles.brutalistSecondaryButton}>
+          <View style={styles.content}>
+            {icon && <View style={styles.iconContainer}>{icon}</View>}
+            <Text style={[styles.secondaryText, textStyle]}>{title}</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
   if (variant === 'primary') {
     return (
       <TouchableOpacity style={[styles.primaryButton, style]} onPress={onPress} activeOpacity={0.8}>
@@ -65,4 +95,38 @@ const styles = StyleSheet.create({
   },
   secondaryGlassOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255, 255, 255, 0.02)' },
   secondaryText: { fontFamily: 'Anton_400Regular', color: '#FFFFFF', fontSize: 16, letterSpacing: 0.5 },
+  brutalistPrimaryShadow: {
+    backgroundColor: '#000000',
+    borderRadius: 12,
+    marginTop: 4,
+    marginRight: 4,
+  },
+  brutalistPrimaryButton: {
+    backgroundColor: '#C6FF33',
+    borderWidth: 2.5,
+    borderColor: '#000000',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    transform: [{ translateX: -4 }, { translateY: -4 }],
+  },
+  brutalistSecondaryShadow: {
+    backgroundColor: '#000000',
+    borderRadius: 12,
+    marginTop: 4,
+    marginRight: 4,
+  },
+  brutalistSecondaryButton: {
+    backgroundColor: '#16171E',
+    borderWidth: 2.5,
+    borderColor: '#C6FF33',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    transform: [{ translateX: -4 }, { translateY: -4 }],
+  },
 });

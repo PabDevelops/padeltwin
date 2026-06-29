@@ -11,6 +11,7 @@ import { theme } from '@/constants/theme';
 import { useSession } from '@/lib/useSession';
 import { usePushNotifications } from '@/lib/usePushNotifications';
 import { applyGlobalFont } from '@/lib/globalFont';
+import { ThemeProvider as VisualThemeProvider } from '@/lib/ThemeContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -50,9 +51,11 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider value={navigationDarkTheme}>
-          <RootNavigator />
-        </ThemeProvider>
+        <VisualThemeProvider>
+          <ThemeProvider value={navigationDarkTheme}>
+            <RootNavigator />
+          </ThemeProvider>
+        </VisualThemeProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
   );
