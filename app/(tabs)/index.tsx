@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View, Animated, Easing, Modal } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useMatches, useJoinMatch, useRecentResults, MatchDateRange } from '@/lib/queries';
+import { useMatches, useRecentResults, MatchDateRange } from '@/lib/queries';
 import { useSession } from '@/lib/useSession';
 import type { MatchWithPlayers, MatchResultWithProfiles, PlayerLevel } from '@/types/database';
 import { theme, cardRadius, chipRadius } from '@/constants/theme';
@@ -37,218 +37,9 @@ export default function MatchSearchScreen() {
   const [dateRange, setDateRange] = useState<MatchDateRange | undefined>(undefined);
   const [focusedInput, setFocusedInput] = useState(false);
   const { data: matches, isLoading, refetch, isRefetching } = useMatches({ zone, level, dateRange });
-  const joinMatch = useJoinMatch();
-  const [joinError, setJoinError] = useState<string | null>(null);
   const { data: recentResults, isLoading: recentLoading } = useRecentResults(userId, 20);
 
-  // Matchmaking State Machine
-  // 'idle' | 'queue' | 'found' | 'accepted'
-  const [activeTab, setActiveTab] = useState<'feed' | 'radar' | 'recent'>('feed');
-  const [queueState, setQueueState] = useState<'idle' | 'queue' | 'found' | 'accepted'>('idle');
-  const [queueTime, setQueueTime] = useState(0);
-  const [countdownTime, setCountdownTime] = useState(10);
-  const [acceptedPlayers, setAcceptedPlayers] = useState<boolean[]>([false, false, false, false]);
-  const [foundMatch, setFoundMatch] = useState<MatchWithPlayers | null>(null);
-
-  // Animations
-  const rotationAnim = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const countdownBarAnim = useRef(new Animated.Value(1)).current;
-
-  // Timers and references
-  const queueTimerRef = useRef<any>(null);
-  const countdownTimerRef = useRef<any>(null);
-  const simulationTimeoutsRef = useRef<any[]>([]);
-
-  // Cleanup timers on unmount
-  useEffect(() => {
-    return () => {
-      clearAllTimers();
-    };
-  }, []);
-
-  const clearAllTimers = () => {
-    if (queueTimerRef.current) clearInterval(queueTimerRef.current);
-    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
-    simulationTimeoutsRef.current.forEach(t => clearTimeout(t));
-    simulationTimeoutsRef.current = [];
-  };
-
-  // Start Queue Mode
-  const startQueue = () => {
-    clearAllTimers();
-    setJoinError(null);
-    setQueueState('queue');
-    setQueueTime(0);
-
-    // Rotation Loop for Radar Sweeper
-    rotationAnim.setValue(0);
-    Animated.loop(
-      Animated.timing(rotationAnim, {
-        toValue: 1,
-        duration: 2000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    ).start();
-
-    // Pulsing Loop
-    pulseAnim.setValue(1);
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.15,
-          duration: 1000,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1.0,
-          duration: 1000,
-          easing: Easing.in(Easing.ease),
-          useNativeDriver: true,
-        })
-      ])
-    ).start();
-
-    // Start Queue Time Counter
-    queueTimerRef.current = setInterval(() => {
-      setQueueTime(prev => prev + 1);
-    }, 1000);
-
-    // Match Found simulation (trigger after 4 seconds)
-    const foundTimeout = setTimeout(() => {
-      const match = (matches ?? []).find(
-        (m) =>
-          (m.match_players?.length ?? 0) < m.max_players &&
-          !(m.match_players ?? []).some((p) => p.player_id === userId)
-      );
-      if (match) {
-        setFoundMatch(match);
-        triggerMatchFound();
-      } else {
-        cancelQueue();
-      }
-    }, 4000);
-    simulationTimeoutsRef.current.push(foundTimeout);
-  };
-
-  const cancelQueue = () => {
-    clearAllTimers();
-    setQueueState('idle');
-    setFoundMatch(null);
-  };
-
-  // Trigger Match Found LoL Popup
-  const triggerMatchFound = () => {
-    if (queueTimerRef.current) clearInterval(queueTimerRef.current);
-    setQueueState('found');
-    setCountdownTime(10);
-    // Player 2 is already accepted to simulate activity
-    setAcceptedPlayers([false, true, false, false]);
-
-    // Countdown Bar Animation (10 seconds to 0)
-    countdownBarAnim.setValue(1);
-    Animated.timing(countdownBarAnim, {
-      toValue: 0,
-      duration: 10000,
-      easing: Easing.linear,
-      useNativeDriver: false,
-    }).start();
-
-    // Countdown Timer decrements every second
-    countdownTimerRef.current = setInterval(() => {
-      setCountdownTime(prev => {
-        if (prev <= 1) {
-          declineMatch();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  // Accept Match Logic
-  // Only the current user's acceptance is real (it actually joins match_players in
-  // the DB); the other 3 player slots are a visual simulation of queue activity.
-  const acceptMatch = () => {
-    if (!foundMatch || !userId) return;
-    setJoinError(null);
-    const matchId = foundMatch.id;
-
-    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
-
-    joinMatch.mutate(
-      { matchId, playerId: userId },
-      {
-        onSuccess: () => {
-          setQueueState('accepted');
-          // Set user (index 0) to true
-          setAcceptedPlayers([true, true, false, false]);
-
-          // Simulate Player 3 accepting after 0.8 seconds
-          const p3Timeout = setTimeout(() => {
-            setAcceptedPlayers([true, true, true, false]);
-          }, 800);
-
-          // Simulate Player 4 accepting after 1.8 seconds
-          const p4Timeout = setTimeout(() => {
-            setAcceptedPlayers([true, true, true, true]);
-
-            // Navigate to match details after success delay — the user is
-            // already a real participant at this point (joined above).
-            const successTimeout = setTimeout(() => {
-              clearAllTimers();
-              setQueueState('idle');
-              setFoundMatch(null);
-              router.push(`/match/${matchId}`);
-            }, 1000);
-            simulationTimeoutsRef.current.push(successTimeout);
-          }, 1800);
-
-          simulationTimeoutsRef.current.push(p3Timeout, p4Timeout);
-        },
-        onError: (err: any) => {
-          // "Already joined" (duplicate key) just means the user is already a
-          // participant — treat that as success instead of failing the flow.
-          if (err?.code === '23505') {
-            setQueueState('accepted');
-            setAcceptedPlayers([true, true, true, true]);
-            const successTimeout = setTimeout(() => {
-              clearAllTimers();
-              setQueueState('idle');
-              setFoundMatch(null);
-              router.push(`/match/${matchId}`);
-            }, 1000);
-            simulationTimeoutsRef.current.push(successTimeout);
-            return;
-          }
-          // Real failure (e.g. match filled up while in queue) — kick back to idle.
-          setJoinError(err?.message ?? 'Could not join that match. It may have just filled up.');
-          cancelQueue();
-        },
-      }
-    );
-  };
-
-  // Decline Match / Timeout Logic
-  const declineMatch = () => {
-    clearAllTimers();
-    setQueueState('idle');
-    setFoundMatch(null);
-  };
-
-  // Format Queue Timer to MM:SS
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
-
-  const sweepAngle = rotationAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
+  const [activeTab, setActiveTab] = useState<'feed' | 'recent'>('feed');
 
   function renderItem({ item }: { item: MatchWithPlayers }) {
     const joinedPlayers = item.match_players ?? [];
@@ -259,11 +50,11 @@ export default function MatchSearchScreen() {
 
     return (
       <Card style={styles.card} contentStyle={{ padding: 0, flexDirection: 'row' }}>
-        <Pressable 
+        <Pressable
           style={({ pressed }) => [
             { flex: 1, flexDirection: 'row' },
             pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }
-          ]} 
+          ]}
           onPress={() => router.push(`/match/${item.id}`)}
         >
           <View style={styles.cardAccentBar} />
@@ -276,7 +67,7 @@ export default function MatchSearchScreen() {
                 </Text>
               </View>
             </View>
-            
+
             <Text style={styles.cardSubtitle}>
               📅 {new Date(item.date_time).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase()} • {new Date(item.date_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
             </Text>
@@ -289,8 +80,8 @@ export default function MatchSearchScreen() {
               <View style={styles.rosterContainer}>
                 <View style={styles.avatarStack}>
                   {joinedPlayers.map((player, idx) => (
-                    <View 
-                      key={player.profiles?.id || idx} 
+                    <View
+                      key={player.profiles?.id || idx}
                       style={[styles.playerAvatar, { marginLeft: idx === 0 ? 0 : -8 }]}
                     >
                       <Text style={styles.avatarInitial}>
@@ -299,10 +90,10 @@ export default function MatchSearchScreen() {
                     </View>
                   ))}
                   {Array.from({ length: emptySlots }).map((_, idx) => (
-                    <View 
-                      key={idx} 
+                    <View
+                      key={idx}
                       style={[
-                        styles.emptyAvatar, 
+                        styles.emptyAvatar,
                         { marginLeft: joinedCount === 0 && idx === 0 ? 0 : -8 }
                       ]}
                     >
@@ -335,29 +126,16 @@ export default function MatchSearchScreen() {
 
       {/* Tab Switcher */}
       <View style={styles.tabSelector}>
-        <Pressable 
+        <Pressable
           style={[styles.tabButton, activeTab === 'feed' && styles.tabButtonActive]}
-          onPress={() => {
-            cancelQueue();
-            setActiveTab('feed');
-          }}
+          onPress={() => setActiveTab('feed')}
         >
           <Ionicons name="list" size={14} color={activeTab === 'feed' ? '#FFF' : theme.textMuted} />
           <Text style={[styles.tabButtonText, activeTab === 'feed' && styles.tabButtonTextActive]}>OPEN MATCHES</Text>
         </Pressable>
         <Pressable
-          style={[styles.tabButton, activeTab === 'radar' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('radar')}
-        >
-          <Ionicons name="radio" size={14} color={activeTab === 'radar' ? '#FFF' : theme.textMuted} />
-          <Text style={[styles.tabButtonText, activeTab === 'radar' && styles.tabButtonTextActive]}>QUICK MATCH</Text>
-        </Pressable>
-        <Pressable
           style={[styles.tabButton, activeTab === 'recent' && styles.tabButtonActive]}
-          onPress={() => {
-            cancelQueue();
-            setActiveTab('recent');
-          }}
+          onPress={() => setActiveTab('recent')}
         >
           <Ionicons name="time" size={14} color={activeTab === 'recent' ? '#FFF' : theme.textMuted} />
           <Text style={[styles.tabButtonText, activeTab === 'recent' && styles.tabButtonTextActive]}>RECENT</Text>
@@ -469,171 +247,6 @@ export default function MatchSearchScreen() {
             />
           )}
         </>
-      ) : activeTab === 'radar' ? (
-        /* Radar Matchmaking View */
-        <View style={styles.radarContainer}>
-          {queueState === 'idle' && (
-            <View style={styles.radarCenter}>
-              <View style={styles.radarGraphicOuter}>
-                <Ionicons name="radio-outline" size={80} color="rgba(198, 255, 51, 0.15)" />
-              </View>
-              <Text style={styles.radarStatusTitle}>Quick Match</Text>
-              <Text style={styles.radarStatusDesc}>
-                We'll look for an open court matching your skill level nearby.
-              </Text>
-              {joinError && <Text style={styles.joinErrorText}>{joinError}</Text>}
-              <Pressable style={styles.radarButton} onPress={startQueue}>
-                <Ionicons name="navigate" size={16} color={theme.onAccent} />
-                <Text style={styles.radarButtonText}>FIND A MATCH</Text>
-              </Pressable>
-            </View>
-          )}
-
-          {queueState === 'queue' && (
-            <View style={styles.radarCenter}>
-              <View style={styles.radarActiveWrapper}>
-                <Animated.View 
-                  style={[
-                    styles.radarPulsingRing, 
-                    { transform: [{ scale: pulseAnim }] }
-                  ]} 
-                />
-                <View style={styles.radarScannerDisc}>
-                  <Animated.View 
-                    style={[
-                      styles.radarSweeper, 
-                      { transform: [{ rotate: sweepAngle }] }
-                    ]} 
-                  />
-                  <Text style={styles.queueTimerText}>{formatTime(queueTime)}</Text>
-                </View>
-              </View>
-              <Text style={[styles.radarStatusTitle, { color: theme.primary }]}>Looking for a match...</Text>
-              <Text style={styles.radarStatusDesc}>
-                Checking {zone ? zone : 'your area'} for courts matching {level ? LEVEL_LABELS[level] : 'your level'}.
-              </Text>
-              <Pressable style={styles.cancelButton} onPress={cancelQueue}>
-                <Text style={styles.cancelButtonText}>CANCEL</Text>
-              </Pressable>
-            </View>
-          )}
-
-          {/* Match Ready Popup Modal */}
-          <Modal
-            visible={queueState === 'found' || queueState === 'accepted'}
-            transparent={true}
-            animationType="fade"
-          >
-            <View style={styles.modalOverlay}>
-              <View style={styles.lolModalCard}>
-                <View style={styles.lolGlowHeader} />
-
-                <Ionicons
-                  name={queueState === 'accepted' ? 'checkmark-circle' : 'tennisball-outline'}
-                  size={42}
-                  color={theme.primary}
-                  style={{ alignSelf: 'center', marginBottom: 12 }}
-                />
-
-                <Text style={styles.lolTitle}>
-                  {queueState === 'accepted' ? "You're in" : 'Match found'}
-                </Text>
-
-                <Text style={styles.lolSubtitle}>
-                  {foundMatch ? foundMatch.location : 'Court details'}
-                </Text>
-
-                <View style={styles.lolDivider} />
-
-                {/* Level / Mode metadata */}
-                <View style={styles.lolMetaRow}>
-                  <View style={styles.lolBadge}>
-                    <Text style={styles.lolBadgeText}>
-                      {foundMatch ? LEVEL_LABELS[foundMatch.level].toUpperCase() : 'ALL LEVELS'}
-                    </Text>
-                  </View>
-                  <View style={[styles.lolBadge, { borderColor: theme.secondary }]}>
-                    <Text style={[styles.lolBadgeText, { color: theme.secondary }]}>
-                      {foundMatch?.mode === 'pair' ? 'DOUBLES' : 'SINGLES'}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Player acceptance grid */}
-                <View style={styles.acceptGrid}>
-                  {acceptedPlayers.map((accepted, idx) => (
-                    <View key={idx} style={styles.playerSlotContainer}>
-                      <View
-                        style={[
-                          styles.playerSlotCircle,
-                          accepted ? styles.playerSlotCircleAccepted : styles.playerSlotCirclePending
-                        ]}
-                      >
-                        <Ionicons
-                          name={accepted ? "checkmark" : "person"}
-                          size={14}
-                          color={accepted ? "#FFF" : theme.textMuted}
-                        />
-                      </View>
-                      <Text style={styles.playerSlotLabel}>
-                        {idx === 0 ? 'YOU' : `Player ${idx + 1}`}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-
-                {/* Countdown Time Text */}
-                {queueState === 'found' && (
-                  <Text style={styles.countdownText}>
-                    Respond within <Text style={{ color: theme.primary, fontWeight: '900' }}>{countdownTime}s</Text>
-                  </Text>
-                )}
-
-                {queueState === 'accepted' && (
-                  <Text style={styles.waitingText}>
-                    Waiting for the other players to confirm...
-                  </Text>
-                )}
-
-                {/* Actions */}
-                <View style={styles.lolActionsContainer}>
-                  {queueState === 'found' ? (
-                    <>
-                      <Pressable style={styles.lolAcceptButton} onPress={acceptMatch}>
-                        <Text style={styles.lolAcceptButtonText}>JOIN</Text>
-                      </Pressable>
-                      <Pressable style={styles.lolDeclineButton} onPress={declineMatch}>
-                        <Text style={styles.lolDeclineButtonText}>NOT NOW</Text>
-                      </Pressable>
-                    </>
-                  ) : (
-                    <View style={styles.lolAcceptedBadge}>
-                      <ActivityIndicator size="small" color="#FFF" style={{ marginRight: 8 }} />
-                      <Text style={styles.lolAcceptedBadgeText}>Confirming match...</Text>
-                    </View>
-                  )}
-                </View>
-
-                {/* Countdown Shrinking Bar */}
-                {queueState === 'found' && (
-                  <View style={styles.lolCountdownContainer}>
-                    <Animated.View 
-                      style={[
-                        styles.lolCountdownBar, 
-                        {
-                          width: countdownBarAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: ['0%', '100%'],
-                          })
-                        }
-                      ]} 
-                    />
-                  </View>
-                )}
-              </View>
-            </View>
-          </Modal>
-        </View>
       ) : (
         /* Recent Matches View */
         <View style={{ flex: 1 }}>
@@ -701,7 +314,7 @@ const styles = StyleSheet.create({
   },
   tagline: { fontSize: 10, fontWeight: '900', color: theme.primary, letterSpacing: 2, marginBottom: 4 },
   title: { fontSize: 28,  color: theme.text, letterSpacing: -0.5 , textTransform: 'uppercase'},
-  
+
   // Tab selector styles
   tabSelector: {
     flexDirection: 'row',
@@ -739,7 +352,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: '900',
   },
-  
+
   // Search input styles
   searchWrapper: {
     position: 'relative',
@@ -757,17 +370,17 @@ const styles = StyleSheet.create({
     right: 16,
     zIndex: 1,
   },
-  input: { 
+  input: {
     flex: 1,
-    borderWidth: 1, 
-    borderColor: 'rgba(255, 255, 255, 0.1)', 
-    borderRadius: 14, 
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 14,
     paddingLeft: 42,
     paddingRight: 42,
-    paddingVertical: 14, 
-    fontSize: 12, 
+    paddingVertical: 14,
+    fontSize: 12,
     fontWeight: '800',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)', 
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     color: theme.text,
     letterSpacing: 0.5,
   },
@@ -775,31 +388,31 @@ const styles = StyleSheet.create({
     borderColor: theme.primary,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
-  
+
   // Filter styles
   filterSection: { marginBottom: 16 },
   filterLabel: { fontSize: 9, fontWeight: '900', color: theme.textMuted, letterSpacing: 1.5, marginBottom: 8 },
   levelRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  levelChip: { 
-    borderWidth: 1, 
-    borderColor: 'rgba(255, 255, 255, 0.08)', 
-    borderRadius: chipRadius, 
-    paddingVertical: 8, 
-    paddingHorizontal: 14, 
-    backgroundColor: 'rgba(255, 255, 255, 0.04)' 
+  levelChip: {
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: chipRadius,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)'
   },
-  levelChipActive: { 
-    backgroundColor: 'rgba(198, 255, 51, 0.15)', 
-    borderColor: theme.primary 
+  levelChipActive: {
+    backgroundColor: 'rgba(198, 255, 51, 0.15)',
+    borderColor: theme.primary
   },
   levelChipText: { color: theme.textMuted, fontWeight: '800', fontSize: 11, letterSpacing: 0.5 },
   levelChipTextActive: { color: theme.primary, fontWeight: '900' },
-  
+
   // List & Card styles
   listContent: { gap: 12, paddingBottom: 110 },
-  card: { 
+  card: {
     flexDirection: 'row',
-    borderRadius: cardRadius, 
+    borderRadius: cardRadius,
     overflow: 'hidden',
   },
   cardAccentBar: {
@@ -812,20 +425,20 @@ const styles = StyleSheet.create({
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardTitle: { fontSize: 15,  color: theme.text, flex: 1, marginRight: 8, textTransform: 'uppercase', letterSpacing: 0.2},
-  modeBadge: { 
-    backgroundColor: 'rgba(255, 255, 255, 0.05)', 
-    borderWidth: 1, 
-    borderColor: 'rgba(255, 255, 255, 0.08)', 
-    borderRadius: 6, 
-    paddingHorizontal: 8, 
-    paddingVertical: 4 
+  modeBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4
   },
   modeBadgeText: { color: theme.textMuted, fontSize: 8, fontWeight: '900', letterSpacing: 0.5 },
   cardSubtitle: { color: theme.textMuted, marginTop: 6, fontSize: 11, fontWeight: '800' },
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 },
   badge: { backgroundColor: 'rgba(198, 255, 51, 0.08)', borderWidth: 1, borderColor: 'rgba(198, 255, 51, 0.25)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { color: theme.primary, fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
-  
+
   // Roster avatar stack
   rosterContainer: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatarStack: { flexDirection: 'row', alignItems: 'center' },
@@ -883,315 +496,4 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   emptyCreateButtonText: { color: theme.onAccent, fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
-
-  // Radar View Styles
-  radarContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingBottom: 60,
-  },
-  radarCenter: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  radarGraphicOuter: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    marginBottom: 24,
-  },
-  radarActiveWrapper: {
-    width: 180,
-    height: 180,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    marginBottom: 24,
-  },
-  radarPulsingRing: {
-    position: 'absolute',
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    borderWidth: 1.5,
-    borderColor: 'rgba(198, 255, 51, 0.2)',
-  },
-  radarScannerDisc: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  radarSweeper: {
-    position: 'absolute',
-    width: 70,
-    height: 70,
-    top: 0,
-    left: 70,
-    backgroundColor: 'rgba(198, 255, 51, 0.08)',
-    borderLeftWidth: 1.5,
-    borderLeftColor: theme.primary,
-    transformOrigin: 'bottom left',
-  },
-  queueTimerText: {
-    color: '#FFF',
-    fontSize: 22,
-    fontWeight: '900',
-    letterSpacing: -0.5,
-  },
-  radarStatusTitle: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: theme.text,
-    letterSpacing: 0.5,
-    marginBottom: 8,
-  },
-  radarStatusDesc: {
-    fontSize: 12,
-    color: theme.textMuted,
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 24,
-    paddingHorizontal: 12,
-  },
-  joinErrorText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: theme.danger,
-    textAlign: 'center',
-    marginTop: -12,
-    marginBottom: 24,
-    paddingHorizontal: 12,
-  },
-  radarButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: theme.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 12,
-    shadowColor: theme.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  radarButtonText: {
-    color: theme.onAccent,
-    fontSize: 12,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  cancelButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
-  cancelButtonText: {
-    color: theme.textMuted,
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-
-  // League of Legends Match Found Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(5, 6, 8, 0.85)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  lolModalCard: {
-    width: '100%',
-    maxWidth: 320,
-    backgroundColor: 'rgba(21, 22, 31, 0.9)',
-    borderRadius: cardRadius,
-    borderWidth: 1.5,
-    borderColor: theme.primary, // Glowing accent outline
-    padding: 24,
-    alignItems: 'stretch',
-    position: 'relative',
-    overflow: 'hidden',
-    shadowColor: theme.primary,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  lolGlowHeader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 4,
-    backgroundColor: theme.primary,
-  },
-  lolTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#FFF',
-    textAlign: 'center',
-    letterSpacing: 1,
-  },
-  lolSubtitle: {
-    fontSize: 11,
-    
-    color: theme.primary,
-    textAlign: 'center',
-    letterSpacing: 1.5,
-    marginTop: 2,
-    textTransform: 'uppercase',},
-  lolDivider: {
-    height: 1,
-    backgroundColor: 'rgba(198, 255, 51, 0.25)',
-    marginVertical: 16,
-    alignSelf: 'stretch',
-  },
-  lolMetaRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 20,
-  },
-  lolBadge: {
-    borderWidth: 1,
-    borderColor: theme.primary,
-    backgroundColor: 'rgba(198, 255, 51, 0.05)',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  lolBadgeText: {
-    color: theme.primary,
-    fontSize: 8,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  acceptGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-    paddingHorizontal: 8,
-  },
-  playerSlotContainer: {
-    alignItems: 'center',
-    gap: 6,
-  },
-  playerSlotCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-  },
-  playerSlotCirclePending: {
-    borderColor: theme.border,
-    backgroundColor: '#1E1E28',
-  },
-  playerSlotCircleAccepted: {
-    borderColor: theme.success,
-    backgroundColor: 'rgba(0, 230, 118, 0.2)',
-  },
-  playerSlotLabel: {
-    fontSize: 8,
-    fontWeight: '900',
-    color: theme.textMuted,
-    letterSpacing: 0.5,
-  },
-  countdownText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#FFF',
-    textAlign: 'center',
-    letterSpacing: 0.5,
-    marginBottom: 16,
-  },
-  waitingText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: theme.secondary,
-    textAlign: 'center',
-    letterSpacing: 0.5,
-    marginBottom: 16,
-  },
-  lolActionsContainer: {
-    gap: 10,
-    marginBottom: 10,
-  },
-  lolAcceptButton: {
-    backgroundColor: theme.success,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: theme.success,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  lolAcceptButtonText: {
-    color: '#FFF',
-    fontSize: 13,
-    fontWeight: '900',
-    letterSpacing: 1.5,
-  },
-  lolDeclineButton: {
-    backgroundColor: 'rgba(255, 59, 48, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 59, 48, 0.3)',
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  lolDeclineButtonText: {
-    color: theme.danger,
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  lolAcceptedBadge: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(46, 157, 255, 0.15)',
-    borderWidth: 1,
-    borderColor: theme.secondary,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  lolAcceptedBadgeText: {
-    color: '#FFF',
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  lolCountdownContainer: {
-    height: 3,
-    backgroundColor: 'rgba(198, 255, 51, 0.15)',
-    borderRadius: 1.5,
-    marginTop: 12,
-    overflow: 'hidden',
-  },
-  lolCountdownBar: {
-    height: '100%',
-    backgroundColor: theme.primary,
-  },
 });
