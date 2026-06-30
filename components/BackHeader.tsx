@@ -1,12 +1,14 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '@/constants/theme';
 
 export function BackHeader({ title }: { title: string }) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, { paddingTop: insets.top + 16 }]}>
       <Pressable style={styles.backBtn} onPress={() => router.back()}>
         <Ionicons name="chevron-back" size={20} color={theme.text} />
       </Pressable>
@@ -16,7 +18,7 @@ export function BackHeader({ title }: { title: string }) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingTop: 16 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20 },
   backBtn: {
     width: 32,
     height: 32,
