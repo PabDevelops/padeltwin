@@ -53,7 +53,6 @@ import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
 import { VerifiedLocation } from '@/components/VerifiedLocation';
 import { Card } from '@/components/Card';
-import { useVisualTheme } from '@/lib/ThemeContext';
 
 function didWin(result: MatchResultWithProfiles, userId: string) {
   const inTeamA = result.team_a_player1 === userId || result.team_a_player2 === userId;
@@ -82,7 +81,6 @@ function formatRelativeTime(dateString: string) {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { visualTheme, toggleTheme } = useVisualTheme();
   const { session } = useSession();
   const userId = session?.user.id;
   const { data: profile, isLoading } = useProfile(userId);
@@ -216,17 +214,6 @@ export default function ProfileScreen() {
       <ScrollView style={styles.container} bounces={false} showsVerticalScrollIndicator={false}>
       {/* CIRCULAR PROFILE PHOTO */}
       <View style={styles.headerWrapper}>
-        <Pressable
-          style={({ pressed }) => [styles.themeToggleCorner, pressed && { opacity: 0.7 }]}
-          onPress={toggleTheme}
-        >
-          <Ionicons 
-            name={visualTheme === 'glass' ? "flash" : "sparkles"} 
-            size={18} 
-            color={visualTheme === 'glass' ? theme.accent : "#FFF"} 
-          />
-        </Pressable>
-
         <Pressable
           style={({ pressed }) => [styles.logoutCorner, pressed && { opacity: 0.7 }]}
           onPress={() => supabase.auth.signOut()}
@@ -905,20 +892,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 24,
     right: 24,
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: theme.card,
-    borderWidth: 1,
-    borderColor: theme.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 30,
-  },
-  themeToggleCorner: {
-    position: 'absolute',
-    top: 24,
-    right: 74,
     width: 40,
     height: 40,
     borderRadius: 14,
