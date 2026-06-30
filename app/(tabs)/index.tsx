@@ -7,7 +7,6 @@ import { useSession } from '@/lib/useSession';
 import type { MatchWithPlayers, MatchResultWithProfiles, PlayerLevel } from '@/types/database';
 import { theme, cardRadius, chipRadius } from '@/constants/theme';
 import { LEVELS, LEVEL_LABELS } from '@/constants/levels';
-import { Card } from '@/components/Card';
 
 function didWinResult(result: MatchResultWithProfiles, userId: string) {
   const inTeamA = result.team_a_player1 === userId || result.team_a_player2 === userId;
@@ -49,66 +48,65 @@ export default function MatchSearchScreen() {
     const emptySlots = Math.max(0, maxPlayers - joinedCount);
 
     return (
-      <Card style={styles.card} contentStyle={{ padding: 0, flexDirection: 'row' }}>
-        <Pressable
-          style={({ pressed }) => [
-            { flex: 1, flexDirection: 'row' },
-            pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }
-          ]}
-          onPress={() => router.push(`/match/${item.id}`)}
-        >
-          <View style={styles.cardAccentBar} />
-          <View style={styles.cardContent}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle} numberOfLines={1}>{item.location}</Text>
-              <View style={styles.modeBadge}>
-                <Text style={styles.modeBadgeText}>
-                  {item.mode === 'pair' ? 'DOUBLES' : 'SINGLES'}
-                </Text>
-              </View>
-            </View>
-
-            <Text style={styles.cardSubtitle}>
-              📅 {new Date(item.date_time).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase()} • {new Date(item.date_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-            </Text>
-
-            <View style={styles.cardRow}>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{LEVEL_LABELS[item.level].toUpperCase()}</Text>
-              </View>
-
-              <View style={styles.rosterContainer}>
-                <View style={styles.avatarStack}>
-                  {joinedPlayers.map((player, idx) => (
-                    <View
-                      key={player.profiles?.id || idx}
-                      style={[styles.playerAvatar, { marginLeft: idx === 0 ? 0 : -8 }]}
-                    >
-                      <Text style={styles.avatarInitial}>
-                        {(player.profiles?.full_name ?? '?').slice(0, 1).toUpperCase()}
-                      </Text>
-                    </View>
-                  ))}
-                  {Array.from({ length: emptySlots }).map((_, idx) => (
-                    <View
-                      key={idx}
-                      style={[
-                        styles.emptyAvatar,
-                        { marginLeft: joinedCount === 0 && idx === 0 ? 0 : -8 }
-                      ]}
-                    >
-                      <Ionicons name="add" size={10} color={theme.textMuted} />
-                    </View>
-                  ))}
-                </View>
-                <Text style={[styles.slotsText, isFull && { color: theme.danger }]}>
-                  {isFull ? 'FULL' : `${joinedCount}/${maxPlayers} JOINED`}
-                </Text>
-              </View>
+      <Pressable
+        style={({ pressed }) => [
+          styles.row,
+          { flexDirection: 'row' },
+          pressed && { opacity: 0.9 }
+        ]}
+        onPress={() => router.push(`/match/${item.id}`)}
+      >
+        <View style={styles.cardAccentBar} />
+        <View style={styles.cardContent}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle} numberOfLines={1}>{item.location}</Text>
+            <View style={styles.modeBadge}>
+              <Text style={styles.modeBadgeText}>
+                {item.mode === 'pair' ? 'DOUBLES' : 'SINGLES'}
+              </Text>
             </View>
           </View>
-        </Pressable>
-      </Card>
+
+          <Text style={styles.cardSubtitle}>
+            📅 {new Date(item.date_time).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase()} • {new Date(item.date_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+          </Text>
+
+          <View style={styles.cardRow}>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{LEVEL_LABELS[item.level].toUpperCase()}</Text>
+            </View>
+
+            <View style={styles.rosterContainer}>
+              <View style={styles.avatarStack}>
+                {joinedPlayers.map((player, idx) => (
+                  <View
+                    key={player.profiles?.id || idx}
+                    style={[styles.playerAvatar, { marginLeft: idx === 0 ? 0 : -8 }]}
+                  >
+                    <Text style={styles.avatarInitial}>
+                      {(player.profiles?.full_name ?? '?').slice(0, 1).toUpperCase()}
+                    </Text>
+                  </View>
+                ))}
+                {Array.from({ length: emptySlots }).map((_, idx) => (
+                  <View
+                    key={idx}
+                    style={[
+                      styles.emptyAvatar,
+                      { marginLeft: joinedCount === 0 && idx === 0 ? 0 : -8 }
+                    ]}
+                  >
+                    <Ionicons name="add" size={10} color={theme.textMuted} />
+                  </View>
+                ))}
+              </View>
+              <Text style={[styles.slotsText, isFull && { color: theme.danger }]}>
+                {isFull ? 'FULL' : `${joinedCount}/${maxPlayers} JOINED`}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </Pressable>
     );
   }
 
@@ -225,26 +223,28 @@ export default function MatchSearchScreen() {
           {/* List content */}
           {isLoading ? (
             <ActivityIndicator style={{ marginTop: 32 }} color={theme.primary} size="large" />
+          ) : (matches ?? []).length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.empty}>NO COURTS FOUND</Text>
+              <Text style={styles.emptySub}>No matches found matching your filters. Set up your own match to start.</Text>
+              <Pressable style={styles.emptyCreateButton} onPress={() => router.push('/create-match')}>
+                <Ionicons name="add-circle" size={14} color={theme.onAccent} />
+                <Text style={styles.emptyCreateButtonText}>CREATE MATCH</Text>
+              </Pressable>
+            </View>
           ) : (
-            <FlatList
-              data={matches ?? []}
-              keyExtractor={(item) => item.id}
-              renderItem={renderItem}
-              onRefresh={refetch}
-              refreshing={isRefetching}
-              contentContainerStyle={styles.listContent}
-              showsVerticalScrollIndicator={false}
-              ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <Text style={styles.empty}>NO COURTS FOUND</Text>
-                  <Text style={styles.emptySub}>No matches found matching your filters. Set up your own match to start.</Text>
-                  <Pressable style={styles.emptyCreateButton} onPress={() => router.push('/create-match')}>
-                    <Ionicons name="add-circle" size={14} color={theme.onAccent} />
-                    <Text style={styles.emptyCreateButtonText}>CREATE MATCH</Text>
-                  </Pressable>
-                </View>
-              }
-            />
+            <View style={styles.listCard}>
+              <FlatList
+                data={matches ?? []}
+                keyExtractor={(item) => item.id}
+                renderItem={renderItem}
+                onRefresh={refetch}
+                refreshing={isRefetching}
+                showsVerticalScrollIndicator={false}
+                ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
+                contentContainerStyle={{ paddingBottom: 110 }}
+              />
+            </View>
           )}
         </>
       ) : (
@@ -252,48 +252,50 @@ export default function MatchSearchScreen() {
         <View style={{ flex: 1 }}>
           {recentLoading ? (
             <ActivityIndicator style={{ marginTop: 32 }} color={theme.primary} size="large" />
+          ) : (recentResults ?? []).length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.empty}>NO MATCHES YET</Text>
+              <Text style={styles.emptySub}>Play and record a result to see your match history here.</Text>
+            </View>
           ) : (
-            <FlatList
-              data={recentResults ?? []}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.listContent}
-              showsVerticalScrollIndicator={false}
-              renderItem={({ item: r }) => {
-                const win = didWinResult(r, userId!);
-                const dateLabel = new Date(r.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase();
-                return (
-                  <Pressable onPress={() => router.push(`/match/${r.match_id || r.id}` as any)} style={({ pressed }) => [pressed && { opacity: 0.8 }]}>
-                    <Card style={[styles.recentCard, { borderLeftWidth: 3, borderLeftColor: win ? theme.success : theme.border }]} contentStyle={{ padding: 16 }}>
-                      <View style={styles.recentRow}>
-                        <View style={{ flex: 1, marginRight: 12 }}>
-                          <Text style={styles.recentVs}>VS</Text>
-                          <Text style={styles.recentOpponent} numberOfLines={1}>{opponentsOf(r, userId!)}</Text>
+            <View style={styles.listCard}>
+              <FlatList
+                data={recentResults ?? []}
+                keyExtractor={(item) => item.id}
+                showsVerticalScrollIndicator={false}
+                ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
+                contentContainerStyle={{ paddingBottom: 110 }}
+                renderItem={({ item: r }) => {
+                  const win = didWinResult(r, userId!);
+                  const dateLabel = new Date(r.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase();
+                  return (
+                    <Pressable onPress={() => router.push(`/match/${r.match_id || r.id}` as any)} style={({ pressed }) => [styles.row, { borderLeftWidth: 3, borderLeftColor: win ? theme.success : 'transparent' }, pressed && { opacity: 0.8 }]}>
+                      <View style={{ flex: 1, padding: 14 }}>
+                        <View style={styles.recentRow}>
+                          <View style={{ flex: 1, marginRight: 12 }}>
+                            <Text style={styles.recentVs}>VS</Text>
+                            <Text style={styles.recentOpponent} numberOfLines={1}>{opponentsOf(r, userId!)}</Text>
+                          </View>
+                          <View style={[styles.recentBadge, win ? styles.recentBadgeWin : styles.recentBadgeLoss]}>
+                            <Text style={[styles.recentBadgeText, { color: win ? theme.success : theme.textMuted }]}>{win ? 'WIN' : 'LOSS'}</Text>
+                          </View>
                         </View>
-                        <View style={[styles.recentBadge, win ? styles.recentBadgeWin : styles.recentBadgeLoss]}>
-                          <Text style={[styles.recentBadgeText, { color: win ? theme.success : theme.textMuted }]}>{win ? 'WIN' : 'LOSS'}</Text>
+                        <View style={styles.recentFooter}>
+                          <View style={{ flexDirection: 'row', gap: 6 }}>
+                            {r.sets.map((s, idx) => (
+                              <View key={idx} style={[styles.recentScoreBox, win && { borderColor: theme.success }]}>
+                                <Text style={[styles.recentScoreText, win && { color: theme.success }]}>{s.a}-{s.b}</Text>
+                              </View>
+                            ))}
+                          </View>
+                          <Text style={styles.recentDate}>{dateLabel}</Text>
                         </View>
                       </View>
-                      <View style={styles.recentFooter}>
-                        <View style={{ flexDirection: 'row', gap: 6 }}>
-                          {r.sets.map((s, idx) => (
-                            <View key={idx} style={[styles.recentScoreBox, win && { borderColor: theme.success }]}>
-                              <Text style={[styles.recentScoreText, win && { color: theme.success }]}>{s.a}-{s.b}</Text>
-                            </View>
-                          ))}
-                        </View>
-                        <Text style={styles.recentDate}>{dateLabel}</Text>
-                      </View>
-                    </Card>
-                  </Pressable>
-                );
-              }}
-              ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <Text style={styles.empty}>NO MATCHES YET</Text>
-                  <Text style={styles.emptySub}>Play and record a result to see your match history here.</Text>
-                </View>
-              }
-            />
+                    </Pressable>
+                  );
+                }}
+              />
+            </View>
           )}
         </View>
       )}
@@ -409,11 +411,17 @@ const styles = StyleSheet.create({
   levelChipTextActive: { color: theme.primary, fontWeight: '900' },
 
   // List & Card styles
-  listContent: { gap: 12, paddingBottom: 110 },
-  card: {
-    flexDirection: 'row',
+  listCard: {
+    flex: 1,
+    backgroundColor: theme.card,
     borderRadius: cardRadius,
+    borderWidth: 1,
+    borderColor: theme.border,
     overflow: 'hidden',
+  },
+  itemSeparator: { height: 1, backgroundColor: theme.border },
+  row: {
+    flexDirection: 'row',
   },
   cardAccentBar: {
     width: 3,
@@ -470,7 +478,6 @@ const styles = StyleSheet.create({
   },
   slotsText: { color: theme.textMuted, fontWeight: '900', fontSize: 9, letterSpacing: 0.5 },
 
-  recentCard: { borderRadius: cardRadius, marginBottom: 12 },
   recentRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   recentVs: { fontSize: 9, fontWeight: '900', color: theme.primary, letterSpacing: 0.5 },
   recentOpponent: { fontSize: 14, fontWeight: '800', color: theme.text, letterSpacing: 0.2, marginTop: 2 },
