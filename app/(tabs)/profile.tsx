@@ -37,7 +37,15 @@ function opponentProfile(result: MatchResultWithProfiles, userId: string) {
 }
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CARD_WIDTH = SCREEN_WIDTH * 0.62;
+const MASONRY_GAP = 10;
+const MASONRY_PADDING = 16;
+const COL_WIDTH = (SCREEN_WIDTH - MASONRY_PADDING * 2 - MASONRY_GAP) / 2;
+// Simple deterministic height variation (tall/short alternating-ish by id) so
+// the grid reads as Pinterest-style masonry instead of uniform tiles.
+function cardHeightFor(id: string, index: number) {
+  const seed = (id.charCodeAt(0) + index) % 3;
+  return COL_WIDTH * (seed === 0 ? 1.5 : seed === 1 ? 1.2 : 1.35);
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -199,11 +207,18 @@ export default function ProfileScreen() {
         postsLoading ? (
           <ActivityIndicator color={theme.accent} style={{ marginTop: 30 }} />
         ) : myPosts && myPosts.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.deckRow} snapToInterval={CARD_WIDTH + 12} decelerationRate="fast">
-            {myPosts.map((p) => (
-              <MatchCard key={p.id} post={p} posterId={userId} width={CARD_WIDTH} />
-            ))}
-          </ScrollView>
+          <View style={styles.masonryRow}>
+            <View style={styles.masonryCol}>
+              {myPosts.filter((_, i) => i % 2 === 0).map((p, i) => (
+                <MatchCard key={p.id} post={p} posterId={userId} width={COL_WIDTH} height={cardHeightFor(p.id, i)} />
+              ))}
+            </View>
+            <View style={styles.masonryCol}>
+              {myPosts.filter((_, i) => i % 2 === 1).map((p, i) => (
+                <MatchCard key={p.id} post={p} posterId={userId} width={COL_WIDTH} height={cardHeightFor(p.id, i + 1)} />
+              ))}
+            </View>
+          </View>
         ) : (
           <View style={styles.emptyTab}>
             <Ionicons name="camera-outline" size={32} color={theme.textMuted} />
@@ -305,7 +320,8 @@ const styles = StyleSheet.create({
   tabRow: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: theme.border },
   tabBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: 'transparent' },
   tabBtnActive: { borderBottomColor: theme.accent },
-  deckRow: { gap: 12, paddingHorizontal: 20, paddingVertical: 4 },
+  masonryRow: { flexDirection: 'row', gap: MASONRY_GAP, paddingHorizontal: MASONRY_PADDING, paddingTop: 4 },
+  masonryCol: { flex: 1, gap: MASONRY_GAP },
   emptyTab: { alignItems: 'center', justifyContent: 'center', paddingVertical: 50, gap: 10 },
   emptyTabText: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
   emptyTabBtn: { backgroundColor: theme.primary, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 8, marginTop: 4 },
