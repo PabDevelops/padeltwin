@@ -1,57 +1,27 @@
-import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSession } from '@/lib/useSession';
 import {
   useProfile,
   useUpdateProfile,
-  usePartnerRequests,
-  useRespondPartnerRequest,
-  useHiddenChats,
-  useHideChat,
   useMyAchievements,
   useMyStats,
   useRecentResults,
-  useApplyToCoach,
-  useStopCoaching,
-  useMyCoachLeads,
-  useUpdateLeadStatus,
+  useMyPosts,
   useFollowerCount,
   useFollowingCount,
   usePersonalRecords,
-  useBlockedProfiles,
-  useUnblockUser,
-  useDeleteAccount,
-  useMyKopStatus,
   useScrimIndex,
   scrimIndexLabel,
-  useActivityFeed,
-  useMyPosts,
 } from '@/lib/queries';
-import { ACHIEVEMENT_LABELS, ACHIEVEMENT_ICONS, ACHIEVEMENT_TIERS, TIER_COLORS } from '@/constants/achievements';
-import { supabase } from '@/lib/supabase';
+import { ACHIEVEMENT_ICONS, ACHIEVEMENT_TIERS, TIER_COLORS } from '@/constants/achievements';
 import { pickAndUploadAvatar } from '@/lib/uploadAvatar';
-import type { PartnerRequestWithProfiles, PlayerLevel, MatchResultWithProfiles } from '@/types/database';
-import { theme, buttonRadius, cardRadius, chipRadius } from '@/constants/theme';
+import type { MatchResultWithProfiles } from '@/types/database';
+import { theme, cardRadius } from '@/constants/theme';
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
-import { VerifiedLocation } from '@/components/VerifiedLocation';
-import { Card } from '@/components/Card';
 
 function didWin(result: MatchResultWithProfiles, userId: string) {
   const inTeamA = result.team_a_player1 === userId || result.team_a_player2 === userId;
@@ -65,90 +35,29 @@ function opponentProfile(result: MatchResultWithProfiles, userId: string) {
     : (result.team_a_player1 === userId ? result.team_b_player1_profile : result.team_a_player1_profile);
 }
 
-function formatRelativeTime(dateString: string) {
-  const now = new Date();
-  const past = new Date(dateString);
-  const diffMs = now.getTime() - past.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
-}
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const GRID_GAP = 2;
+const GRID_COLS = 3;
+const GRID_PADDING = 0;
+const THUMB_SIZE = (SCREEN_WIDTH - GRID_PADDING * 2 - GRID_GAP * (GRID_COLS - 1)) / GRID_COLS;
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { session } = useSession();
   const userId = session?.user.id;
   const { data: profile, isLoading } = useProfile(userId);
-  const { data: kopStatus } = useMyKopStatus(userId);
   const { data: scrimIndex } = useScrimIndex(userId);
   const updateProfile = useUpdateProfile();
-  const { data: requests } = usePartnerRequests(userId);
-  const { data: myAchievements, isLoading: achievementsLoading } = useMyAchievements(userId);
-  const { data: stats, isLoading: statsLoading } = useMyStats(userId);
-  const { data: recentResults, isLoading: resultsLoading } = useRecentResults(userId, 8);
-  const { data: followedFeed } = useActivityFeed(userId, 3);
-  const { data: myPosts } = useMyPosts(userId);
+  const { data: myAchievements } = useMyAchievements(userId);
+  const { data: stats } = useMyStats(userId);
+  const { data: recentResults, isLoading: resultsLoading } = useRecentResults(userId, 20);
+  const { data: myPosts, isLoading: postsLoading } = useMyPosts(userId);
   const { data: followerCount } = useFollowerCount(userId);
   const { data: followingCount } = useFollowingCount(userId);
   const { data: records } = usePersonalRecords(userId);
-  const respondRequest = useRespondPartnerRequest();
-  const { data: hiddenChats } = useHiddenChats(userId);
-  const hideChat = useHideChat();
-  const { data: blockedProfiles } = useBlockedProfiles(userId);
-  const unblockUser = useUnblockUser();
-  const deleteAccount = useDeleteAccount();
-  const applyToCoach = useApplyToCoach();
-  const stopCoaching = useStopCoaching();
-  const { data: leads, isLoading: leadsLoading } = useMyCoachLeads(profile?.coach_status === 'approved' ? userId : undefined);
-  const updateLeadStatus = useUpdateLeadStatus();
-  const [coachModalVisible, setCoachModalVisible] = useState(false);
-  const [coachBio, setCoachBio] = useState('');
-  const [coachRate, setCoachRate] = useState('');
-  const [coachExperience, setCoachExperience] = useState('');
-  const [coachSpecialties, setCoachSpecialties] = useState('');
-
-  const recordItems: { icon: keyof typeof Ionicons.glyphMap; value: string; label: string }[] = [];
-  if (records?.longestWinStreak) {
-    recordItems.push({ icon: 'flame', value: `${records.longestWinStreak} wins`, label: 'Longest streak' });
-  }
-  if (records?.busiestMonth) {
-    recordItems.push({ icon: 'calendar', value: `${records.busiestMonth.count} matches`, label: records.busiestMonth.label });
-  }
-  if (records?.bestEloGain) {
-    recordItems.push({ icon: 'flash', value: `+${records.bestEloGain.delta} PS`, label: 'Best PS Score gain' });
-  }
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [focusedInput, setFocusedInput] = useState<string | null>(null);
-
-  const pendingReceived = (requests ?? []).filter((r) => r.status === 'pending' && r.to_id === userId);
-  const accepted = (requests ?? []).filter((r) => r.status === 'accepted' && !hiddenChats?.has(r.id));
-
-  function otherProfile(r: PartnerRequestWithProfiles) {
-    return r.from_id === userId ? r.to_profile : r.from_profile;
-  }
-
-  const [fullName, setFullName] = useState('');
-  const [zone, setZone] = useState('');
-  const [country, setCountry] = useState('');
-  const [level, setLevel] = useState<PlayerLevel | null>(null);
-  const [club, setClub] = useState('');
-  const [lookingForPartner, setLookingForPartner] = useState(true);
-
-  useEffect(() => {
-    if (profile) {
-      setFullName(profile.full_name ?? '');
-      setZone(profile.zone ?? '');
-      setCountry(profile.country ?? '');
-      setLevel(profile.level);
-      setClub(profile.club ?? '');
-      setLookingForPartner(profile.looking_for_partner);
-    }
-  }, [profile]);
+  const [activeTab, setActiveTab] = useState<'posts' | 'matches'>('posts');
 
   if (isLoading || !userId || !profile) {
     return (
@@ -168,55 +77,25 @@ export default function ProfileScreen() {
     }
   }
 
-  function handleSave() {
-    updateProfile.mutate({
-      id: userId!,
-      full_name: fullName,
-      zone,
-      country: country || null,
-      level,
-      club: club || null,
-      looking_for_partner: lookingForPartner,
-    });
+  const recordItems: { icon: keyof typeof Ionicons.glyphMap; value: string; label: string }[] = [];
+  if (records?.longestWinStreak) {
+    recordItems.push({ icon: 'flame', value: `${records.longestWinStreak} wins`, label: 'Longest streak' });
   }
-
-  function handleBecomeCoach() {
-    if (!userId || !coachBio.trim()) return;
-    applyToCoach.mutate(
-      {
-        id: userId,
-        bio: coachBio.trim(),
-        hourlyRate: coachRate.trim() ? Number(coachRate.trim()) : null,
-        yearsExperience: coachExperience.trim() ? Number(coachExperience.trim()) : null,
-        specialties: coachSpecialties.trim(),
-      },
-      {
-        onSuccess: () => {
-          setCoachModalVisible(false);
-          setCoachBio('');
-          setCoachRate('');
-          setCoachExperience('');
-          setCoachSpecialties('');
-        },
-        onError: (err: any) => Alert.alert('Could not save listing', err.message ?? 'Try again.'),
-      }
-    );
+  if (records?.busiestMonth) {
+    recordItems.push({ icon: 'calendar', value: `${records.busiestMonth.count} matches`, label: records.busiestMonth.label });
   }
-
-  const initials = (fullName || 'Player').slice(0, 2).toUpperCase();
+  if (records?.bestEloGain) {
+    recordItems.push({ icon: 'flash', value: `+${records.bestEloGain.delta} PS`, label: 'Best PS Score gain' });
+  }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView style={styles.container} bounces={false} showsVerticalScrollIndicator={false}>
-      {/* CIRCULAR PROFILE PHOTO */}
+    <ScrollView style={styles.container} bounces={false} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 110 }}>
       <View style={styles.headerWrapper}>
         <Pressable
-          style={({ pressed }) => [styles.logoutCorner, pressed && { opacity: 0.7 }]}
-          onPress={() => supabase.auth.signOut()}
+          style={({ pressed }) => [styles.settingsCorner, pressed && { opacity: 0.7 }]}
+          onPress={() => router.push('/settings' as any)}
         >
-          <Ionicons name="log-out-outline" size={20} color={theme.danger} />
+          <Ionicons name="settings-outline" size={20} color={theme.text} />
         </Pressable>
 
         <View style={styles.avatarCircleWrap}>
@@ -227,7 +106,6 @@ export default function ProfileScreen() {
               <Image source={require('@/assets/images/icon.png')} style={styles.avatarCirclePlaceholderLogo} resizeMode="contain" />
             </View>
           )}
-
           <Pressable
             style={({ pressed }) => [styles.cameraBadge, pressed && { transform: [{ scale: 0.95 }] }]}
             onPress={handlePickAvatar}
@@ -236,618 +114,147 @@ export default function ProfileScreen() {
             {uploadingAvatar ? (
               <ActivityIndicator size="small" color={theme.onAccent} />
             ) : (
-              <Ionicons name="camera" size={16} color={theme.onAccent} />
+              <Ionicons name="camera" size={14} color={theme.onAccent} />
             )}
           </Pressable>
         </View>
-      </View>
 
-      <View style={styles.contentBody}>
-        {/* BADGES */}
-        {lookingForPartner && (
-          <View style={styles.badgeRow}>
-            <View style={styles.outlinedBadge}>
-              <Text style={styles.outlinedBadgeText}>LOOKING FOR PARTNER</Text>
-            </View>
-          </View>
-        )}
-
-        {/* SOCIAL */}
-        <View style={styles.socialStatsRow}>
-          <Pressable
-            style={({ pressed }) => [styles.socialStatPill, pressed && { opacity: 0.7 }]}
-            onPress={() => router.push(`/social/${userId}?type=followers` as any)}
-          >
-            <Text style={styles.socialStatValue}>{followerCount ?? 0}</Text>
-            <Text style={styles.socialStatLabel}>Followers</Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.socialStatPill, pressed && { opacity: 0.7 }]}
-            onPress={() => router.push(`/social/${userId}?type=following` as any)}
-          >
-            <Text style={styles.socialStatValue}>{followingCount ?? 0}</Text>
-            <Text style={styles.socialStatLabel}>Following</Text>
-          </Pressable>
-        </View>
-
-        {/* NAME */}
         <View style={styles.nameRow}>
           <Text style={styles.playerName}>{profile.full_name ?? 'Player'}</Text>
           {profile.is_pro && <ProBadge />}
           {profile.coach_status === 'approved' && <CoachBadge />}
         </View>
-
         {profile.zone ? <Text style={styles.locationSub}>📍 {profile.zone}</Text> : null}
-
-        {scrimIndex != null && (
-          <View style={[styles.scrimIndexPill, { borderColor: scrimIndex >= 7 ? theme.success : scrimIndex >= 5 ? theme.accent : theme.danger }]}>
-            <Text style={styles.scrimIndexValue}>{scrimIndex.toFixed(1)}</Text>
-            <Text style={styles.scrimIndexLabel}>{scrimIndexLabel(scrimIndex)}</Text>
+        {profile.looking_for_partner && (
+          <View style={styles.outlinedBadge}>
+            <Text style={styles.outlinedBadgeText}>LOOKING FOR PARTNER</Text>
           </View>
         )}
 
-        {/* STATS */}
-        <Card style={styles.psScoreHero} contentStyle={{ alignItems: 'center', paddingVertical: 20 }}>
-          <Text style={styles.psScoreHeroValue}>{profile.elo}</Text>
-          <Text style={styles.psScoreHeroLabel}>PS SCORE</Text>
-        </Card>
-
-        <Card style={styles.statsCardContainer} contentStyle={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 18, paddingHorizontal: 10 }}>
-          {statsLoading ? (
-            <ActivityIndicator color={theme.accent} />
-          ) : (
-            <>
-              <View style={styles.statColumn}>
-                <Text style={styles.statHugeText}>{stats?.played ?? 0}</Text>
-                <Text style={styles.statSubLabel}>Matches Played</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statColumn}>
-                <Text style={styles.statHugeText}>{stats?.winRate ?? 0}%</Text>
-                <Text style={styles.statSubLabel}>Win Rate</Text>
-              </View>
-            </>
-          )}
-        </Card>
-
-        {/* RECORDS */}
-        {recordItems.length > 0 && (
-          <>
-            <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Personal records</Text>
-            <Card style={styles.recordsCardContainer} contentStyle={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 10 }}>
-              {recordItems.map((item, index) => (
-                <View key={item.label} style={styles.recordItem}>
-                  {index > 0 && <View style={styles.statDivider} />}
-                  <View style={styles.recordColumn}>
-                    <Ionicons name={item.icon} size={18} color={theme.accent} />
-                    <Text style={styles.recordValue}>{item.value}</Text>
-                    <Text style={styles.recordLabel}>{item.label}</Text>
-                  </View>
-                </View>
-              ))}
-            </Card>
-          </>
-        )}
-
-
-        {/* RECENT MATCHES */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Recent matches</Text>
-        </View>
-
-        {resultsLoading ? (
-          <ActivityIndicator color={theme.accent} style={{ marginBottom: 12 }} />
-        ) : !recentResults || recentResults.length === 0 ? (
-          <Text style={styles.helperText}>No matches recorded yet — play one and record the result.</Text>
-        ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-            {(() => {
-              return recentResults.map((r) => {
-                const win = didWin(r, userId!);
-                const opponent = opponentProfile(r, userId!);
-                const opponentName = opponent?.full_name ?? 'Padel Player';
-                const opponentAvatar = opponent?.avatar_url;
-                const scoreString = r.sets.map((s: any) => `${s.a}-${s.b}`).join(', ');
-
-                return (
-                  <Pressable key={r.id} onPress={() => router.push(`/match/${r.match_id || r.id}` as any)} style={({pressed}) => [pressed && {opacity: 0.8}]}>
-                  <Card style={styles.horizontalReviewCard} contentStyle={{ padding: 14 }}>
-                    <View style={styles.cardHeaderRow}>
-                      {opponentAvatar ? (
-                        <Image source={{ uri: opponentAvatar }} style={styles.smallAvatar} />
-                      ) : (
-                        <View style={styles.smallAvatarPlaceholder}>
-                          <Image source={require('@/assets/images/icon.png')} style={styles.smallAvatarPlaceholderLogo} resizeMode="contain" />
-                        </View>
-                      )}
-                      <View style={styles.cardInfoCol}>
-                        <Text style={styles.cardOpponentName} numberOfLines={1}>
-                          vs {opponentName}
-                        </Text>
-                        <View style={styles.cardRatingRow}>
-                          <Ionicons name="trophy" size={11} color={theme.accent} style={{ marginRight: 4 }} />
-                          <Text style={styles.cardResultText}>
-                            {win ? 'Won' : 'Lost'} {scoreString}
-                          </Text>
-                          <Text style={styles.cardTimeText}>
-                            {'  '}•{'  '}
-                            {formatRelativeTime(r.created_at)}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  </Card>
-                  </Pressable>
-                );
-              });
-            })()}
-          </ScrollView>
-        )}
-
-        {/* MY POSTS */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>My posts</Text>
-          <Pressable onPress={() => router.push('/post/new' as any)}>
-            <Text style={[styles.label, { color: theme.accent, marginTop: 0 }]}>+ NEW POST</Text>
+        {/* Stat row */}
+        <View style={styles.statsRow}>
+          <View style={styles.statColumn}>
+            <Text style={styles.statValue}>{myPosts?.length ?? 0}</Text>
+            <Text style={styles.statLabel}>Posts</Text>
+          </View>
+          <Pressable style={styles.statColumn} onPress={() => router.push(`/social/${userId}?type=followers` as any)}>
+            <Text style={styles.statValue}>{followerCount ?? 0}</Text>
+            <Text style={styles.statLabel}>Followers</Text>
           </Pressable>
+          <Pressable style={styles.statColumn} onPress={() => router.push(`/social/${userId}?type=following` as any)}>
+            <Text style={styles.statValue}>{followingCount ?? 0}</Text>
+            <Text style={styles.statLabel}>Following</Text>
+          </Pressable>
+          <View style={styles.statColumn}>
+            <Text style={[styles.statValue, { color: theme.accent }]}>{profile.elo}</Text>
+            <Text style={styles.statLabel}>PS Score</Text>
+          </View>
         </View>
-        {myPosts && myPosts.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-            {myPosts.map((p) => (
-              <Image key={p.id} source={{ uri: p.photo_url }} style={styles.myPostThumb} />
+
+        <View style={styles.secondaryStatsRow}>
+          <Text style={styles.secondaryStat}>{stats?.played ?? 0} matches · {stats?.winRate ?? 0}% win rate</Text>
+          {scrimIndex != null && (
+            <View style={[styles.scrimPill, { borderColor: scrimIndex >= 7 ? theme.success : scrimIndex >= 5 ? theme.accent : theme.danger }]}>
+              <Text style={styles.scrimPillText}>{scrimIndex.toFixed(1)} {scrimIndexLabel(scrimIndex)}</Text>
+            </View>
+          )}
+        </View>
+
+        {recordItems.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recordsRow}>
+            {recordItems.map((item) => (
+              <View key={item.label} style={styles.recordChip}>
+                <Ionicons name={item.icon} size={13} color={theme.accent} />
+                <Text style={styles.recordChipText}>{item.value}</Text>
+              </View>
             ))}
           </ScrollView>
-        ) : (
-          <Text style={styles.helperText}>Share a photo from your last match to get started.</Text>
         )}
 
-        {/* ACHIEVEMENTS */}
-        <Card style={styles.section} contentStyle={{ padding: 16 }}>
-          <Text style={styles.sectionHeader}>MY ACHIEVEMENTS</Text>
-          {achievementsLoading ? (
-            <ActivityIndicator color={theme.accent} />
-          ) : myAchievements && myAchievements.length > 0 ? (
-            <View style={styles.achievementsRow}>
-              {myAchievements.map((item) => {
-                const iconName = ACHIEVEMENT_ICONS[item.type] || 'trophy';
-                const labelText = ACHIEVEMENT_LABELS[item.type] || 'New Achievement';
-                const tier = ACHIEVEMENT_TIERS[item.type] || 'bronze';
-                const tierColor = TIER_COLORS[tier];
-                return (
-                  <View key={item.id} style={styles.achievementBadgeContainer}>
-                    <View style={[styles.achievementBadgeCircle, { borderColor: tierColor, backgroundColor: `${tierColor}1A` }]}>
-                      <Ionicons name={iconName as any} size={20} color={tierColor} />
-                    </View>
-                    <Text style={[styles.achievementTierLabel, { color: tierColor }]}>{tier.toUpperCase()}</Text>
-                    <Text style={styles.achievementBadgeLabel} numberOfLines={2}>
-                      {labelText.toUpperCase()}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-          ) : (
-            <Text style={styles.helperText}>Play matches and win games to unlock exclusive player badges!</Text>
-          )}
-        </Card>
-
-        {/* FOLLOWED ACTIVITY */}
-        {followedFeed && followedFeed.length > 0 && (
-          <Card style={styles.section} contentStyle={{ padding: 0, paddingVertical: 4 }}>
-            <Text style={[styles.sectionHeader, { paddingHorizontal: 16, marginBottom: 8 }]}>FROM PLAYERS YOU FOLLOW</Text>
-            {followedFeed.map((item) => {
-              const isAchievement = item.kind === 'achievement';
-              const isPost = item.kind === 'post';
-              const name = isAchievement || isPost
-                ? (item.profiles?.full_name ?? 'Player')
-                : (item.winner === 'a' ? item.team_a_player1_profile?.full_name : item.team_b_player1_profile?.full_name) ?? 'Player';
-              const detail = isAchievement
-                ? (ACHIEVEMENT_LABELS[item.type] || 'New achievement')
-                : isPost
-                ? 'shared a new post'
-                : `won a match`;
+        {myAchievements && myAchievements.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.achievementsRow}>
+            {myAchievements.map((item) => {
+              const iconName = ACHIEVEMENT_ICONS[item.type] || 'trophy';
+              const tier = ACHIEVEMENT_TIERS[item.type] || 'bronze';
+              const tierColor = TIER_COLORS[tier];
               return (
-                <View key={`${item.kind}-${item.id}`} style={styles.followedFeedRow}>
-                  <Ionicons name={isAchievement ? 'trophy' : isPost ? 'camera' : 'tennisball'} size={14} color={theme.accent} />
-                  <Text style={styles.followedFeedText} numberOfLines={1}>
-                    <Text style={{ color: theme.text, fontWeight: '800' }}>{name}</Text>
-                    {'  '}{detail}
-                  </Text>
-                  <Text style={styles.followedFeedTime}>{formatRelativeTime(item.created_at)}</Text>
+                <View key={item.id} style={[styles.achievementBadge, { borderColor: tierColor, backgroundColor: `${tierColor}1A` }]}>
+                  <Ionicons name={iconName as any} size={16} color={tierColor} />
                 </View>
               );
             })}
-          </Card>
+          </ScrollView>
         )}
-
-        {/* ATHLETE DETAILS */}
-        <Card style={styles.section} contentStyle={{ padding: 16 }}>
-          <Text style={styles.sectionHeader}>ATHLETE DETAILS</Text>
-
-          <Text style={styles.label}>NAME</Text>
-          <TextInput
-            style={[styles.input, focusedInput === 'name' && styles.inputFocused]}
-            value={fullName}
-            onChangeText={setFullName}
-            placeholder="Your name"
-            placeholderTextColor={theme.textMuted}
-            onFocus={() => setFocusedInput('name')}
-            onBlur={() => setFocusedInput(null)}
-          />
-
-          <Text style={[styles.label, { marginTop: 14 }]}>LOCATION</Text>
-          <VerifiedLocation
-            city={zone || null}
-            country={country || null}
-            onDetected={(loc) => {
-              setZone(loc.city);
-              setCountry(loc.country);
-            }}
-          />
-
-          <Pressable style={styles.duoQueueLink} onPress={() => router.push('/pairs' as any)}>
-            <Text style={styles.duoQueueLinkText}>👥 MY PAIR — Manage your fixed partner</Text>
-            <Text style={styles.duoQueueLinkArrow}>{'>'}</Text>
-          </Pressable>
-
-        </Card>
-
-        {/* KOP STATUS */}
-        <Card style={styles.section} contentStyle={{ padding: 16 }}>
-          <Text style={styles.sectionHeader}>KOP STATUS</Text>
-          <Text style={styles.helperText}>
-            KOP is contested by your ranked pair, not solo — join a club's board from the KOP tab.
-          </Text>
-
-          <Pressable style={styles.kopCrownRow} onPress={() => router.push('/club-leaderboard' as any)}>
-            <Ionicons name="trophy" size={28} color={theme.success} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.kopCrownValue}>
-                {kopStatus?.crownedClubs.length ?? 0} CROWN{(kopStatus?.crownedClubs.length ?? 0) === 1 ? '' : 'S'}
-              </Text>
-              <Text style={styles.kopCrownSub}>
-                {kopStatus && kopStatus.joinedClubs.length > 0
-                  ? `Held across ${kopStatus.joinedClubs.length} joined club${kopStatus.joinedClubs.length === 1 ? '' : 's'}`
-                  : 'Not contesting any club yet'}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
-          </Pressable>
-
-          <Text style={[styles.label, { marginTop: 14 }]}>HOME CLUB</Text>
-          <TextInput
-            style={[styles.input, focusedInput === 'club' && styles.inputFocused]}
-            value={club}
-            onChangeText={setClub}
-            placeholder="Your club or court"
-            placeholderTextColor={theme.textMuted}
-            onFocus={() => setFocusedInput('club')}
-            onBlur={() => setFocusedInput(null)}
-          />
-          <Text style={styles.helperText}>Shown on your profile — doesn't by itself enter you into KOP.</Text>
-        </Card>
-
-        <Card style={styles.section} contentStyle={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 }}>
-          <View style={{ flex: 1, marginRight: 16 }}>
-            <Text style={[styles.label, { marginTop: 0 }]}>PARTNER SEARCH</Text>
-            <Text style={styles.helperText}>Make profile visible in the matchmaking pool.</Text>
-          </View>
-          <Switch
-            value={lookingForPartner}
-            onValueChange={setLookingForPartner}
-            trackColor={{ true: theme.accent, false: theme.border }}
-            thumbColor={lookingForPartner ? theme.secondary : '#7F7F8F'}
-          />
-        </Card>
-
-        <Pressable
-          style={({ pressed }) => [
-            styles.button,
-            pressed && styles.buttonPressed,
-            updateProfile.isPending && styles.buttonDisabled,
-          ]}
-          onPress={handleSave}
-          disabled={updateProfile.isPending}
-        >
-          {updateProfile.isPending ? (
-            <ActivityIndicator color={theme.onAccent} />
-          ) : (
-            <Text style={styles.buttonText}>Save Changes</Text>
-          )}
-        </Pressable>
-
-        {profile.coach_status === 'approved' ? (
-          <Card style={styles.section} contentStyle={{ padding: 16 }}>
-            <Text style={styles.sectionHeader}>COACH LISTING</Text>
-            <Text style={styles.helperText}>
-              You're listed in the coach directory. {leads && leads.length > 0 ? `${leads.length} lesson request${leads.length > 1 ? 's' : ''} received.` : 'No requests yet.'}
-            </Text>
-            {leadsLoading ? (
-              <ActivityIndicator color={theme.accent} style={{ marginTop: 10 }} />
-            ) : leads && leads.length > 0 ? (
-              leads.map((lead) => (
-                <View key={lead.id} style={styles.leadCard}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text style={styles.requestName}>{lead.requester?.full_name ?? 'Player'}</Text>
-                    <Text style={[styles.leadStatus, lead.status === 'pending' && styles.leadStatusPending]}>
-                      {lead.status.toUpperCase()}
-                    </Text>
-                  </View>
-                  <Text style={styles.helperText}>{lead.message}</Text>
-                  {lead.status === 'pending' && (
-                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                      <Pressable
-                        style={[styles.smallButton, styles.acceptButton]}
-                        onPress={() => updateLeadStatus.mutate({ leadId: lead.id, status: 'contacted' })}
-                      >
-                        <Text style={styles.smallButtonText}>MARK CONTACTED</Text>
-                      </Pressable>
-                      <Pressable
-                        style={[styles.smallButton, styles.rejectButton]}
-                        onPress={() => updateLeadStatus.mutate({ leadId: lead.id, status: 'closed' })}
-                      >
-                        <Text style={styles.smallButtonText}>CLOSE</Text>
-                      </Pressable>
-                    </View>
-                  )}
-                </View>
-              ))
-            ) : null}
-            <Pressable
-              style={({ pressed }) => [styles.deleteChatBtn, { alignSelf: 'flex-start', width: 'auto', paddingHorizontal: 14, marginTop: 12 }, pressed && { opacity: 0.7 }]}
-              onPress={() => userId && stopCoaching.mutate(userId)}
-            >
-              <Text style={{ color: theme.danger, fontWeight: '800', fontSize: 11 }}>STOP COACHING</Text>
-            </Pressable>
-          </Card>
-        ) : profile.coach_status === 'pending' ? (
-          <Card style={styles.section} contentStyle={{ padding: 16 }}>
-            <Text style={styles.sectionHeader}>COACH APPLICATION</Text>
-            <Text style={styles.helperText}>
-              Your application is under review. We'll list you in the coach directory once it's approved.
-            </Text>
-          </Card>
-        ) : !profile.is_pro ? (
-          <Card style={styles.section} contentStyle={{ padding: 16 }}>
-            <Text style={styles.sectionHeader}>ARE YOU A PADEL COACH?</Text>
-            <Text style={styles.helperText}>
-              Listing as a coach is a Pro feature. Upgrade to Pro to apply for a spot in the coach directory.
-            </Text>
-            <Text style={[styles.label, { color: theme.textMuted, marginTop: 10 }]}>PRO REQUIRED</Text>
-          </Card>
-        ) : (
-          <Card style={styles.section} contentStyle={{ padding: 16 }}>
-            <Pressable
-              style={({ pressed }) => [pressed && { opacity: 0.9 }]}
-              onPress={() => setCoachModalVisible(true)}
-            >
-              <Text style={styles.sectionHeader}>ARE YOU A PADEL COACH?</Text>
-              <Text style={styles.helperText}>Apply to be listed in the coach directory and get lesson requests from players near you. Subject to review.</Text>
-              <Text style={[styles.label, { color: theme.accent, marginTop: 10 }]}>APPLY TO BECOME A COACH →</Text>
-            </Pressable>
-          </Card>
-        )}
-
-        {pendingReceived.length > 0 && (
-          <View style={styles.partnersSection}>
-            <Text style={styles.sectionTitle}>PARTNER REQUESTS</Text>
-            {pendingReceived.map((r) => (
-              <Card key={r.id} style={styles.requestCard} contentStyle={{ padding: 16 }}>
-                <Text style={styles.requestName}>{otherProfile(r)?.full_name ?? 'Player'}</Text>
-                <View style={styles.requestActions}>
-                  <Pressable
-                    style={({ pressed }) => [styles.smallButton, styles.acceptButton, pressed && { opacity: 0.8 }]}
-                    onPress={() => respondRequest.mutate({ requestId: r.id, status: 'accepted' })}
-                  >
-                    <Text style={styles.smallButtonText}>ACCEPT</Text>
-                  </Pressable>
-                  <Pressable
-                    style={({ pressed }) => [styles.smallButton, styles.rejectButton, pressed && { opacity: 0.8 }]}
-                    onPress={() => respondRequest.mutate({ requestId: r.id, status: 'rejected' })}
-                  >
-                    <Text style={styles.smallButtonText}>DECLINE</Text>
-                  </Pressable>
-                </View>
-              </Card>
-            ))}
-          </View>
-        )}
-
-        {accepted.length > 0 && (
-          <View style={styles.partnersSection}>
-            <Text style={styles.sectionTitle}>MY PARTNERS</Text>
-            {accepted.map((r) => (
-              <Card key={r.id} style={styles.partnerRequestCard}>
-                <Pressable
-                  style={({ pressed }) => [
-                    { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-                    pressed && { opacity: 0.9, transform: [{ scale: 0.99 }] },
-                  ]}
-                  onPress={() => router.push({ pathname: '/chat/[requestId]', params: { requestId: r.id } })}
-                >
-                  <View style={styles.partnerInfo}>
-                    <Text style={styles.requestName}>{otherProfile(r)?.full_name ?? 'Player'}</Text>
-                    <Text style={styles.partnerCity}>{otherProfile(r)?.zone ?? 'Madrid'}</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <View style={styles.chatLinkBadge}>
-                      <Text style={styles.chatLinkText}>CHAT</Text>
-                    </View>
-                    <Pressable
-                      style={({ pressed }) => [styles.deleteChatBtn, pressed && { opacity: 0.7 }]}
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        Alert.alert(
-                          'Delete chat?',
-                          `This removes the chat from your list only — ${otherProfile(r)?.full_name ?? 'this player'} will still see it.`,
-                          [
-                            { text: 'Cancel', style: 'cancel' },
-                            {
-                              text: 'Delete',
-                              style: 'destructive',
-                              onPress: () => userId && hideChat.mutate({ requestId: r.id, profileId: userId }),
-                            },
-                          ]
-                        );
-                      }}
-                    >
-                      <Ionicons name="trash-outline" size={16} color={theme.danger} />
-                    </Pressable>
-                  </View>
-                </Pressable>
-              </Card>
-            ))}
-          </View>
-        )}
-
-        <Card style={styles.section} contentStyle={{ padding: 16 }}>
-          <Text style={styles.sectionHeader}>PRIVACY & SAFETY</Text>
-
-          <Pressable onPress={() => router.push('/privacy' as any)}>
-            <Text style={[styles.label, { color: theme.accent, marginTop: 0 }]}>PRIVACY POLICY →</Text>
-          </Pressable>
-
-          {blockedProfiles && blockedProfiles.length > 0 && (
-            <>
-              <Text style={[styles.label, { marginTop: 16 }]}>BLOCKED PLAYERS</Text>
-              {blockedProfiles.map((b) => (
-                <View key={b.id} style={[styles.leadCard, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
-                  <Text style={styles.requestName}>{b.full_name ?? 'Player'}</Text>
-                  <Pressable
-                    onPress={() => userId && unblockUser.mutate({ blockerId: userId, blockedId: b.id })}
-                  >
-                    <Text style={{ color: theme.accent, fontWeight: '800', fontSize: 11 }}>UNBLOCK</Text>
-                  </Pressable>
-                </View>
-              ))}
-            </>
-          )}
-
-          <Pressable
-            style={{ marginTop: 16 }}
-            onPress={() =>
-              Alert.alert(
-                'Delete account?',
-                "This permanently deletes your profile, matches, messages, and stats. This can't be undone.",
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Delete my account',
-                    style: 'destructive',
-                    onPress: () =>
-                      deleteAccount.mutate(undefined, {
-                        onSuccess: () => supabase.auth.signOut(),
-                        onError: (err: any) => Alert.alert('Could not delete account', err.message ?? 'Try again.'),
-                      }),
-                  },
-                ]
-              )
-            }
-          >
-            <Text style={{ color: theme.danger, fontWeight: '800', fontSize: 11, letterSpacing: 0.5 }}>DELETE MY ACCOUNT</Text>
-          </Pressable>
-        </Card>
       </View>
 
-      <Modal visible={coachModalVisible} transparent animationType="fade" onRequestClose={() => setCoachModalVisible(false)}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.modalOverlay}>
-          <ScrollView style={styles.modalCard} contentContainerStyle={{ gap: 10 }}>
-            <Text style={styles.modalTitle}>COACH APPLICATION</Text>
-            <Text style={styles.label}>BIO</Text>
-            <TextInput
-              style={[styles.input, { minHeight: 70, textAlignVertical: 'top' }]}
-              value={coachBio}
-              onChangeText={setCoachBio}
-              placeholder="Tell players about your coaching style and background."
-              placeholderTextColor={theme.textMuted}
-              multiline
-            />
-            <Text style={styles.label}>HOURLY RATE (£, optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={coachRate}
-              onChangeText={setCoachRate}
-              placeholder="e.g. 35"
-              placeholderTextColor={theme.textMuted}
-              keyboardType="numeric"
-            />
-            <Text style={styles.label}>YEARS OF EXPERIENCE (optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={coachExperience}
-              onChangeText={setCoachExperience}
-              placeholder="e.g. 8"
-              placeholderTextColor={theme.textMuted}
-              keyboardType="numeric"
-            />
-            <Text style={styles.label}>SPECIALTIES (optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={coachSpecialties}
-              onChangeText={setCoachSpecialties}
-              placeholder="e.g. Beginners, footwork, competitive prep"
-              placeholderTextColor={theme.textMuted}
-            />
-            <View style={styles.modalActions}>
-              <Pressable style={styles.modalCancelBtn} onPress={() => setCoachModalVisible(false)}>
-                <Text style={styles.modalCancelText}>CANCEL</Text>
-              </Pressable>
+      {/* Tabs */}
+      <View style={styles.tabRow}>
+        <Pressable style={[styles.tabBtn, activeTab === 'posts' && styles.tabBtnActive]} onPress={() => setActiveTab('posts')}>
+          <Ionicons name="grid-outline" size={18} color={activeTab === 'posts' ? theme.text : theme.textMuted} />
+        </Pressable>
+        <Pressable style={[styles.tabBtn, activeTab === 'matches' && styles.tabBtnActive]} onPress={() => setActiveTab('matches')}>
+          <Ionicons name="tennisball-outline" size={18} color={activeTab === 'matches' ? theme.text : theme.textMuted} />
+        </Pressable>
+      </View>
+
+      {activeTab === 'posts' ? (
+        postsLoading ? (
+          <ActivityIndicator color={theme.accent} style={{ marginTop: 30 }} />
+        ) : myPosts && myPosts.length > 0 ? (
+          <View style={styles.grid}>
+            {myPosts.map((p) => (
+              <Image key={p.id} source={{ uri: p.photo_url }} style={styles.gridThumb} />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyTab}>
+            <Ionicons name="camera-outline" size={32} color={theme.textMuted} />
+            <Text style={styles.emptyTabText}>Share a photo from your last match</Text>
+            <Pressable style={styles.emptyTabBtn} onPress={() => router.push('/post/new' as any)}>
+              <Text style={styles.emptyTabBtnText}>NEW POST</Text>
+            </Pressable>
+          </View>
+        )
+      ) : resultsLoading ? (
+        <ActivityIndicator color={theme.accent} style={{ marginTop: 30 }} />
+      ) : recentResults && recentResults.length > 0 ? (
+        <View style={styles.matchesList}>
+          {recentResults.map((r) => {
+            const win = didWin(r, userId);
+            const opponent = opponentProfile(r, userId);
+            return (
               <Pressable
-                style={[styles.modalConfirmBtn, (!coachBio.trim() || applyToCoach.isPending) && { opacity: 0.5 }]}
-                onPress={handleBecomeCoach}
-                disabled={!coachBio.trim() || applyToCoach.isPending}
+                key={r.id}
+                onPress={() => router.push(`/match/${r.match_id || r.id}` as any)}
+                style={({ pressed }) => [styles.matchRow, pressed && { opacity: 0.8 }]}
               >
-                {applyToCoach.isPending ? <ActivityIndicator color={theme.onAccent} /> : <Text style={styles.modalConfirmText}>SUBMIT</Text>}
+                <View style={[styles.matchResultDot, { backgroundColor: win ? theme.success : theme.danger }]} />
+                <Text style={styles.matchOpponent} numberOfLines={1}>vs {opponent?.full_name ?? 'Player'}</Text>
+                <Text style={styles.matchScore}>{r.sets.map((s) => `${s.a}-${s.b}`).join(', ')}</Text>
               </Pressable>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </Modal>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            );
+          })}
+        </View>
+      ) : (
+        <View style={styles.emptyTab}>
+          <Ionicons name="tennisball-outline" size={32} color={theme.textMuted} />
+          <Text style={styles.emptyTabText}>No matches recorded yet</Text>
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'transparent' },
-  duoQueueLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    padding: 14,
-  },
-  duoQueueLinkText: { color: theme.text, fontWeight: '700', fontSize: 13 },
-  duoQueueLinkArrow: { color: theme.textMuted, fontWeight: '700' },
-  kopCrownRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    padding: 14,
-  },
-  kopCrownValue: { color: theme.text, fontWeight: '900', fontSize: 16, letterSpacing: 0.5 },
-  kopCrownSub: { color: theme.textMuted, fontSize: 11, marginTop: 2 },
   centerContainer: { flex: 1, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   headerWrapper: {
-    position: 'relative',
-    width: '100%',
-    zIndex: 10,
-    backgroundColor: 'transparent',
     alignItems: 'center',
     paddingTop: 24,
-    paddingBottom: 8,
+    paddingBottom: 16,
+    paddingHorizontal: 24,
   },
-  logoutCorner: {
+  settingsCorner: {
     position: 'absolute',
     top: 24,
     right: 24,
@@ -861,240 +268,57 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 30,
   },
-  avatarCircleWrap: { width: 132, height: 132 },
-  avatarCircle: {
-    width: 132,
-    height: 132,
-    borderRadius: 66,
-    borderWidth: 3,
-    borderColor: theme.accent,
-  },
+  avatarCircleWrap: { width: 96, height: 96, marginBottom: 10 },
+  avatarCircle: { width: 96, height: 96, borderRadius: 48, borderWidth: 2, borderColor: theme.accent },
   avatarCirclePlaceholder: {
-    width: 132,
-    height: 132,
-    borderRadius: 66,
-    borderWidth: 3,
-    borderColor: theme.accent,
-    backgroundColor: theme.card,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 96, height: 96, borderRadius: 48, borderWidth: 2, borderColor: theme.accent,
+    backgroundColor: theme.card, alignItems: 'center', justifyContent: 'center',
   },
-  avatarCirclePlaceholderLogo: { width: 64, height: 64, opacity: 0.5 },
+  avatarCirclePlaceholderLogo: { width: 48, height: 48, opacity: 0.5 },
   cameraBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 36,
-    height: 36,
-    borderRadius: 14,
-    backgroundColor: theme.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: theme.background,
-    shadowColor: theme.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 6,
+    position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: 12,
+    backgroundColor: theme.accent, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: theme.background,
   },
-  contentBody: { backgroundColor: 'transparent', paddingTop: 16, paddingHorizontal: 24, paddingBottom: 110, gap: 16 },
-  badgeRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 16 },
-  outlinedBadge: {
-    borderWidth: 1.5,
-    borderColor: theme.border,
-    borderRadius: 30,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-  },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
+  playerName: { fontFamily: 'Anton_400Regular', fontSize: 20, color: theme.text, letterSpacing: -0.3 },
+  locationSub: { fontSize: 12, fontWeight: '600', color: theme.textMuted, marginBottom: 6 },
+  outlinedBadge: { borderWidth: 1, borderColor: theme.border, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, marginBottom: 14 },
   outlinedBadgeText: { color: theme.text, fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 4, gap: 8 },
-  playerName: { fontFamily: 'Anton_400Regular', fontSize: 26, color: theme.accent, letterSpacing: -0.5, textAlign: 'center' , textTransform: 'uppercase' },
-  locationSub: { fontSize: 11, fontWeight: '700', color: theme.textMuted, letterSpacing: 0.5, textAlign: 'center', marginBottom: 8 },
-  scrimIndexPill: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 6,
-    alignSelf: 'center',
-    borderWidth: 1.5,
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    marginBottom: 10,
+  statsRow: { flexDirection: 'row', width: '100%', justifyContent: 'space-around', marginBottom: 10 },
+  statColumn: { alignItems: 'center' },
+  statValue: { fontFamily: 'Anton_400Regular', fontSize: 18, color: theme.text },
+  statLabel: { fontSize: 10, color: theme.textMuted, marginTop: 2, fontWeight: '600' },
+  secondaryStatsRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  secondaryStat: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
+  scrimPill: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
+  scrimPillText: { color: theme.text, fontSize: 10, fontWeight: '800' },
+  recordsRow: { gap: 8, marginBottom: 8 },
+  recordChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: theme.border,
+    backgroundColor: theme.card, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 6,
   },
-  scrimIndexValue: { fontFamily: 'Anton_400Regular', color: theme.text, fontSize: 15 },
-  scrimIndexLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
-  psScoreHero: {
-    alignItems: 'center',
-    borderRadius: 24,
+  recordChipText: { color: theme.text, fontSize: 10, fontWeight: '700' },
+  achievementsRow: { gap: 8 },
+  achievementBadge: {
+    width: 32, height: 32, borderRadius: 16, borderWidth: 1.5,
+    alignItems: 'center', justifyContent: 'center',
   },
-  psScoreHeroValue: { fontFamily: 'Anton_400Regular', fontSize: 56, color: theme.accent, letterSpacing: -1 },
-  psScoreHeroLabel: { fontSize: 12, fontWeight: '900', color: theme.text, letterSpacing: 1.5, marginTop: 2 },
-  statsCardContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderRadius: 24,
+  tabRow: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: theme.border },
+  tabBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  tabBtnActive: { borderBottomColor: theme.accent },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: GRID_GAP },
+  gridThumb: { width: THUMB_SIZE, height: THUMB_SIZE, backgroundColor: theme.card },
+  emptyTab: { alignItems: 'center', justifyContent: 'center', paddingVertical: 50, gap: 10 },
+  emptyTabText: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
+  emptyTabBtn: { backgroundColor: theme.primary, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 8, marginTop: 4 },
+  emptyTabBtnText: { color: theme.onAccent, fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
+  matchesList: { paddingBottom: 110 },
+  matchRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 12,
+    borderBottomWidth: 1, borderBottomColor: theme.border,
   },
-  statColumn: { flex: 1, alignItems: 'center' },
-  statHugeText: { fontFamily: 'Anton_400Regular', fontSize: 22, color: theme.accent, letterSpacing: -0.5 },
-  statSubLabel: { fontSize: 11, fontWeight: '500', color: theme.textMuted, marginTop: 4 },
-  statDivider: { width: 1.5, height: 32, backgroundColor: theme.border },
-  socialStatsRow: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginTop: 10 },
-  socialStatPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  socialStatValue: { fontFamily: 'Anton_400Regular', fontSize: 15, color: theme.accent },
-  socialStatLabel: { fontSize: 11, color: theme.textMuted },
-  recordsCardContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderRadius: 24,
-    marginTop: 10,
-  },
-  recordItem: { flex: 1, flexDirection: 'row', alignItems: 'center' },
-  recordColumn: { flex: 1, alignItems: 'center' },
-  recordValue: { fontSize: 13, fontWeight: '800', color: theme.text, marginTop: 6, textAlign: 'center' },
-  recordLabel: { fontSize: 10, fontWeight: '500', color: theme.textMuted, marginTop: 2, textAlign: 'center' },
-  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sectionTitle: { fontSize: 16,  color: theme.text , textTransform: 'uppercase'},
-  horizontalScroll: { gap: 12, paddingBottom: 4 },
-  myPostThumb: { width: 96, height: 120, borderRadius: 12, backgroundColor: theme.card },
-  horizontalReviewCard: { width: 220, borderRadius: 20 },
-  cardHeaderRow: { flexDirection: 'row', alignItems: 'center' },
-  smallAvatar: { width: 36, height: 36, borderRadius: 18, marginRight: 10 },
-  smallAvatarPlaceholder: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
-  smallAvatarPlaceholderLogo: { width: 18, height: 18, opacity: 0.5 },
-  cardInfoCol: { flex: 1 },
-  cardOpponentName: { fontSize: 13, fontWeight: '700', color: theme.text },
-  cardRatingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
-  cardResultText: { fontSize: 10, fontWeight: '700', color: theme.text },
-  cardTimeText: { fontSize: 9, fontWeight: '500', color: theme.textMuted },
-  emptyText: { color: theme.textMuted, fontSize: 12, fontStyle: 'italic' },
-  section: { borderRadius: 16 },
-  sectionHeader: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: theme.secondary,
-    letterSpacing: 1.5,
-    marginBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-    paddingBottom: 6,
-  },
-  label: { fontSize: 11, fontWeight: '700', color: theme.text, letterSpacing: 0.8, marginBottom: 6 },
-  helperText: { color: theme.textMuted, fontSize: 12, marginTop: 6, lineHeight: 16 },
-  input: { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', borderRadius: 12, padding: 14, fontSize: 16, backgroundColor: 'rgba(255, 255, 255, 0.03)', color: theme.text },
-  inputFocused: { borderColor: theme.accent, backgroundColor: 'rgba(255, 255, 255, 0.06)' },
-  row: { flexDirection: 'row', gap: 8, marginTop: 4, flexWrap: 'wrap' },
-  chip: { borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', borderRadius: chipRadius, paddingVertical: 8, paddingHorizontal: 16, backgroundColor: 'rgba(255, 255, 255, 0.04)' },
-  chipActive: {
-    backgroundColor: theme.accent,
-    borderColor: theme.accent,
-    shadowColor: theme.accent,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-  },
-  chipText: { color: theme.textMuted, fontWeight: '700', fontSize: 13 },
-  chipTextActive: { color: theme.onAccent, fontWeight: '800' },
-  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  button: {
-    backgroundColor: theme.primary,
-    borderRadius: buttonRadius,
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: theme.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  buttonPressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
-  buttonDisabled: { opacity: 0.5 },
-  buttonText: { color: theme.onAccent, fontSize: 16,  textTransform: 'uppercase', letterSpacing: 0.5},
-  partnersSection: { gap: 8 },
-  requestCard: { borderRadius: cardRadius },
-  partnerRequestCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderRadius: cardRadius,
-  },
-  partnerInfo: { flex: 1, marginRight: 12 },
-  partnerCity: { color: theme.textMuted, fontSize: 12, marginTop: 2, fontWeight: '600' },
-  requestName: { fontSize: 15, fontWeight: '700', color: theme.text },
-  requestActions: { flexDirection: 'row', gap: 8, marginTop: 12 },
-  smallButton: { flex: 1, borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
-  smallButtonText: { color: '#fff', fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
-  acceptButton: { backgroundColor: theme.success },
-  rejectButton: { backgroundColor: theme.danger },
-  chatLinkBadge: { backgroundColor: 'rgba(255, 83, 27, 0.15)', borderWidth: 1, borderColor: theme.accent, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 4 },
-  deleteChatBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.danger,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chatLinkText: { color: theme.accent, fontWeight: '800', fontSize: 11, letterSpacing: 0.5 },
-  achievementsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 4 },
-  achievementBadgeContainer: { width: '28%', alignItems: 'center', marginBottom: 8 },
-  achievementBadgeCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(198, 255, 51, 0.08)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(198, 255, 51, 0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-  },
-  achievementBadgeLabel: { color: theme.text, fontSize: 8, fontWeight: '900', textAlign: 'center', letterSpacing: 0.2, lineHeight: 10 },
-  achievementTierLabel: { fontSize: 7, fontWeight: '900', letterSpacing: 0.6, marginBottom: 2 },
-  followedFeedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
-  },
-  followedFeedText: { flex: 1, color: theme.textMuted, fontSize: 11 },
-  followedFeedTime: { color: theme.textMuted, fontSize: 9, fontWeight: '600' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modalCard: { width: '100%', maxHeight: '80%', backgroundColor: theme.card, borderRadius: 20, padding: 20, borderWidth: 1, borderColor: theme.border },
-  modalTitle: { color: theme.text,  fontSize: 13, letterSpacing: 1, marginBottom: 4 , textTransform: 'uppercase'},
-  modalActions: { flexDirection: 'row', gap: 10, marginTop: 6 },
-  modalCancelBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: buttonRadius, borderWidth: 1, borderColor: theme.border },
-  modalCancelText: { color: theme.textMuted, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
-  modalConfirmBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: buttonRadius, backgroundColor: theme.accent },
-  modalConfirmText: { color: theme.onAccent, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
-  leadCard: { borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.03)', padding: 12, marginTop: 10 },
-  leadStatus: { fontSize: 9, fontWeight: '900', color: theme.textMuted, letterSpacing: 0.5 },
-  leadStatusPending: { color: theme.accent },
+  matchResultDot: { width: 8, height: 8, borderRadius: 4 },
+  matchOpponent: { flex: 1, color: theme.text, fontSize: 13, fontWeight: '700' },
+  matchScore: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
 });
