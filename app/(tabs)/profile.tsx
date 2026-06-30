@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '@/lib/useSession';
 import {
   useProfile,
@@ -15,6 +16,7 @@ import {
   usePersonalRecords,
   useScrimIndex,
   scrimIndexLabel,
+  useUnreadNotificationCount,
 } from '@/lib/queries';
 import { ACHIEVEMENT_ICONS, ACHIEVEMENT_TIERS, TIER_COLORS } from '@/constants/achievements';
 import { pickAndUploadAvatar } from '@/lib/uploadAvatar';
@@ -64,6 +66,8 @@ export default function ProfileScreen() {
   const { data: followerCount } = useFollowerCount(userId);
   const { data: followingCount } = useFollowingCount(userId);
   const { data: records } = usePersonalRecords(userId);
+  const { data: unreadCount } = useUnreadNotificationCount(userId);
+  const insets = useSafeAreaInsets();
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'matches'>('posts');
@@ -110,13 +114,22 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView style={styles.container} bounces={false} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 110 }}>
-      <View style={styles.headerWrapper}>
-        <Pressable
-          style={({ pressed }) => [styles.settingsCorner, pressed && { opacity: 0.7 }]}
-          onPress={() => router.push('/settings' as any)}
-        >
-          <Ionicons name="settings-outline" size={20} color={theme.text} />
-        </Pressable>
+      <View style={[styles.headerWrapper, { paddingTop: insets.top + 24 }]}>
+        <View style={[styles.topIconsRow, { top: insets.top + 16 }]}>
+          <Pressable style={({ pressed }) => [styles.topIconBtn, pressed && { opacity: 0.7 }]} onPress={() => router.push('/search' as any)}>
+            <Ionicons name="search-outline" size={20} color={theme.text} />
+          </Pressable>
+          <Pressable style={({ pressed }) => [styles.topIconBtn, pressed && { opacity: 0.7 }]} onPress={() => router.push('/chat' as any)}>
+            <Ionicons name="chatbubble-outline" size={20} color={theme.text} />
+          </Pressable>
+          <Pressable style={({ pressed }) => [styles.topIconBtn, pressed && { opacity: 0.7 }]} onPress={() => router.push('/notifications' as any)}>
+            <Ionicons name="notifications-outline" size={20} color={theme.text} />
+            {!!unreadCount && <View style={styles.badgeDot} />}
+          </Pressable>
+          <Pressable style={({ pressed }) => [styles.topIconBtn, pressed && { opacity: 0.7 }]} onPress={() => router.push('/settings' as any)}>
+            <Ionicons name="settings-outline" size={20} color={theme.text} />
+          </Pressable>
+        </View>
 
         <View style={styles.avatarCircleWrap}>
           {profile.avatar_url ? (
@@ -311,23 +324,36 @@ const styles = StyleSheet.create({
   centerContainer: { flex: 1, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   headerWrapper: {
     alignItems: 'center',
-    paddingTop: 24,
     paddingBottom: 16,
     paddingHorizontal: 24,
   },
-  settingsCorner: {
+  topIconsRow: {
     position: 'absolute',
-    top: 24,
-    right: 24,
-    width: 40,
-    height: 40,
-    borderRadius: 14,
+    right: 16,
+    flexDirection: 'row',
+    gap: 8,
+    zIndex: 30,
+  },
+  topIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     backgroundColor: theme.card,
     borderWidth: 1,
     borderColor: theme.border,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 30,
+  },
+  badgeDot: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.primary,
+    borderWidth: 1.5,
+    borderColor: theme.card,
   },
   avatarCircleWrap: { width: 96, height: 96, marginBottom: 10 },
   avatarCircle: { width: 96, height: 96, borderRadius: 48, borderWidth: 2, borderColor: theme.accent },
