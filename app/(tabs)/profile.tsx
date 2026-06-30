@@ -97,13 +97,6 @@ export default function ProfileScreen() {
 
   const rank = profile ? divisionProgress(profile.elo) : null;
 
-  // "Best" post pinned to the top: most recent win if you have one, else just
-  // the most recent post — no separate "likes" data is fetched for the grid.
-  const bestPost = myPosts && myPosts.length > 0
-    ? myPosts.find((p) => p.matchResult && didWin(p.matchResult, userId!)) ?? myPosts[0]
-    : null;
-  const restPosts = bestPost ? myPosts!.filter((p) => p.id !== bestPost.id) : myPosts ?? [];
-
   const recordItems: { icon: keyof typeof Ionicons.glyphMap; value: string; label: string }[] = [];
   if (records?.longestWinStreak) {
     recordItems.push({ icon: 'flame', value: `${records.longestWinStreak} wins`, label: 'Longest streak' });
@@ -168,7 +161,7 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        <Pressable style={styles.editProfileBtn} onPress={() => router.push('/settings' as any)}>
+        <Pressable style={styles.editProfileBtn} onPress={() => router.push('/edit-profile' as any)}>
           <Text style={styles.editProfileBtnText}>EDIT PROFILE</Text>
         </Pressable>
 
@@ -242,49 +235,32 @@ export default function ProfileScreen() {
         postsLoading ? (
           <ActivityIndicator color={theme.accent} style={{ marginTop: 30 }} />
         ) : myPosts && myPosts.length > 0 ? (
-          <>
-            {bestPost && (
-              <View style={styles.pinnedWrap}>
-                <View style={styles.pinnedLabel}>
-                  <Ionicons name="star" size={11} color={theme.accent} />
-                  <Text style={styles.pinnedLabelText}>PINNED</Text>
-                </View>
+          <View style={styles.masonryRow}>
+            <View style={styles.masonryCol}>
+              {myPosts.filter((_, i) => i % 2 === 0).map((p, i) => (
                 <MatchCard
-                  post={bestPost}
+                  key={p.id}
+                  post={p}
                   posterId={userId}
-                  width={SCREEN_WIDTH - MASONRY_PADDING * 2}
-                  height={260}
-                  onPress={() => handlePostPress(bestPost)}
+                  width={COL_WIDTH}
+                  height={cardHeightFor(p.id, i)}
+                  onPress={() => handlePostPress(p)}
                 />
-              </View>
-            )}
-            <View style={styles.masonryRow}>
-              <View style={styles.masonryCol}>
-                {restPosts.filter((_, i) => i % 2 === 0).map((p, i) => (
-                  <MatchCard
-                    key={p.id}
-                    post={p}
-                    posterId={userId}
-                    width={COL_WIDTH}
-                    height={cardHeightFor(p.id, i)}
-                    onPress={() => handlePostPress(p)}
-                  />
-                ))}
-              </View>
-              <View style={styles.masonryCol}>
-                {restPosts.filter((_, i) => i % 2 === 1).map((p, i) => (
-                  <MatchCard
-                    key={p.id}
-                    post={p}
-                    posterId={userId}
-                    width={COL_WIDTH}
-                    height={cardHeightFor(p.id, i + 1)}
-                    onPress={() => handlePostPress(p)}
-                  />
-                ))}
-              </View>
+              ))}
             </View>
-          </>
+            <View style={styles.masonryCol}>
+              {myPosts.filter((_, i) => i % 2 === 1).map((p, i) => (
+                <MatchCard
+                  key={p.id}
+                  post={p}
+                  posterId={userId}
+                  width={COL_WIDTH}
+                  height={cardHeightFor(p.id, i + 1)}
+                  onPress={() => handlePostPress(p)}
+                />
+              ))}
+            </View>
+          </View>
         ) : (
           <View style={styles.emptyTab}>
             <Ionicons name="camera-outline" size={32} color={theme.textMuted} />
@@ -382,9 +358,6 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   editProfileBtnText: { color: theme.text, fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
-  pinnedWrap: { paddingHorizontal: MASONRY_PADDING, marginBottom: MASONRY_GAP },
-  pinnedLabel: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 6 },
-  pinnedLabelText: { color: theme.accent, fontSize: 10, fontWeight: '900', letterSpacing: 0.8 },
   statsRow: { flexDirection: 'row', width: '100%', justifyContent: 'space-around', marginBottom: 10 },
   statColumn: { alignItems: 'center' },
   statValue: { fontFamily: 'Anton_400Regular', fontSize: 18, color: theme.text },

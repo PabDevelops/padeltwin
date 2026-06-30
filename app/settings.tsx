@@ -35,7 +35,6 @@ import {
 import { supabase } from '@/lib/supabase';
 import type { PartnerRequestWithProfiles, PlayerLevel } from '@/types/database';
 import { theme, buttonRadius, cardRadius } from '@/constants/theme';
-import { VerifiedLocation } from '@/components/VerifiedLocation';
 import { Card } from '@/components/Card';
 import { BackHeader } from '@/components/BackHeader';
 
@@ -71,20 +70,12 @@ export default function SettingsScreen() {
     return r.from_id === userId ? r.to_profile : r.from_profile;
   }
 
-  const [fullName, setFullName] = useState('');
-  const [bio, setBio] = useState('');
-  const [zone, setZone] = useState('');
-  const [country, setCountry] = useState('');
   const [level, setLevel] = useState<PlayerLevel | null>(null);
   const [club, setClub] = useState('');
   const [lookingForPartner, setLookingForPartner] = useState(true);
 
   useEffect(() => {
     if (profile) {
-      setFullName(profile.full_name ?? '');
-      setBio(profile.bio ?? '');
-      setZone(profile.zone ?? '');
-      setCountry(profile.country ?? '');
       setLevel(profile.level);
       setClub(profile.club ?? '');
       setLookingForPartner(profile.looking_for_partner);
@@ -102,10 +93,6 @@ export default function SettingsScreen() {
   function handleSave() {
     updateProfile.mutate({
       id: userId!,
-      full_name: fullName,
-      bio: bio.trim() || null,
-      zone,
-      country: country || null,
       level,
       club: club || null,
       looking_for_partner: lookingForPartner,
@@ -139,44 +126,12 @@ export default function SettingsScreen() {
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <BackHeader title="Settings" />
       <ScrollView contentContainerStyle={styles.contentBody} showsVerticalScrollIndicator={false}>
-        {/* ATHLETE DETAILS */}
+        {/* ATHLETE LINKS */}
         <Card style={styles.section} contentStyle={{ padding: 16 }}>
-          <Text style={styles.sectionHeader}>ATHLETE DETAILS</Text>
-
-          <Text style={styles.label}>NAME</Text>
-          <TextInput
-            style={[styles.input, focusedInput === 'name' && styles.inputFocused]}
-            value={fullName}
-            onChangeText={setFullName}
-            placeholder="Your name"
-            placeholderTextColor={theme.textMuted}
-            onFocus={() => setFocusedInput('name')}
-            onBlur={() => setFocusedInput(null)}
-          />
-
-          <Text style={[styles.label, { marginTop: 14 }]}>BIO</Text>
-          <TextInput
-            style={[styles.input, { minHeight: 60, textAlignVertical: 'top' }, focusedInput === 'bio' && styles.inputFocused]}
-            value={bio}
-            onChangeText={setBio}
-            placeholder="A short line about you and your game"
-            placeholderTextColor={theme.textMuted}
-            multiline
-            maxLength={120}
-            onFocus={() => setFocusedInput('bio')}
-            onBlur={() => setFocusedInput(null)}
-          />
-
-          <Text style={[styles.label, { marginTop: 14 }]}>LOCATION</Text>
-          <VerifiedLocation
-            city={zone || null}
-            country={country || null}
-            onDetected={(loc) => {
-              setZone(loc.city);
-              setCountry(loc.country);
-            }}
-          />
-
+          <Text style={styles.sectionHeader}>ATHLETE</Text>
+          <Pressable onPress={() => router.push('/edit-profile' as any)}>
+            <Text style={[styles.label, { color: theme.accent, marginTop: 0 }]}>EDIT NAME, BIO & PHOTO →</Text>
+          </Pressable>
           <Pressable style={styles.linkRow} onPress={() => router.push('/pairs' as any)}>
             <Text style={styles.linkRowText}>👥 MY PAIR — Manage your fixed partner</Text>
             <Text style={styles.linkRowArrow}>{'>'}</Text>
