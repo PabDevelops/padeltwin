@@ -8,6 +8,9 @@ on:
         required: true
         default: '15'
 
+permissions:
+  contents: write
+
 jobs:
   preview:
     runs-on: ubuntu-latest
@@ -22,9 +25,53 @@ jobs:
 
       - run: npm install --no-save @expo/ngrok@^4.1.0
 
-      - name: Start Expo tunnel
+      - name: Start tunnel and publish URL
         env:
           EXPO_PUBLIC_SUPABASE_URL: https://rqqpxmsxikcrkvkbgvwi.supabase.co
           EXPO_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxcXB4bXN4aWtjcmt2a2JndndpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NTM5NDMsImV4cCI6MjA5ODAyOTk0M30.WC30CFkHlc3aHynk_itIvfSW0M4A-rzOOj_gFatzozM
         run: |
-          timeout "$((${{ inputs.minutes }} * 60))" npx expo start --tunnel --non-interactive || true
+          set -e
+          git config user.email "actions@github.com"
+          git config user.name "github-actions"
+
+          npx expo start --tunnel --non-interactive > expo-tunnel.log 2>&1 &
+          EXPO_PID=$!
+
+          URL=""
+          for i in $(seq 1 90); do
+            URL=$(grep -oE 'exp://[a-zA-Z0-9.-]+\.exp\.direct[^ ]*' expo-tunnel.log | head -1 || true)
+            if [ -n "$URL" ]; then
+              break
+            fi
+            sleep 2
+          done
+
+          if [ -z "$URL" ]; then
+            echo "status: failed" > preview-url.txt
+            echo "" >> preview-url.txt
+            echo "Tunnel did not come up within timeout. Log tail:" >> preview-url.txt
+            tail -50 expo-tunnel.log >> preview-url.txt
+          else
+            echo "status: ready" > preview-url.txt
+            echo "url: $URL" >> preview-url.txt
+            echo "expires_in_minutes: ${{ inputs.minutes }}" >> preview-url.txt
+          fi
+
+          git add preview-url.txt
+          git commit -m "Update preview URL [skip ci]"
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep 3
+          done
+
+          timeout "$((${{ inputs.minutes }} * 60))" tail -f --pid=$EXPO_PID expo-tunnel.log || true
+
+          git fetch origin "${GITHUB_REF_NAME}"
+          git reset --hard "origin/${GITHUB_REF_NAME}"
+          echo "status: ended" > preview-url.txt
+          git add preview-url.txt
+          git commit -m "Preview session ended [skip ci]"
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            sleep 3
+          done
