@@ -29,6 +29,8 @@ import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
 import { Card } from '@/components/Card';
 import { MatchCard } from '@/components/MatchCard';
+import { PhotoViewerModal } from '@/components/PhotoViewerModal';
+import type { PostCardData } from '@/lib/queries';
 import { AppButton } from '@/components/AppButton';
 
 function didWin(result: MatchResultWithProfiles, userId: string) {
@@ -72,6 +74,7 @@ export default function HomeScreen() {
   const { data: profile } = useProfile(userId);
   const { data: scrimIndex } = useScrimIndex(userId);
   const [scrimInfoOpen, setScrimInfoOpen] = useState(false);
+  const [viewingPhoto, setViewingPhoto] = useState<PostCardData | null>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
   const { data: stats, isLoading: statsLoading } = useMyStats(userId);
   const { data: realRecentResults } = useRecentResults(userId, 100);
@@ -598,6 +601,10 @@ export default function HomeScreen() {
                       vibCount={item.vibCount}
                       vibbedByMe={item.vibbedByMe}
                       onToggleVib={() => handleToggleVib(item)}
+                      onPress={() => {
+                        if (item.match_id) router.push(`/match/${item.match_id}` as any);
+                        else setViewingPhoto(item);
+                      }}
                     />
                   </View>
                 </View>
@@ -732,6 +739,12 @@ export default function HomeScreen() {
         )}
       </Pressable>
 
+      <PhotoViewerModal
+        visible={!!viewingPhoto}
+        photoUrl={viewingPhoto?.photo_url ?? null}
+        caption={viewingPhoto?.caption}
+        onClose={() => setViewingPhoto(null)}
+      />
     </ScrollView>
   );
 }

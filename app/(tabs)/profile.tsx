@@ -23,6 +23,8 @@ import { theme, cardRadius } from '@/constants/theme';
 import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
 import { MatchCard } from '@/components/MatchCard';
+import { PhotoViewerModal } from '@/components/PhotoViewerModal';
+import type { PostCardData } from '@/lib/queries';
 
 function didWin(result: MatchResultWithProfiles, userId: string) {
   const inTeamA = result.team_a_player1 === userId || result.team_a_player2 === userId;
@@ -64,6 +66,15 @@ export default function ProfileScreen() {
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'matches'>('posts');
+  const [viewingPhoto, setViewingPhoto] = useState<PostCardData | null>(null);
+
+  function handlePostPress(post: PostCardData) {
+    if (post.match_id) {
+      router.push(`/match/${post.match_id}` as any);
+    } else {
+      setViewingPhoto(post);
+    }
+  }
 
   if (isLoading || !userId || !profile) {
     return (
@@ -210,12 +221,26 @@ export default function ProfileScreen() {
           <View style={styles.masonryRow}>
             <View style={styles.masonryCol}>
               {myPosts.filter((_, i) => i % 2 === 0).map((p, i) => (
-                <MatchCard key={p.id} post={p} posterId={userId} width={COL_WIDTH} height={cardHeightFor(p.id, i)} />
+                <MatchCard
+                  key={p.id}
+                  post={p}
+                  posterId={userId}
+                  width={COL_WIDTH}
+                  height={cardHeightFor(p.id, i)}
+                  onPress={() => handlePostPress(p)}
+                />
               ))}
             </View>
             <View style={styles.masonryCol}>
               {myPosts.filter((_, i) => i % 2 === 1).map((p, i) => (
-                <MatchCard key={p.id} post={p} posterId={userId} width={COL_WIDTH} height={cardHeightFor(p.id, i + 1)} />
+                <MatchCard
+                  key={p.id}
+                  post={p}
+                  posterId={userId}
+                  width={COL_WIDTH}
+                  height={cardHeightFor(p.id, i + 1)}
+                  onPress={() => handlePostPress(p)}
+                />
               ))}
             </View>
           </View>
@@ -254,6 +279,12 @@ export default function ProfileScreen() {
           <Text style={styles.emptyTabText}>No matches recorded yet</Text>
         </View>
       )}
+      <PhotoViewerModal
+        visible={!!viewingPhoto}
+        photoUrl={viewingPhoto?.photo_url ?? null}
+        caption={viewingPhoto?.caption}
+        onClose={() => setViewingPhoto(null)}
+      />
     </ScrollView>
   );
 }
