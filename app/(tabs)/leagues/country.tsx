@@ -64,8 +64,10 @@ export default function CountryLeagueScreen() {
                     <Text style={styles.divisionHeaderText}>{divisionFromPairElo(pair.elo).toUpperCase()}</Text>
                   </View>
                 )}
-                <View style={[styles.row, isMine && styles.rowMe]}>
-                  <Text style={[styles.rankText, rank <= 3 && styles.rankTextTop]}>{rank}</Text>
+                <View style={[styles.row, rank <= 3 && styles.rowPodium, isMine && styles.rowMe]}>
+                  <Text style={[styles.rankText, rank <= 3 && styles.rankTextTop]}>
+                    {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}
+                  </Text>
                   <Text style={styles.pairName} numberOfLines={1}>
                     {(pair.player_a?.full_name ?? 'Player').toUpperCase()} & {(pair.player_b?.full_name ?? 'Player').toUpperCase()}
                     {isMine ? ' (YOU)' : ''}
@@ -104,6 +106,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
   rowMe: { backgroundColor: 'rgba(198, 255, 51, 0.08)' },
+  rowPodium: { backgroundColor: 'rgba(255, 215, 0, 0.04)' },
   rankText: { width: 24, color: theme.textMuted, fontWeight: '800', fontSize: 13 },
   rankTextTop: { color: theme.accent },
   pairName: { flex: 1, color: theme.text,  fontSize: 12, letterSpacing: 0.2 , textTransform: 'uppercase'},

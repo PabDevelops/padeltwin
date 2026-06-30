@@ -114,7 +114,9 @@ export default function ClubLeaderboardScreen() {
                   rank === 1 && styles.leaderboardRowChampion,
                 ]}
               >
-                <Text style={[styles.rankText, rank <= 3 && styles.rankTextTop]}>{rank === 1 ? '👑' : rank < 10 ? `0${rank}` : rank}</Text>
+                <Text style={[styles.rankText, rank <= 3 && styles.rankTextTop]}>
+                  {rank === 1 ? '👑' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank < 10 ? `0${rank}` : rank}
+                </Text>
                 <Text style={styles.leaderboardName} numberOfLines={1}>
                   {(pair.player_a?.full_name ?? 'Player').toUpperCase()} & {(pair.player_b?.full_name ?? 'Player').toUpperCase()}
                   {isMine ? ' (YOU)' : ''}

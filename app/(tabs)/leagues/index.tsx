@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSession } from '@/lib/useSession';
 import { useProfile, useMyPairs, useMyKopStatus } from '@/lib/queries';
-import { divisionFromPairElo } from '@/lib/pairDivisions';
+import { divisionFromPairElo, divisionProgress } from '@/lib/pairDivisions';
 import { theme, cardRadius, chipRadius } from '@/constants/theme';
 import { Card } from '@/components/Card';
 
@@ -43,14 +43,33 @@ export default function LeaguesScreen() {
         another country's league too? Declare another pair there (up to your pair limit).
       </Text>
 
-      <Card style={styles.pairBanner} contentStyle={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 14 }}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.pairBannerText}>
-            Playing as: {activePair.player_a?.full_name ?? 'You'} & {activePair.player_b?.full_name ?? 'Partner'}
-          </Text>
-          <Text style={styles.pairBannerDivision}>{divisionFromPairElo(activePair.elo)}</Text>
+      <Card style={styles.pairBanner} contentStyle={{ paddingVertical: 14, paddingHorizontal: 16 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.pairBannerText}>
+              Playing as: {activePair.player_a?.full_name ?? 'You'} & {activePair.player_b?.full_name ?? 'Partner'}
+            </Text>
+            <Text style={styles.pairBannerDivision}>{divisionFromPairElo(activePair.elo)}</Text>
+          </View>
+          <Text style={styles.pairBannerElo}>{activePair.elo} PS</Text>
         </View>
-        <Text style={styles.pairBannerElo}>{activePair.elo} PS</Text>
+
+        {(() => {
+          const dp = divisionProgress(activePair.elo);
+          if (!dp.nextDivision) {
+            return <Text style={styles.divisionProgressLabel}>TOP DIVISION REACHED</Text>;
+          }
+          return (
+            <View style={{ marginTop: 12 }}>
+              <View style={styles.divisionProgressTrack}>
+                <View style={[styles.divisionProgressFill, { width: `${Math.round(dp.progress * 100)}%` }]} />
+              </View>
+              <Text style={styles.divisionProgressLabel}>
+                {dp.eloToNext} PS TO {dp.nextDivision.toUpperCase()}
+              </Text>
+            </View>
+          );
+        })()}
       </Card>
 
       <Card style={styles.card}>
@@ -116,6 +135,9 @@ const styles = StyleSheet.create({
   pairBannerText: { color: theme.text, fontSize: 12, fontWeight: '700' },
   pairBannerDivision: { color: theme.accent, fontSize: 10, fontWeight: '900', marginTop: 2, letterSpacing: 0.5 },
   pairBannerElo: { color: theme.accent, fontWeight: '900', fontSize: 13 },
+  divisionProgressTrack: { height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' },
+  divisionProgressFill: { height: '100%', borderRadius: 3, backgroundColor: theme.accent },
+  divisionProgressLabel: { color: theme.textMuted, fontSize: 9, fontWeight: '800', letterSpacing: 0.5, marginTop: 6, textAlign: 'right' },
   card: {
     borderRadius: cardRadius,
   },
