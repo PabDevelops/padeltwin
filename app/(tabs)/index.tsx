@@ -449,35 +449,7 @@ export default function MatchSearchScreen() {
             <ActivityIndicator style={{ marginTop: 32 }} color={theme.primary} size="large" />
           ) : (
             <FlatList
-              data={matches && matches.length > 0 ? matches : [
-                {
-                  id: 'mock1',
-                  created_by: 'mock',
-                  date_time: new Date(Date.now() + 86400000).toISOString(),
-                  location: 'Premier Padel Center, Madrid',
-                  level: 'intermedio',
-                  mode: 'pair',
-                  status: 'open',
-                  visibility: 'open',
-                  max_players: 4,
-                  match_players: [{ player_id: 'mock_p1', profiles: { full_name: 'Alejandro G.' } }]
-                },
-                {
-                  id: 'mock2',
-                  created_by: 'mock',
-                  date_time: new Date(Date.now() + 86400000 * 2).toISOString(),
-                  location: 'Club de Campo Villa de Madrid',
-                  level: 'avanzado',
-                  mode: 'pair',
-                  status: 'open',
-                  visibility: 'open',
-                  max_players: 4,
-                  match_players: [
-                    { player_id: 'mock_p1', profiles: { full_name: 'Arturo C.' } },
-                    { player_id: 'mock_p2', profiles: { full_name: 'Fede C.' } }
-                  ]
-                }
-              ] as any}
+              data={matches ?? []}
               keyExtractor={(item) => item.id}
               renderItem={renderItem}
               onRefresh={refetch}

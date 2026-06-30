@@ -352,37 +352,12 @@ export default function ProfileScreen() {
 
         {resultsLoading ? (
           <ActivityIndicator color={theme.accent} style={{ marginBottom: 12 }} />
+        ) : !recentResults || recentResults.length === 0 ? (
+          <Text style={styles.helperText}>No matches recorded yet — play one and record the result.</Text>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
             {(() => {
-              const displayResults = recentResults && recentResults.length > 0 
-                ? recentResults 
-                : [
-                    {
-                      id: 'mock1',
-                      team_a_player1: userId,
-                      team_a_player2: 'mock_p2',
-                      team_b_player1: 'mock_p3',
-                      team_b_player2: 'mock_p4',
-                      winner: 'a',
-                      sets: [{ a: 6, b: 4 }, { a: 6, b: 2 }],
-                      created_at: new Date().toISOString(),
-                      team_b_player1_profile: { full_name: 'Alejandro Galán' }
-                    },
-                    {
-                      id: 'mock2',
-                      team_a_player1: userId,
-                      team_a_player2: 'mock_p2',
-                      team_b_player1: 'mock_p3',
-                      team_b_player2: 'mock_p4',
-                      winner: 'b',
-                      sets: [{ a: 4, b: 6 }, { a: 2, b: 6 }],
-                      created_at: new Date(Date.now() - 86400000).toISOString(),
-                      team_b_player1_profile: { full_name: 'Arturo Coello' }
-                    }
-                  ] as any[];
-
-              return displayResults.map((r) => {
+              return recentResults.map((r) => {
                 const win = didWin(r, userId!);
                 const opponent = opponentProfile(r, userId!);
                 const opponentName = opponent?.full_name ?? 'Padel Player';

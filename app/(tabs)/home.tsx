@@ -79,59 +79,16 @@ export default function HomeScreen() {
   const { data: partnerRequests } = usePartnerRequests(userId);
   const { data: realActivityFeed, isLoading: feedLoading } = useActivityFeed(userId, 5);
 
-  const isMock = !realRecentResults || realRecentResults.length === 0;
-
-  const displayResults = !isMock ? realRecentResults : [
-    {
-      id: 'mock1', match_id: 'mock_match_1', team_a_player1: userId, team_a_player2: 'mock_p2', team_b_player1: 'mock_p3', team_b_player2: 'mock_p4',
-      winner: 'a', sets: [{ a: 6, b: 4 }, { a: 6, b: 2 }], created_at: new Date().toISOString(), team_b_player1_profile: { full_name: 'Alejandro Galán' }
-    },
-    {
-      id: 'mock2', match_id: 'mock_match_2', team_a_player1: userId, team_a_player2: 'mock_p2', team_b_player1: 'mock_p3', team_b_player2: 'mock_p4',
-      winner: 'a', sets: [{ a: 7, b: 5 }, { a: 6, b: 4 }], created_at: new Date(Date.now() - 86400000).toISOString(), team_b_player1_profile: { full_name: 'Arturo Coello' }
-    },
-    {
-      id: 'mock3', match_id: 'mock_match_3', team_a_player1: userId, team_a_player2: 'mock_p2', team_b_player1: 'mock_p3', team_b_player2: 'mock_p4',
-      winner: 'b', sets: [{ a: 4, b: 6 }, { a: 2, b: 6 }], created_at: new Date(Date.now() - 86400000 * 3).toISOString(), team_b_player1_profile: { full_name: 'Fede Chingotto' }
-    },
-    {
-      id: 'mock4', match_id: 'mock_match_4', team_a_player1: userId, team_a_player2: 'mock_p2', team_b_player1: 'mock_p3', team_b_player2: 'mock_p4',
-      winner: 'a', sets: [{ a: 6, b: 1 }, { a: 6, b: 2 }], created_at: new Date(Date.now() - 86400000 * 5).toISOString(), team_b_player1_profile: { full_name: 'Juan Lebrón' }
-    },
-    {
-      id: 'mock5', match_id: 'mock_match_5', team_a_player1: userId, team_a_player2: 'mock_p2', team_b_player1: 'mock_p3', team_b_player2: 'mock_p4',
-      winner: 'b', sets: [{ a: 5, b: 7 }, { a: 6, b: 3 }, { a: 4, b: 6 }], created_at: new Date(Date.now() - 86400000 * 10).toISOString(), team_b_player1_profile: { full_name: 'Paquito Navarro' }
-    },
-    {
-      id: 'mock6', match_id: 'mock_match_6', team_a_player1: userId, team_a_player2: 'mock_p2', team_b_player1: 'mock_p3', team_b_player2: 'mock_p4',
-      winner: 'a', sets: [{ a: 6, b: 3 }, { a: 6, b: 4 }], created_at: new Date(Date.now() - 86400000 * 20).toISOString(), team_b_player1_profile: { full_name: 'Martin Di Nenno' }
-    },
-    {
-      id: 'mock7', match_id: 'mock_match_7', team_a_player1: userId, team_a_player2: 'mock_p2', team_b_player1: 'mock_p3', team_b_player2: 'mock_p4',
-      winner: 'a', sets: [{ a: 6, b: 0 }, { a: 6, b: 1 }], created_at: new Date(Date.now() - 86400000 * 40).toISOString(), team_b_player1_profile: { full_name: 'Sanyo Gutierrez' }
-    }
-  ] as any[];
-
-  const activityFeed = (realActivityFeed && realActivityFeed.length > 0) ? realActivityFeed : [
-    {
-      id: 'mockf1', kind: 'match', winner: 'a', created_at: new Date().toISOString(), vibbedByMe: false, vibCount: 3,
-      team_a_player1_profile: { full_name: 'You' }, team_a_player2_profile: { full_name: 'J. Lebron' },
-      team_b_player1_profile: { full_name: 'A. Galán' }, team_b_player2_profile: { full_name: 'A. Coello' },
-      sets: [{ a: 6, b: 4 }, { a: 6, b: 2 }]
-    },
-    {
-      id: 'mockf2', kind: 'achievement', type: 'first_match', created_at: new Date(Date.now() - 86400000).toISOString(), vibbedByMe: true, vibCount: 12,
-      profiles: { full_name: 'You' }
-    }
-  ] as unknown as FeedItem[];
+  const displayResults = realRecentResults ?? [];
+  const activityFeed = realActivityFeed ?? [];
   const { data: following } = useFollowing(userId);
   const { data: compatiblePlayers } = useCompatiblePlayers(userId, profile);
   const followPlayer = useFollowPlayer();
   const toggleVib = useToggleVib();
   const pendingRequestsCount = (partnerRequests ?? []).filter((r) => r.status === 'pending' && r.to_id === userId).length;
 
-  const actualElo = isMock ? 1350 : profile?.elo ?? 1200;
-  const actualScrim = isMock ? 7.8 : scrimIndex;
+  const actualElo = profile?.elo ?? 1200;
+  const actualScrim = scrimIndex;
 
   const suggestedFollows: Profile[] = (compatiblePlayers ?? [])
     .filter((p) => !following?.has(p.id))
@@ -254,7 +211,7 @@ export default function HomeScreen() {
   const isCalibrating = playedCount < ELO_PROVISIONAL_MATCHES;
 
   // Rank Label (used by the trophy badge in the PS Score hero)
-  let rankLabel = "TOP 25%";
+  let rankLabel = leaderboardLoading ? '—' : 'UNRANKED';
   if (isCalibrating) {
     rankLabel = "UNRANKED";
   } else if (leaderboard && profile) {

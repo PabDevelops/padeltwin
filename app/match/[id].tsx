@@ -15,57 +15,20 @@ export default function MatchDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useSession();
   const userId = session?.user.id;
-  const isMock = typeof id === 'string' && id.startsWith('mock');
 
-  const { data: realMatch, isLoading: matchLoading } = useMatch(isMock ? undefined : id);
-  const { data: realResult, isLoading: resultLoading } = useMatchResult(isMock ? undefined : id);
+  const { data: match, isLoading: matchLoading } = useMatch(id);
+  const { data: existingResult, isLoading: resultLoading } = useMatchResult(id);
 
-  const match = isMock ? {
-    id: id,
-    created_by: userId,
-    date_time: new Date().toISOString(),
-    location: 'Premier Padel Center, Madrid',
-    level: 'intermedio',
-    mode: 'pair',
-    status: 'completed',
-    visibility: 'open',
-    max_players: 4,
-    match_players: [
-      { player_id: userId, profiles: { full_name: 'You (Mock Player)', level: 'intermedio', elo: 1350 } },
-      { player_id: 'mock2', profiles: { full_name: 'Alejandro Galán', level: 'avanzado', elo: 1950, avatar_url: 'https://i.pravatar.cc/150?u=a' } },
-      { player_id: 'mock3', profiles: { full_name: 'Arturo Coello', level: 'avanzado', elo: 1980, avatar_url: 'https://i.pravatar.cc/150?u=b' } },
-      { player_id: 'mock4', profiles: { full_name: 'Juan Lebrón', level: 'avanzado', elo: 1900, avatar_url: 'https://i.pravatar.cc/150?u=c' } }
-    ]
-  } : realMatch;
-
-  const existingResult = isMock ? {
-    id: 'mock-res',
-    match_id: id,
-    team_a_player1: userId,
-    team_a_player2: 'mock2',
-    team_b_player1: 'mock3',
-    team_b_player2: 'mock4',
-    winner: 'a',
-    status: 'confirmed',
-    recorded_by: userId,
-    confirmed_by: 'mock3',
-    created_at: new Date().toISOString(),
-    sets: [{ a: 6, b: 4 }, { a: 6, b: 2 }],
-    team_a_player1_profile: { full_name: 'You' },
-    team_a_player2_profile: { full_name: 'A. Galán' },
-    team_b_player1_profile: { full_name: 'A. Coello' },
-    team_b_player2_profile: { full_name: 'J. Lebrón' }
-  } : realResult;
   const joinMatch = useJoinMatch();
   const leaveMatch = useLeaveMatch();
   const recordResult = useRecordMatchResult();
   const confirmResult = useConfirmMatchResult();
   const disputeResult = useDisputeMatchResult();
-  const { data: resultVibs } = useItemVibs('match_result', isMock ? undefined : existingResult?.id, userId);
+  const { data: resultVibs } = useItemVibs('match_result', existingResult?.id, userId);
   const toggleVib = useToggleVib();
 
   function handleToggleResultVib() {
-    if (!userId || !existingResult || isMock) return;
+    if (!userId || !existingResult) return;
     toggleVib.mutate({
       profileId: userId,
       itemType: 'match_result',
@@ -96,7 +59,7 @@ export default function MatchDetailScreen() {
   const [winner, setWinner] = useState<Team | null>(null);
   const [resultError, setResultError] = useState<string | null>(null);
 
-  if ((matchLoading && !isMock) || !match || (resultLoading && !isMock)) {
+  if (matchLoading || !match || resultLoading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator />
@@ -329,27 +292,25 @@ export default function MatchDetailScreen() {
               >
                 {sharing ? <ActivityIndicator color={theme.text} /> : <Text style={styles.shareButtonText}>📤 Share Result</Text>}
               </Pressable>
-              {!isMock && (
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.kudosButton,
-                    resultVibs?.vibbedByMe && styles.kudosButtonActive,
-                    pressed && { opacity: 0.85 },
-                  ]}
-                  onPress={handleToggleResultVib}
-                >
-                  <Ionicons
-                    name={resultVibs?.vibbedByMe ? 'heart' : 'heart-outline'}
-                    size={16}
-                    color={resultVibs?.vibbedByMe ? theme.primary : theme.textMuted}
-                  />
-                  {!!resultVibs?.count && (
-                    <Text style={[styles.kudosCount, resultVibs?.vibbedByMe && { color: theme.primary }]}>
-                      {resultVibs.count}
-                    </Text>
-                  )}
-                </Pressable>
-              )}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.kudosButton,
+                  resultVibs?.vibbedByMe && styles.kudosButtonActive,
+                  pressed && { opacity: 0.85 },
+                ]}
+                onPress={handleToggleResultVib}
+              >
+                <Ionicons
+                  name={resultVibs?.vibbedByMe ? 'heart' : 'heart-outline'}
+                  size={16}
+                  color={resultVibs?.vibbedByMe ? theme.primary : theme.textMuted}
+                />
+                {!!resultVibs?.count && (
+                  <Text style={[styles.kudosCount, resultVibs?.vibbedByMe && { color: theme.primary }]}>
+                    {resultVibs.count}
+                  </Text>
+                )}
+              </Pressable>
             </View>
           )}
 
