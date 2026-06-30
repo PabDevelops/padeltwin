@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { ActivityIndicator, Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { supabase } from '@/lib/supabase';
 import { useSession } from '@/lib/useSession';
 import {
   useProfile,
@@ -70,7 +72,22 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [activeTab, setActiveTab] = useState<'posts' | 'matches'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'matches' | 'search'>('posts');
+  const [searchQuery, setSearchQuery] = useState('');
+  const { data: searchResults, isLoading: searchLoading } = useQuery({
+    queryKey: ['profileTabSearch', searchQuery],
+    queryFn: async () => {
+      if (!searchQuery.trim()) return [];
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .ilike('full_name', `%${searchQuery}%`)
+        .limit(20);
+      if (error) throw error;
+      return data;
+    },
+    enabled: searchQuery.length > 1,
+  });
   const [viewingPhoto, setViewingPhoto] = useState<PostCardData | null>(null);
 
   function handlePostPress(post: PostCardData) {
@@ -116,9 +133,6 @@ export default function ProfileScreen() {
     <ScrollView style={styles.container} bounces={false} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 110 }}>
       <View style={[styles.headerWrapper, { paddingTop: insets.top + 24 }]}>
         <View style={[styles.topIconsRow, { top: insets.top + 16 }]}>
-          <Pressable style={({ pressed }) => [styles.topIconBtn, pressed && { opacity: 0.7 }]} onPress={() => router.push('/search' as any)}>
-            <Ionicons name="search-outline" size={20} color={theme.text} />
-          </Pressable>
           <Pressable style={({ pressed }) => [styles.topIconBtn, pressed && { opacity: 0.7 }]} onPress={() => router.push('/chat' as any)}>
             <Ionicons name="chatbubble-outline" size={20} color={theme.text} />
           </Pressable>
@@ -242,9 +256,49 @@ export default function ProfileScreen() {
         <Pressable style={[styles.tabBtn, activeTab === 'matches' && styles.tabBtnActive]} onPress={() => setActiveTab('matches')}>
           <Ionicons name="tennisball-outline" size={18} color={activeTab === 'matches' ? theme.text : theme.textMuted} />
         </Pressable>
+        <Pressable style={[styles.tabBtn, activeTab === 'search' && styles.tabBtnActive]} onPress={() => setActiveTab('search')}>
+          <Ionicons name="search-outline" size={18} color={activeTab === 'search' ? theme.text : theme.textMuted} />
+        </Pressable>
       </View>
 
-      {activeTab === 'posts' ? (
+      {activeTab === 'search' ? (
+        <View style={styles.searchTab}>
+          <View style={styles.searchInputWrap}>
+            <Ionicons name="search" size={16} color={theme.textMuted} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search players..."
+              placeholderTextColor={theme.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCorrect={false}
+            />
+          </View>
+          {searchLoading && searchQuery.length > 1 && <ActivityIndicator color={theme.accent} style={{ marginTop: 20 }} />}
+          {!searchLoading && searchQuery.length > 1 && (!searchResults || searchResults.length === 0) && (
+            <Text style={styles.emptyTabText}>No players found for "{searchQuery}"</Text>
+          )}
+          {searchResults?.map((p) => (
+            <Pressable
+              key={p.id}
+              style={({ pressed }) => [styles.searchRow, pressed && { opacity: 0.8 }]}
+              onPress={() => router.push(`/player/${p.id}` as any)}
+            >
+              {p.avatar_url ? (
+                <Image source={{ uri: p.avatar_url }} style={styles.searchAvatar} />
+              ) : (
+                <View style={styles.searchAvatarPlaceholder}>
+                  <Ionicons name="person" size={18} color={theme.textMuted} />
+                </View>
+              )}
+              <View style={{ flex: 1 }}>
+                <Text style={styles.searchName}>{p.full_name ?? 'Player'}</Text>
+                <Text style={styles.searchMeta}>{p.zone ?? 'No zone'} · PS {p.elo}</Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      ) : activeTab === 'posts' ? (
         postsLoading ? (
           <ActivityIndicator color={theme.accent} style={{ marginTop: 30 }} />
         ) : myPosts && myPosts.length > 0 ? (
@@ -409,6 +463,17 @@ const styles = StyleSheet.create({
   masonryRow: { flexDirection: 'row', gap: MASONRY_GAP, paddingHorizontal: MASONRY_PADDING, paddingTop: 4 },
   masonryCol: { flex: 1, gap: MASONRY_GAP },
   emptyTab: { alignItems: 'center', justifyContent: 'center', paddingVertical: 50, gap: 10 },
+  searchTab: { paddingHorizontal: 20, paddingTop: 16, gap: 8 },
+  searchInputWrap: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: theme.card,
+    borderWidth: 1, borderColor: theme.border, borderRadius: 12, paddingHorizontal: 14, marginBottom: 8,
+  },
+  searchInput: { flex: 1, color: theme.text, fontSize: 14, paddingVertical: 12 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: theme.border },
+  searchAvatar: { width: 40, height: 40, borderRadius: 20 },
+  searchAvatarPlaceholder: { width: 40, height: 40, borderRadius: 20, backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' },
+  searchName: { color: theme.text, fontSize: 13, fontWeight: '700' },
+  searchMeta: { color: theme.textMuted, fontSize: 11, marginTop: 2 },
   emptyTabText: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
   emptyTabBtn: { backgroundColor: theme.primary, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 8, marginTop: 4 },
   emptyTabBtnText: { color: theme.onAccent, fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
