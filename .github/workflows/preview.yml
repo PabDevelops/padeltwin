@@ -34,12 +34,16 @@ jobs:
           git config user.email "actions@github.com"
           git config user.name "github-actions"
 
-          npx expo start --tunnel --non-interactive > expo-tunnel.log 2>&1 &
+          # GitHub Actions sets CI=true, which makes Expo's CLI suppress its
+          # interactive UI and never print the actual exp://...exp.direct
+          # tunnel URL (only a localhost URL). Force interactive mode with a
+          # fake TTY (script) and CI=false so the real tunnel URL gets logged.
+          script -qec "CI=false npx expo start --tunnel" /dev/null > expo-tunnel.log 2>&1 &
           EXPO_PID=$!
 
           URL=""
           for i in $(seq 1 90); do
-            URL=$(grep -oE 'exp://[a-zA-Z0-9.-]+\.exp\.direct[^ ]*' expo-tunnel.log | head -1 || true)
+            URL=$(grep -oE 'exp://[a-zA-Z0-9.-]+\.exp\.direct' expo-tunnel.log | head -1 || true)
             if [ -n "$URL" ]; then
               break
             fi
