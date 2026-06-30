@@ -17,6 +17,8 @@ import type {
   PartnerRequest,
   PartnerRequestWithProfiles,
   PlayerLevel,
+  Post,
+  PostWithProfile,
   Profile,
   RequestStatus,
   SetScore,
@@ -29,7 +31,8 @@ import type {
 
 export type FeedItem =
   | ({ kind: "achievement"; vibCount: number; vibbedByMe: boolean } & AchievementWithProfile)
-  | ({ kind: "match_result"; vibCount: number; vibbedByMe: boolean } & MatchResultWithProfiles);
+  | ({ kind: "match_result"; vibCount: number; vibbedByMe: boolean } & MatchResultWithProfiles)
+  | ({ kind: "post"; vibCount: number; vibbedByMe: boolean } & PostWithProfile);
 
 const LEVEL_ORDER: PlayerLevel[] = ["iniciacion", "intermedio", "avanzado"];
 
@@ -755,7 +758,7 @@ export function useActivityFeed(userId: string | undefined, limit = 20) {
         )
         .join(",");
 
-      const [achievementsRes, resultsRes] = await Promise.all([
+      const [achievementsRes, resultsRes, postsRes] = await Promise.all([
         supabase
           .from("achievements")
           .select("*, profiles(*)")
@@ -769,9 +772,16 @@ export function useActivityFeed(userId: string | undefined, limit = 20) {
           .or(resultsOrFilter)
           .order("created_at", { ascending: false })
           .limit(limit),
+        supabase
+          .from("posts")
+          .select("*, profiles(*)")
+          .in("profile_id", followedIds)
+          .order("created_at", { ascending: false })
+          .limit(limit),
       ]);
       if (achievementsRes.error) throw achievementsRes.error;
       if (resultsRes.error) throw resultsRes.error;
+      if (postsRes.error) throw postsRes.error;
 
       const achievementItems = ((achievementsRes.data as unknown as AchievementWithProfile[]) ?? []).map(
         (a) => ({ ...a, kind: "achievement" as const, vibCount: 0, vibbedByMe: false })
@@ -782,8 +792,14 @@ export function useActivityFeed(userId: string | undefined, limit = 20) {
         vibCount: 0,
         vibbedByMe: false,
       }));
+      const postItems = ((postsRes.data as unknown as PostWithProfile[]) ?? []).map((p) => ({
+        ...p,
+        kind: "post" as const,
+        vibCount: 0,
+        vibbedByMe: false,
+      }));
 
-      const merged: FeedItem[] = [...achievementItems, ...resultItems]
+      const merged: FeedItem[] = [...achievementItems, ...resultItems, ...postItems]
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, limit);
 
@@ -876,6 +892,41 @@ export function useNotifications(userId: string | undefined) {
         .limit(50);
       if (error) throw error;
       return (data ?? []) as AppNotification[];
+    },
+    enabled: !!userId,
+  });
+}
+
+export function useCreatePost() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { profileId: string; photoUrl: string; caption: string; matchId?: string | null }) => {
+      const { error } = await supabase.from("posts").insert({
+        profile_id: vars.profileId,
+        photo_url: vars.photoUrl,
+        caption: vars.caption.trim() || null,
+        match_id: vars.matchId ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["activityFeed"] });
+      queryClient.invalidateQueries({ queryKey: ["myPosts"] });
+    },
+  });
+}
+
+export function useMyPosts(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["myPosts", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("posts")
+        .select("*, profiles(*)")
+        .eq("profile_id", userId!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as PostWithProfile[];
     },
     enabled: !!userId,
   });

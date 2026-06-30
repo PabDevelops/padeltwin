@@ -558,12 +558,51 @@ export default function HomeScreen() {
       </Card>
 
 
-      <Text style={styles.sectionTitle}>ACTIVITY FEED</Text>
+      <View style={styles.feedSectionHeader}>
+        <Text style={[styles.sectionTitle, { marginBottom: 0, paddingHorizontal: 0 }]}>ACTIVITY FEED</Text>
+        <Pressable style={styles.newPostBtn} onPress={() => router.push('/post/new' as any)}>
+          <Ionicons name="add" size={14} color={theme.onAccent} />
+          <Text style={styles.newPostBtnText}>POST</Text>
+        </Pressable>
+      </View>
       {feedLoading ? (
         <ActivityIndicator color={theme.primary} style={{ marginTop: 12 }} />
       ) : activityFeed && activityFeed.length > 0 ? (
         <Card style={styles.feedContainer} contentStyle={{ paddingVertical: 4 }}>
           {activityFeed.map((item) => {
+            if (item.kind === 'post') {
+              return (
+                <View key={`post-${item.id}`} style={styles.postRow}>
+                  <View style={styles.feedRow}>
+                    <View style={styles.feedAvatar}>
+                      {item.profiles?.avatar_url ? (
+                        <Image source={{ uri: item.profiles.avatar_url }} style={styles.feedAvatarImg} />
+                      ) : (
+                        <View style={styles.feedAvatarPlaceholder}>
+                          <Image source={require('@/assets/images/icon.png')} style={styles.feedAvatarPlaceholderLogo} resizeMode="contain" />
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.feedInfo}>
+                      <Text style={styles.feedPlayerName}>{item.profiles?.full_name ?? 'Player'}</Text>
+                      <Text style={styles.feedTime}>{formatRelativeTime(item.created_at)}</Text>
+                    </View>
+                  </View>
+                  <Image source={{ uri: item.photo_url }} style={styles.postPhoto} />
+                  <View style={styles.postFooter}>
+                    {item.caption ? <Text style={styles.postCaption} numberOfLines={2}>{item.caption}</Text> : <View />}
+                    <Pressable
+                      style={({ pressed }) => [styles.vibButton, item.vibbedByMe && styles.vibButtonActive, pressed && { opacity: 0.8 }]}
+                      onPress={() => handleToggleVib(item)}
+                    >
+                      <Ionicons name={item.vibbedByMe ? 'heart' : 'heart-outline'} size={14} color={item.vibbedByMe ? theme.primary : theme.textMuted} />
+                      {item.vibCount > 0 && <Text style={[styles.vibCount, item.vibbedByMe && styles.vibCountActive]}>{item.vibCount}</Text>}
+                    </Pressable>
+                  </View>
+                </View>
+              );
+            }
+
             let iconName: string;
             let avatarProfile: Profile | null | undefined;
             let primaryText: string;
@@ -957,6 +996,28 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
   },
+  feedSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  newPostBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: theme.primary,
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  newPostBtnText: { color: theme.onAccent, fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
+  postRow: { borderBottomWidth: 1, borderBottomColor: theme.border, paddingBottom: 8 },
+  postPhoto: { width: '100%', aspectRatio: 4 / 5, backgroundColor: '#1A1A1F' },
+  postFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 10 },
+  postCaption: { flex: 1, color: theme.text, fontSize: 12, marginRight: 12 },
   feedContainer: {
     paddingVertical: 8,
     borderRadius: cardRadius,

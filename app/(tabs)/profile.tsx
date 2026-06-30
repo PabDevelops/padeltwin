@@ -41,6 +41,7 @@ import {
   useScrimIndex,
   scrimIndexLabel,
   useActivityFeed,
+  useMyPosts,
 } from '@/lib/queries';
 import { ACHIEVEMENT_LABELS, ACHIEVEMENT_ICONS, ACHIEVEMENT_TIERS, TIER_COLORS } from '@/constants/achievements';
 import { supabase } from '@/lib/supabase';
@@ -90,6 +91,7 @@ export default function ProfileScreen() {
   const { data: stats, isLoading: statsLoading } = useMyStats(userId);
   const { data: recentResults, isLoading: resultsLoading } = useRecentResults(userId, 8);
   const { data: followedFeed } = useActivityFeed(userId, 3);
+  const { data: myPosts } = useMyPosts(userId);
   const { data: followerCount } = useFollowerCount(userId);
   const { data: followingCount } = useFollowingCount(userId);
   const { data: records } = usePersonalRecords(userId);
@@ -382,6 +384,23 @@ export default function ProfileScreen() {
           </ScrollView>
         )}
 
+        {/* MY POSTS */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>My posts</Text>
+          <Pressable onPress={() => router.push('/post/new' as any)}>
+            <Text style={[styles.label, { color: theme.accent, marginTop: 0 }]}>+ NEW POST</Text>
+          </Pressable>
+        </View>
+        {myPosts && myPosts.length > 0 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
+            {myPosts.map((p) => (
+              <Image key={p.id} source={{ uri: p.photo_url }} style={styles.myPostThumb} />
+            ))}
+          </ScrollView>
+        ) : (
+          <Text style={styles.helperText}>Share a photo from your last match to get started.</Text>
+        )}
+
         {/* ACHIEVEMENTS */}
         <Card style={styles.section} contentStyle={{ padding: 16 }}>
           <Text style={styles.sectionHeader}>MY ACHIEVEMENTS</Text>
@@ -418,15 +437,18 @@ export default function ProfileScreen() {
             <Text style={[styles.sectionHeader, { paddingHorizontal: 16, marginBottom: 8 }]}>FROM PLAYERS YOU FOLLOW</Text>
             {followedFeed.map((item) => {
               const isAchievement = item.kind === 'achievement';
-              const name = isAchievement
+              const isPost = item.kind === 'post';
+              const name = isAchievement || isPost
                 ? (item.profiles?.full_name ?? 'Player')
                 : (item.winner === 'a' ? item.team_a_player1_profile?.full_name : item.team_b_player1_profile?.full_name) ?? 'Player';
               const detail = isAchievement
                 ? (ACHIEVEMENT_LABELS[item.type] || 'New achievement')
+                : isPost
+                ? 'shared a new post'
                 : `won a match`;
               return (
                 <View key={`${item.kind}-${item.id}`} style={styles.followedFeedRow}>
-                  <Ionicons name={isAchievement ? 'trophy' : 'tennisball'} size={14} color={theme.accent} />
+                  <Ionicons name={isAchievement ? 'trophy' : isPost ? 'camera' : 'tennisball'} size={14} color={theme.accent} />
                   <Text style={styles.followedFeedText} numberOfLines={1}>
                     <Text style={{ color: theme.text, fontWeight: '800' }}>{name}</Text>
                     {'  '}{detail}
@@ -947,6 +969,7 @@ const styles = StyleSheet.create({
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sectionTitle: { fontSize: 16,  color: theme.text , textTransform: 'uppercase'},
   horizontalScroll: { gap: 12, paddingBottom: 4 },
+  myPostThumb: { width: 96, height: 120, borderRadius: 12, backgroundColor: theme.card },
   horizontalReviewCard: { width: 220, borderRadius: 20 },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center' },
   smallAvatar: { width: 36, height: 36, borderRadius: 18, marginRight: 10 },

@@ -102,6 +102,7 @@ function RootNavigator() {
       <Stack.Screen name="search" options={{ headerShown: false }} />
       <Stack.Screen name="notifications" options={{ headerShown: false }} />
       <Stack.Screen name="chat/index" options={{ headerShown: false }} />
+      <Stack.Screen name="post/new" options={{ headerShown: false, presentation: 'modal' }} />
       <Stack.Screen
         name="league/[id]"
         options={{ title: 'LEAGUE', contentStyle: { paddingBottom: insets.bottom } }}

@@ -159,6 +159,19 @@ export interface AchievementWithProfile extends Achievement {
   profiles: Profile | null;
 }
 
+export interface Post {
+  id: string;
+  profile_id: string;
+  match_id: string | null;
+  photo_url: string;
+  caption: string | null;
+  created_at: string;
+}
+
+export interface PostWithProfile extends Post {
+  profiles: Profile | null;
+}
+
 export interface Follow {
   follower_id: string;
   followed_id: string;
@@ -185,7 +198,7 @@ export interface Report {
   created_at: string;
 }
 
-export type VibItemType = "achievement" | "match_result";
+export type VibItemType = "achievement" | "match_result" | "post";
 
 export interface Vib {
   id: string;
