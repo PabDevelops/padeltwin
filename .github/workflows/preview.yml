@@ -1,0 +1,30 @@
+name: Live Preview (Expo Go tunnel)
+
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: 'How many minutes to keep the tunnel open'
+        required: true
+        default: '15'
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - run: npm install --no-save @expo/ngrok@^4.1.0
+
+      - name: Start Expo tunnel
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: https://rqqpxmsxikcrkvkbgvwi.supabase.co
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxcXB4bXN4aWtjcmt2a2JndndpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NTM5NDMsImV4cCI6MjA5ODAyOTk0M30.WC30CFkHlc3aHynk_itIvfSW0M4A-rzOOj_gFatzozM
+        run: |
+          timeout "$((${{ inputs.minutes }} * 60))" npx expo start --tunnel --non-interactive || true
