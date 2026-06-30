@@ -352,7 +352,7 @@ export default function HomeScreen() {
             <Card style={[styles.nextMatchCard, pressed && { opacity: 0.9 }]}>
               <View style={styles.nextMatchHeader}>
                 <Text style={styles.nextMatchTag}>⚡ NEXT MATCH</Text>
-                <View style={[styles.gridBadge, { backgroundColor: 'rgba(255, 92, 0, 0.15)', marginTop: 0 }]}>
+                <View style={[styles.gridBadge, { backgroundColor: 'rgba(198, 255, 51, 0.15)', marginTop: 0 }]}>
                   <Text style={[styles.gridBadgeText, { color: theme.primary }]}>CONFIRMED</Text>
                 </View>
               </View>
@@ -952,7 +952,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: 'rgba(255, 92, 0, 0.1)',
+    backgroundColor: 'rgba(198, 255, 51, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -963,7 +963,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 92, 0, 0.1)',
+    backgroundColor: 'rgba(198, 255, 51, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -974,7 +974,7 @@ const styles = StyleSheet.create({
   },
   resultRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   opponentWrapper: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 12 },
-  vsTag: { fontSize: 9, fontWeight: '900', color: theme.primary, backgroundColor: 'rgba(255, 92, 0, 0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginRight: 8 },
+  vsTag: { fontSize: 9, fontWeight: '900', color: theme.primary, backgroundColor: 'rgba(198, 255, 51, 0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginRight: 8 },
   resultOpponent: { fontSize: 14, fontWeight: '800', color: theme.text, letterSpacing: 0.2 },
   resultBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   winBadge: { backgroundColor: 'rgba(0, 230, 118, 0.1)', borderWidth: 1, borderColor: theme.success },
@@ -1194,7 +1194,7 @@ const styles = StyleSheet.create({
   },
   vibButtonActive: {
     borderColor: theme.primary,
-    backgroundColor: 'rgba(255, 92, 0, 0.08)',
+    backgroundColor: 'rgba(198, 255, 51, 0.08)',
   },
   vibCount: {
     fontSize: 10,
@@ -1242,7 +1242,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   suggestedFollowButton: {
-    backgroundColor: 'rgba(255, 92, 0, 0.1)',
+    backgroundColor: 'rgba(198, 255, 51, 0.1)',
     borderWidth: 1,
     borderColor: theme.primary,
     borderRadius: 6,
@@ -1256,15 +1256,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   leaderboardRowMe: {
-    backgroundColor: 'rgba(255, 92, 0, 0.06)',
+    backgroundColor: 'rgba(198, 255, 51, 0.06)',
   },
   feedIconContainer: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 92, 0, 0.08)',
+    backgroundColor: 'rgba(198, 255, 51, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 92, 0, 0.25)',
+    borderColor: 'rgba(198, 255, 51, 0.25)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1288,7 +1288,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   emptyFeedButton: {
-    backgroundColor: 'rgba(255, 92, 0, 0.1)',
+    backgroundColor: 'rgba(198, 255, 51, 0.1)',
     borderWidth: 1,
     borderColor: theme.primary,
     borderRadius: 8,

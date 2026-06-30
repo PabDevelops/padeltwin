@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.border,
   },
-  rowMe: { backgroundColor: 'rgba(255, 92, 0, 0.06)' },
+  rowMe: { backgroundColor: 'rgba(198, 255, 51, 0.06)' },
   rankText: { width: 20, color: theme.textMuted, fontWeight: '800', fontSize: 13 },
   rankTextTop: { color: theme.accent },
   avatarPlaceholder: {

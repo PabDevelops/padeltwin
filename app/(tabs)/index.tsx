@@ -479,7 +479,7 @@ export default function MatchSearchScreen() {
           {queueState === 'idle' && (
             <View style={styles.radarCenter}>
               <View style={styles.radarGraphicOuter}>
-                <Ionicons name="radio-outline" size={80} color="rgba(255, 92, 0, 0.15)" />
+                <Ionicons name="radio-outline" size={80} color="rgba(198, 255, 51, 0.15)" />
               </View>
               <Text style={styles.radarStatusTitle}>AUTO-MATCHMAKER</Text>
               <Text style={styles.radarStatusDesc}>
@@ -744,7 +744,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.04)' 
   },
   levelChipActive: { 
-    backgroundColor: 'rgba(255, 92, 0, 0.15)', 
+    backgroundColor: 'rgba(198, 255, 51, 0.15)', 
     borderColor: theme.primary 
   },
   levelChipText: { color: theme.textMuted, fontWeight: '800', fontSize: 11, letterSpacing: 0.5 },
@@ -778,7 +778,7 @@ const styles = StyleSheet.create({
   modeBadgeText: { color: theme.textMuted, fontSize: 8, fontWeight: '900', letterSpacing: 0.5 },
   cardSubtitle: { color: theme.textMuted, marginTop: 6, fontSize: 11, fontWeight: '800' },
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 },
-  badge: { backgroundColor: 'rgba(255, 92, 0, 0.08)', borderWidth: 1, borderColor: 'rgba(255, 92, 0, 0.25)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  badge: { backgroundColor: 'rgba(198, 255, 51, 0.08)', borderWidth: 1, borderColor: 'rgba(198, 255, 51, 0.25)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { color: theme.primary, fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
   
   // Roster avatar stack
@@ -863,7 +863,7 @@ const styles = StyleSheet.create({
     height: 180,
     borderRadius: 90,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 92, 0, 0.2)',
+    borderColor: 'rgba(198, 255, 51, 0.2)',
   },
   radarScannerDisc: {
     width: 140,
@@ -883,7 +883,7 @@ const styles = StyleSheet.create({
     height: 70,
     top: 0,
     left: 70,
-    backgroundColor: 'rgba(255, 92, 0, 0.08)',
+    backgroundColor: 'rgba(198, 255, 51, 0.08)',
     borderLeftWidth: 1.5,
     borderLeftColor: theme.primary,
     transformOrigin: 'bottom left',
@@ -967,7 +967,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(21, 22, 31, 0.9)',
     borderRadius: cardRadius,
     borderWidth: 1.5,
-    borderColor: '#FF5C00', // Glowing orange outline
+    borderColor: theme.primary, // Glowing accent outline
     padding: 24,
     alignItems: 'stretch',
     position: 'relative',
@@ -1003,7 +1003,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',},
   lolDivider: {
     height: 1,
-    backgroundColor: 'rgba(255, 92, 0, 0.25)',
+    backgroundColor: 'rgba(198, 255, 51, 0.25)',
     marginVertical: 16,
     alignSelf: 'stretch',
   },
@@ -1016,7 +1016,7 @@ const styles = StyleSheet.create({
   lolBadge: {
     borderWidth: 1,
     borderColor: theme.primary,
-    backgroundColor: 'rgba(255, 92, 0, 0.05)',
+    backgroundColor: 'rgba(198, 255, 51, 0.05)',
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -1128,7 +1128,7 @@ const styles = StyleSheet.create({
   },
   lolCountdownContainer: {
     height: 3,
-    backgroundColor: 'rgba(255, 92, 0, 0.15)',
+    backgroundColor: 'rgba(198, 255, 51, 0.15)',
     borderRadius: 1.5,
     marginTop: 12,
     overflow: 'hidden',

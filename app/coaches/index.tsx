@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   avatarPlaceholderLogo: { width: 22, height: 22, opacity: 0.5 },
   coachName: { color: theme.text,  fontSize: 15 , textTransform: 'uppercase'},
   coachMeta: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
-  featuredBadge: { backgroundColor: 'rgba(255, 92, 0, 0.15)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  featuredBadge: { backgroundColor: 'rgba(198, 255, 51, 0.15)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   featuredBadgeText: { color: theme.accent, fontSize: 8, fontWeight: '900', letterSpacing: 0.5 },
   rate: { color: theme.accent, fontWeight: '800', fontSize: 13, marginRight: 4 },
   emptyContainer: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 16 },

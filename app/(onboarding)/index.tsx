@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.card 
   },
   chipActive: { 
-    backgroundColor: 'rgba(255, 92, 0, 0.15)', 
+    backgroundColor: 'rgba(198, 255, 51, 0.15)', 
     borderColor: theme.primary,
   },
   chipText: { color: theme.textMuted, fontWeight: '800', fontSize: 11, letterSpacing: 0.5 },
