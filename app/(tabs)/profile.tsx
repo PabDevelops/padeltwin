@@ -40,8 +40,6 @@ import {
   useMyKopStatus,
   useScrimIndex,
   scrimIndexLabel,
-  useResetStats,
-  useInjectMockData,
   useActivityFeed,
 } from '@/lib/queries';
 import { ACHIEVEMENT_LABELS, ACHIEVEMENT_ICONS, ACHIEVEMENT_TIERS, TIER_COLORS } from '@/constants/achievements';
@@ -101,8 +99,6 @@ export default function ProfileScreen() {
   const { data: blockedProfiles } = useBlockedProfiles(userId);
   const unblockUser = useUnblockUser();
   const deleteAccount = useDeleteAccount();
-  const resetStats = useResetStats();
-  const injectMockData = useInjectMockData();
   const applyToCoach = useApplyToCoach();
   const stopCoaching = useStopCoaching();
   const { data: leads, isLoading: leadsLoading } = useMyCoachLeads(profile?.coach_status === 'approved' ? userId : undefined);
@@ -727,65 +723,6 @@ export default function ProfileScreen() {
             }
           >
             <Text style={{ color: theme.danger, fontWeight: '800', fontSize: 11, letterSpacing: 0.5 }}>DELETE MY ACCOUNT</Text>
-          </Pressable>
-        </Card>
-
-        {/* DANGER ZONE - DEV ONLY */}
-        <Card style={[styles.section, { borderColor: theme.danger, borderWidth: 1 }]} contentStyle={{ padding: 16 }}>
-          <Text style={[styles.sectionHeader, { color: theme.danger, borderBottomColor: 'rgba(255,59,48,0.2)' }]}>DEV DANGER ZONE</Text>
-          <Text style={styles.helperText}>
-            Development tools to manage your testing data.
-          </Text>
-          
-          <Pressable
-            style={({ pressed }) => [
-              { marginTop: 16, backgroundColor: 'rgba(255,59,48,0.1)', padding: 12, borderRadius: 8, alignItems: 'center' },
-              pressed && { opacity: 0.7 }
-            ]}
-            onPress={() => {
-              Alert.alert(
-                'Hard Reset Data?',
-                'This will wipe all your match history and reset your ELO to 1200.',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  { 
-                    text: 'RESET', 
-                    style: 'destructive',
-                    onPress: () => userId && resetStats.mutate(userId, {
-                      onSuccess: () => Alert.alert('Success', 'Your stats have been reset to 1200.'),
-                      onError: (err: any) => Alert.alert('Error', err.message)
-                    })
-                  }
-                ]
-              )
-            }}
-          >
-            {resetStats.isPending ? (
-              <ActivityIndicator color={theme.danger} />
-            ) : (
-              <Text style={{ color: theme.danger, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 }}>HARD RESET MY STATS</Text>
-            )}
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [
-              { marginTop: 8, backgroundColor: 'rgba(198, 255, 51, 0.15)', padding: 12, borderRadius: 8, alignItems: 'center' },
-              pressed && { opacity: 0.7 }
-            ]}
-            onPress={() => {
-              if (userId) {
-                injectMockData.mutate(userId, {
-                  onSuccess: () => Alert.alert('Success', 'Mock data has been injected into your profile!'),
-                  onError: (err: any) => Alert.alert('Error', err.message)
-                });
-              }
-            }}
-          >
-            {injectMockData.isPending ? (
-              <ActivityIndicator color={theme.accent} />
-            ) : (
-              <Text style={{ color: theme.accent, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 }}>INJECT MOCK DATA</Text>
-            )}
           </Pressable>
         </Card>
       </View>
