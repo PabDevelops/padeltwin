@@ -3,7 +3,8 @@ import { ActivityIndicator, FlatList, Image, Pressable, ScrollView, StyleSheet, 
 import { useLocalSearchParams } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
-import { useMatch, useJoinMatch, useLeaveMatch, useMatchResult, useRecordMatchResult, useConfirmMatchResult, useDisputeMatchResult } from '@/lib/queries';
+import { useMatch, useJoinMatch, useLeaveMatch, useMatchResult, useRecordMatchResult, useConfirmMatchResult, useDisputeMatchResult, useItemVibs, useToggleVib } from '@/lib/queries';
+import { Ionicons } from '@expo/vector-icons';
 import { useSession } from '@/lib/useSession';
 import { MatchShareCard } from '@/components/MatchShareCard';
 import type { MatchPlayer, MatchResultWithProfiles, PlayerLevel, Profile, SetScore, Team } from '@/types/database';
@@ -60,6 +61,18 @@ export default function MatchDetailScreen() {
   const recordResult = useRecordMatchResult();
   const confirmResult = useConfirmMatchResult();
   const disputeResult = useDisputeMatchResult();
+  const { data: resultVibs } = useItemVibs('match_result', isMock ? undefined : existingResult?.id, userId);
+  const toggleVib = useToggleVib();
+
+  function handleToggleResultVib() {
+    if (!userId || !existingResult || isMock) return;
+    toggleVib.mutate({
+      profileId: userId,
+      itemType: 'match_result',
+      itemId: existingResult.id,
+      currentlyVibbed: !!resultVibs?.vibbedByMe,
+    });
+  }
 
   const shareCardRef = useRef<View>(null);
   const [sharing, setSharing] = useState(false);
@@ -222,22 +235,41 @@ export default function MatchDetailScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionHeader}>MATCH ROSTER</Text>
         {players.length > 0 ? (
-          players.map((item, index) => (
-            <View key={item.player_id} style={[styles.playerRow, index === players.length - 1 && { borderBottomWidth: 0 }]}>
-              <View style={styles.playerAvatar}>
-                {item.profiles?.avatar_url ? (
-                  <Image source={{ uri: item.profiles.avatar_url }} style={styles.avatarImage} />
-                ) : (
-                  <Image source={require('@/assets/images/icon.png')} style={styles.playerAvatarLogo} resizeMode="contain" />
-                )}
+          players.map((item, index) => {
+            const isMe = item.player_id === userId;
+            const isHost = item.player_id === match.created_by;
+            return (
+              <View
+                key={item.player_id}
+                style={[
+                  styles.playerRow,
+                  index === players.length - 1 && { borderBottomWidth: 0 },
+                  isMe && styles.playerRowMe,
+                ]}
+              >
+                <View style={[styles.playerAvatar, isMe && styles.playerAvatarMe]}>
+                  {item.profiles?.avatar_url ? (
+                    <Image source={{ uri: item.profiles.avatar_url }} style={styles.avatarImage} />
+                  ) : (
+                    <Image source={require('@/assets/images/icon.png')} style={styles.playerAvatarLogo} resizeMode="contain" />
+                  )}
+                </View>
+                <View style={styles.playerInfo}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={styles.playerName}>{isMe ? 'YOU' : (item.profiles?.full_name ?? 'Player')}</Text>
+                    {isHost && (
+                      <View style={styles.hostBadge}>
+                        <Ionicons name="star" size={9} color={theme.accent} />
+                        <Text style={styles.hostBadgeText}>HOST</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.playerSub}>{item.profiles?.level ? LEVEL_LABELS[item.profiles.level].toUpperCase() : 'NO LEVEL'}</Text>
+                </View>
+                <Text style={styles.playerElo}>{item.profiles?.elo ?? '—'} <Text style={{ fontSize: 9, color: theme.textMuted }}>PS</Text></Text>
               </View>
-              <View style={styles.playerInfo}>
-                <Text style={styles.playerName}>{item.profiles?.full_name ?? 'Player'}</Text>
-                <Text style={styles.playerSub}>{item.profiles?.level ? LEVEL_LABELS[item.profiles.level].toUpperCase() : 'NO LEVEL'}</Text>
-              </View>
-              <Text style={styles.playerElo}>{item.profiles?.elo ?? '—'} <Text style={{ fontSize: 9, color: theme.textMuted }}>PS</Text></Text>
-            </View>
-          ))
+            );
+          })
         ) : (
           <Text style={styles.empty}>No players have joined this match roster yet.</Text>
         )}
@@ -289,13 +321,36 @@ export default function MatchDetailScreen() {
           </View>
 
           {existingResult.status === 'confirmed' && (
-            <Pressable
-              style={({ pressed }) => [styles.shareButton, pressed && { opacity: 0.9 }]}
-              onPress={handleShareResult}
-              disabled={sharing}
-            >
-              {sharing ? <ActivityIndicator color={theme.text} /> : <Text style={styles.shareButtonText}>📤 Share Result</Text>}
-            </Pressable>
+            <View style={styles.postMatchRow}>
+              <Pressable
+                style={({ pressed }) => [styles.shareButton, { flex: 1 }, pressed && { opacity: 0.9 }]}
+                onPress={handleShareResult}
+                disabled={sharing}
+              >
+                {sharing ? <ActivityIndicator color={theme.text} /> : <Text style={styles.shareButtonText}>📤 Share Result</Text>}
+              </Pressable>
+              {!isMock && (
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.kudosButton,
+                    resultVibs?.vibbedByMe && styles.kudosButtonActive,
+                    pressed && { opacity: 0.85 },
+                  ]}
+                  onPress={handleToggleResultVib}
+                >
+                  <Ionicons
+                    name={resultVibs?.vibbedByMe ? 'heart' : 'heart-outline'}
+                    size={16}
+                    color={resultVibs?.vibbedByMe ? theme.primary : theme.textMuted}
+                  />
+                  {!!resultVibs?.count && (
+                    <Text style={[styles.kudosCount, resultVibs?.vibbedByMe && { color: theme.primary }]}>
+                      {resultVibs.count}
+                    </Text>
+                  )}
+                </Pressable>
+              )}
+            </View>
           )}
 
           {canConfirmOrDispute && (
@@ -479,7 +534,6 @@ const styles = StyleSheet.create({
   scrollContainer: { flex: 1, backgroundColor: theme.background },
   offscreenCard: { position: 'absolute', top: -9999, left: -9999 },
   shareButton: {
-    marginTop: 12,
     backgroundColor: theme.card,
     borderWidth: 1,
     borderColor: theme.border,
@@ -488,6 +542,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   shareButtonText: { color: theme.text, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
+  postMatchRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  kudosButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 14,
+    borderRadius: buttonRadius,
+    borderWidth: 1,
+    borderColor: theme.border,
+    backgroundColor: theme.card,
+  },
+  kudosButtonActive: { borderColor: theme.primary, backgroundColor: 'rgba(255, 92, 0, 0.08)' },
+  kudosCount: { fontSize: 12, fontWeight: '800', color: theme.textMuted },
   container: { padding: 20, gap: 16, paddingBottom: 32 },
   headerContainer: { marginTop: 12, marginBottom: 4 },
   tagline: { fontSize: 10, fontWeight: '900', color: theme.primary, letterSpacing: 2, marginBottom: 4 },
@@ -514,8 +581,12 @@ const styles = StyleSheet.create({
   slotDotEmpty: { backgroundColor: '#22242E' },
   section: { backgroundColor: theme.card, borderRadius: cardRadius, padding: 16, borderWidth: 1, borderColor: theme.border },
   sectionHeader: { fontSize: 10,  color: theme.primary, letterSpacing: 1.5, marginBottom: 14, borderBottomWidth: 1, borderBottomColor: theme.border, paddingBottom: 6, textTransform: 'uppercase'},
-  playerRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: theme.border },
+  playerRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 8, borderRadius: 10, borderBottomWidth: 1, borderBottomColor: theme.border },
+  playerRowMe: { backgroundColor: 'rgba(255, 92, 0, 0.06)', borderBottomColor: 'transparent' },
+  hostBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: 'rgba(198, 255, 51, 0.12)', borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 },
+  hostBadgeText: { fontSize: 8, fontWeight: '900', color: theme.accent, letterSpacing: 0.3 },
   playerAvatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#22242E', alignItems: 'center', marginRight: 12, borderWidth: 1, borderColor: theme.border, justifyContent: 'center' },
+  playerAvatarMe: { borderColor: theme.primary, borderWidth: 1.5 },
   avatarImage: { width: '100%', height: '100%', borderRadius: 15 },
   playerAvatarLogo: { width: 14, height: 14, opacity: 0.5 },
   playerInfo: { flex: 1 },

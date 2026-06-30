@@ -30,3 +30,26 @@ export const ACHIEVEMENT_ICONS: Record<AchievementType, string> = {
   elo_1400: 'trending-up',
   elo_1500: 'trending-up',
 };
+
+export type AchievementTier = 'bronze' | 'silver' | 'gold';
+
+// Rarity tier for trophy-case styling — bigger milestones get a richer badge.
+export const ACHIEVEMENT_TIERS: Record<AchievementType, AchievementTier> = {
+  first_match: 'bronze',
+  matches_5: 'bronze',
+  matches_10: 'silver',
+  matches_25: 'gold',
+  first_win: 'bronze',
+  wins_5: 'silver',
+  wins_10: 'gold',
+  wins_25: 'gold',
+  elo_1300: 'silver',
+  elo_1400: 'gold',
+  elo_1500: 'gold',
+};
+
+export const TIER_COLORS: Record<AchievementTier, string> = {
+  bronze: '#CD7F32',
+  silver: '#C0C0C8',
+  gold: '#FFD700',
+};

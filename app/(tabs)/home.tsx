@@ -31,6 +31,7 @@ import { ProBadge } from '@/components/ProBadge';
 import { CoachBadge } from '@/components/CoachBadge';
 import { Card } from '@/components/Card';
 import { AppButton } from '@/components/AppButton';
+import { ActivityHeatmap } from '@/components/ActivityHeatmap';
 
 function didWin(result: MatchResultWithProfiles, userId: string) {
   const inTeamA = result.team_a_player1 === userId || result.team_a_player2 === userId;
@@ -312,7 +313,7 @@ export default function HomeScreen() {
   const monthDelta = thisMonthMatches - lastMonthMatches;
 
   // Most active day of week
-  const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const dayCounts = [0, 0, 0, 0, 0, 0, 0];
   if (userId && displayResults) {
     for (const r of displayResults) dayCounts[new Date(r.created_at).getDay()]++;
@@ -437,7 +438,7 @@ export default function HomeScreen() {
                   <Text style={styles.rankBadgeText}>{rankLabel}</Text>
                 </View>
                 <Text style={{ color: theme.textMuted, fontSize: 10, fontWeight: '600', letterSpacing: 0.5 }}>
-                  {stats?.played ?? 0} PARTIDAS
+                  {stats?.played ?? 0} MATCHES
                 </Text>
               </View>
             </Card>
@@ -464,17 +465,17 @@ export default function HomeScreen() {
               {/* Month summary */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <View>
-                  <Text style={styles.heroLabel}>ESTE MES</Text>
+                  <Text style={styles.heroLabel}>THIS MONTH</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 2 }}>
                     <Text style={[styles.eloScore, { fontSize: 30 }]}>{thisMonthMatches}</Text>
-                    <Text style={{ color: theme.textMuted, fontSize: 13, fontWeight: '600' }}>partidas</Text>
+                    <Text style={{ color: theme.textMuted, fontSize: 13, fontWeight: '600' }}>matches</Text>
                   </View>
                   <Text style={{ color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 2, letterSpacing: 0.5 }}>
                     {thisMonthWins}W · {thisMonthMatches - thisMonthWins}L{thisMonthMatches > 0 ? ` · ${Math.round((thisMonthWins / thisMonthMatches) * 100)}%` : ''}
                   </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.heroLabel}>VS MES ANT.</Text>
+                  <Text style={styles.heroLabel}>VS LAST MONTH</Text>
                   <Text style={{ fontSize: 26, fontFamily: 'Anton_400Regular', color: monthDelta >= 0 ? theme.accent : '#FF3B30', marginTop: 4 }}>
                     {monthDelta > 0 ? '+' : ''}{monthDelta}
                   </Text>
@@ -517,11 +518,11 @@ export default function HomeScreen() {
                   <Text style={styles.prValue}>{maxElo}</Text>
                 </View>
                 <View style={[styles.prItem, { alignItems: 'center' }]}>
-                  <Text style={styles.prLabel}>MEJOR RACHA</Text>
+                  <Text style={styles.prLabel}>BEST STREAK</Text>
                   <Text style={styles.prValue}>{bestWinStreak > 0 ? `${bestWinStreak}W` : '—'}</Text>
                 </View>
                 <View style={[styles.prItem, { alignItems: 'flex-end' }]}>
-                  <Text style={styles.prLabel}>DÍA ACTIVO</Text>
+                  <Text style={styles.prLabel}>MOST ACTIVE DAY</Text>
                   <Text style={styles.prValue}>{mostActiveDay}</Text>
                 </View>
               </View>
@@ -568,6 +569,15 @@ export default function HomeScreen() {
         </View>
       </View>
 
+      {/* Activity Heatmap */}
+      {userId && displayResults && displayResults.length > 0 && (
+        <Card>
+          <ActivityHeatmap
+            results={displayResults.map((r) => ({ created_at: r.created_at, won: didWin(r, userId) }))}
+          />
+        </Card>
+      )}
+
       {/* Scrim Index */}
       <Card style={{ borderLeftWidth: 3, borderLeftColor: theme.accent }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -597,7 +607,7 @@ export default function HomeScreen() {
         </View>
         {scrimInfoOpen && (
           <Text style={[styles.scrimInfoText, { marginTop: 10 }]}>
-            Tu Scrim Index es tu forma AHORA MISMO (1.0–10.0). Se basa en tus últimas 5 partidas confirmadas.
+            Your Scrim Index is your form RIGHT NOW (1.0–10.0), based on your last 5 confirmed matches.
           </Text>
         )}
       </Card>
@@ -648,9 +658,11 @@ export default function HomeScreen() {
       ) : (
         displayResults.slice(0, 5).map((r) => {
           const win = didWin(r, userId!);
+          const matchDate = new Date(r.created_at);
+          const dateLabel = matchDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase();
           return (
             <Pressable key={r.id} onPress={() => router.push(`/match/${r.match_id || r.id}` as any)} style={({pressed}) => [pressed && {opacity: 0.8}]}>
-            <Card style={styles.resultCard} contentStyle={{ padding: 16 }}>
+            <Card style={[styles.resultCard, { borderLeftWidth: 3, borderLeftColor: win ? theme.success : theme.border }]} contentStyle={{ padding: 16 }}>
               <View style={styles.resultRow}>
                 <View style={styles.opponentWrapper}>
                   <Text style={styles.vsTag}>VS</Text>
@@ -672,7 +684,10 @@ export default function HomeScreen() {
                   </View>
                 ))}
               </View>
-              <Text style={styles.matchTypeTag}>DOUBLES MATCH</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={styles.matchDateTag}>{dateLabel}</Text>
+                <Text style={styles.matchTypeTag}>DOUBLES</Text>
+              </View>
               </View>
             </Card>
             </Pressable>
@@ -974,6 +989,7 @@ const styles = StyleSheet.create({
   scoreText: { fontSize: 12, fontWeight: '800', color: theme.textMuted },
   scoreTextWin: { color: theme.success },
   matchTypeTag: { fontSize: 9, fontWeight: '900', color: theme.textMuted, letterSpacing: 0.5 },
+  matchDateTag: { fontSize: 9, fontWeight: '700', color: theme.textMuted, letterSpacing: 0.3 },
   empty: { color: theme.textMuted, textAlign: 'center', marginTop: 8, fontSize: 13 },
   leaderboardContainer: {
     borderRadius: cardRadius,

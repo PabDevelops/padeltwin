@@ -42,8 +42,10 @@ import {
   scrimIndexLabel,
   useResetStats,
   useInjectMockData,
+  useActivityFeed,
 } from '@/lib/queries';
-import { ACHIEVEMENT_LABELS, ACHIEVEMENT_ICONS } from '@/constants/achievements';
+import { ACHIEVEMENT_LABELS, ACHIEVEMENT_ICONS, ACHIEVEMENT_TIERS, TIER_COLORS } from '@/constants/achievements';
+import { ActivityHeatmap } from '@/components/ActivityHeatmap';
 import { supabase } from '@/lib/supabase';
 import { pickAndUploadAvatar } from '@/lib/uploadAvatar';
 import type { PartnerRequestWithProfiles, PlayerLevel, MatchResultWithProfiles } from '@/types/database';
@@ -92,6 +94,8 @@ export default function ProfileScreen() {
   const { data: myAchievements, isLoading: achievementsLoading } = useMyAchievements(userId);
   const { data: stats, isLoading: statsLoading } = useMyStats(userId);
   const { data: recentResults, isLoading: resultsLoading } = useRecentResults(userId, 8);
+  const { data: heatmapResults } = useRecentResults(userId, 100);
+  const { data: followedFeed } = useActivityFeed(userId, 3);
   const { data: followerCount } = useFollowerCount(userId);
   const { data: followingCount } = useFollowingCount(userId);
   const { data: records } = usePersonalRecords(userId);
@@ -342,6 +346,15 @@ export default function ProfileScreen() {
           </>
         )}
 
+        {/* ACTIVITY HEATMAP */}
+        {userId && heatmapResults && heatmapResults.length > 0 && (
+          <Card>
+            <ActivityHeatmap
+              results={heatmapResults.map((r) => ({ created_at: r.created_at, won: didWin(r, userId) }))}
+            />
+          </Card>
+        )}
+
         {/* RECENT MATCHES */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Recent matches</Text>
@@ -431,11 +444,14 @@ export default function ProfileScreen() {
               {myAchievements.map((item) => {
                 const iconName = ACHIEVEMENT_ICONS[item.type] || 'trophy';
                 const labelText = ACHIEVEMENT_LABELS[item.type] || 'New Achievement';
+                const tier = ACHIEVEMENT_TIERS[item.type] || 'bronze';
+                const tierColor = TIER_COLORS[tier];
                 return (
                   <View key={item.id} style={styles.achievementBadgeContainer}>
-                    <View style={styles.achievementBadgeCircle}>
-                      <Ionicons name={iconName as any} size={20} color={theme.accent} />
+                    <View style={[styles.achievementBadgeCircle, { borderColor: tierColor, backgroundColor: `${tierColor}1A` }]}>
+                      <Ionicons name={iconName as any} size={20} color={tierColor} />
                     </View>
+                    <Text style={[styles.achievementTierLabel, { color: tierColor }]}>{tier.toUpperCase()}</Text>
                     <Text style={styles.achievementBadgeLabel} numberOfLines={2}>
                       {labelText.toUpperCase()}
                     </Text>
@@ -447,6 +463,32 @@ export default function ProfileScreen() {
             <Text style={styles.helperText}>Play matches and win games to unlock exclusive player badges!</Text>
           )}
         </Card>
+
+        {/* FOLLOWED ACTIVITY */}
+        {followedFeed && followedFeed.length > 0 && (
+          <Card style={styles.section} contentStyle={{ padding: 0, paddingVertical: 4 }}>
+            <Text style={[styles.sectionHeader, { paddingHorizontal: 16, marginBottom: 8 }]}>FROM PLAYERS YOU FOLLOW</Text>
+            {followedFeed.map((item) => {
+              const isAchievement = item.kind === 'achievement';
+              const name = isAchievement
+                ? (item.profiles?.full_name ?? 'Player')
+                : (item.winner === 'a' ? item.team_a_player1_profile?.full_name : item.team_b_player1_profile?.full_name) ?? 'Player';
+              const detail = isAchievement
+                ? (ACHIEVEMENT_LABELS[item.type] || 'New achievement')
+                : `won a match`;
+              return (
+                <View key={`${item.kind}-${item.id}`} style={styles.followedFeedRow}>
+                  <Ionicons name={isAchievement ? 'trophy' : 'tennisball'} size={14} color={theme.accent} />
+                  <Text style={styles.followedFeedText} numberOfLines={1}>
+                    <Text style={{ color: theme.text, fontWeight: '800' }}>{name.toUpperCase()}</Text>
+                    {'  '}{detail}
+                  </Text>
+                  <Text style={styles.followedFeedTime}>{formatRelativeTime(item.created_at)}</Text>
+                </View>
+              );
+            })}
+          </Card>
+        )}
 
         {/* ATHLETE DETAILS */}
         <Card style={styles.section} contentStyle={{ padding: 16 }}>
@@ -1134,6 +1176,18 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   achievementBadgeLabel: { color: theme.text, fontSize: 8, fontWeight: '900', textAlign: 'center', letterSpacing: 0.2, lineHeight: 10 },
+  achievementTierLabel: { fontSize: 7, fontWeight: '900', letterSpacing: 0.6, marginBottom: 2 },
+  followedFeedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+  },
+  followedFeedText: { flex: 1, color: theme.textMuted, fontSize: 11 },
+  followedFeedTime: { color: theme.textMuted, fontSize: 9, fontWeight: '600' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalCard: { width: '100%', maxHeight: '80%', backgroundColor: theme.card, borderRadius: 20, padding: 20, borderWidth: 1, borderColor: theme.border },
   modalTitle: { color: theme.text,  fontSize: 13, letterSpacing: 1, marginBottom: 4 , textTransform: 'uppercase'},

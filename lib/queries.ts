@@ -920,9 +920,29 @@ export function useToggleVib() {
         if (error) throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["activityFeed"] });
+      queryClient.invalidateQueries({ queryKey: ["itemVibs", vars.itemType, vars.itemId] });
     },
+  });
+}
+
+// Vib count + whether the current user has vibbed a single item (e.g. a match
+// result's scoreboard, viewed outside the activity feed).
+export function useItemVibs(itemType: VibItemType, itemId: string | undefined, userId: string | undefined) {
+  return useQuery({
+    queryKey: ["itemVibs", itemType, itemId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vibs")
+        .select("profile_id")
+        .eq("item_type", itemType)
+        .eq("item_id", itemId!);
+      if (error) throw error;
+      const rows = data ?? [];
+      return { count: rows.length, vibbedByMe: rows.some((r) => r.profile_id === userId) };
+    },
+    enabled: !!itemId,
   });
 }
 
