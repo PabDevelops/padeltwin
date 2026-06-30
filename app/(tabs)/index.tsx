@@ -272,7 +272,7 @@ export default function MatchSearchScreen() {
               <Text style={styles.cardTitle} numberOfLines={1}>{item.location}</Text>
               <View style={styles.modeBadge}>
                 <Text style={styles.modeBadgeText}>
-                  {item.mode === 'pair' ? '⚔️ DOUBLES' : '⚔️ SINGLES'}
+                  {item.mode === 'pair' ? 'DOUBLES' : 'SINGLES'}
                 </Text>
               </View>
             </View>
@@ -325,8 +325,8 @@ export default function MatchSearchScreen() {
     <View style={styles.container}>
       <View style={[styles.headerContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }]}>
         <View>
-          <Text style={styles.tagline}>LIVE MATCHMAKING</Text>
-          <Text style={styles.title}>MATCH FEED</Text>
+          <Text style={styles.tagline}>FIND A GAME</Text>
+          <Text style={styles.title}>MATCHES</Text>
         </View>
         <Pressable style={styles.createMatchFab} onPress={() => router.push('/create-match')}>
           <Ionicons name="add" size={22} color={theme.onAccent} />
@@ -343,14 +343,14 @@ export default function MatchSearchScreen() {
           }}
         >
           <Ionicons name="list" size={14} color={activeTab === 'feed' ? '#FFF' : theme.textMuted} />
-          <Text style={[styles.tabButtonText, activeTab === 'feed' && styles.tabButtonTextActive]}>LIST VIEW</Text>
+          <Text style={[styles.tabButtonText, activeTab === 'feed' && styles.tabButtonTextActive]}>OPEN MATCHES</Text>
         </Pressable>
         <Pressable
           style={[styles.tabButton, activeTab === 'radar' && styles.tabButtonActive]}
           onPress={() => setActiveTab('radar')}
         >
           <Ionicons name="radio" size={14} color={activeTab === 'radar' ? '#FFF' : theme.textMuted} />
-          <Text style={[styles.tabButtonText, activeTab === 'radar' && styles.tabButtonTextActive]}>RADAR JOIN</Text>
+          <Text style={[styles.tabButtonText, activeTab === 'radar' && styles.tabButtonTextActive]}>QUICK MATCH</Text>
         </Pressable>
         <Pressable
           style={[styles.tabButton, activeTab === 'recent' && styles.tabButtonActive]}
@@ -477,9 +477,9 @@ export default function MatchSearchScreen() {
               <View style={styles.radarGraphicOuter}>
                 <Ionicons name="radio-outline" size={80} color="rgba(198, 255, 51, 0.15)" />
               </View>
-              <Text style={styles.radarStatusTitle}>AUTO-MATCHMAKER</Text>
+              <Text style={styles.radarStatusTitle}>Quick Match</Text>
               <Text style={styles.radarStatusDesc}>
-                Enter the live queue to find active courts and teammates matching your skill rating.
+                We'll look for an open court matching your skill level nearby.
               </Text>
               {joinError && <Text style={styles.joinErrorText}>{joinError}</Text>}
               <Pressable style={styles.radarButton} onPress={startQueue}>
@@ -508,17 +508,17 @@ export default function MatchSearchScreen() {
                   <Text style={styles.queueTimerText}>{formatTime(queueTime)}</Text>
                 </View>
               </View>
-              <Text style={[styles.radarStatusTitle, { color: theme.primary }]}>SEARCHING FOR MATCH...</Text>
+              <Text style={[styles.radarStatusTitle, { color: theme.primary }]}>Looking for a match...</Text>
               <Text style={styles.radarStatusDesc}>
-                Scanning local lobbies in {zone ? zone.toUpperCase() : 'YOUR ZONE'} matching {level ? LEVEL_LABELS[level].toUpperCase() : 'YOUR RATING'}...
+                Checking {zone ? zone : 'your area'} for courts matching {level ? LEVEL_LABELS[level] : 'your level'}.
               </Text>
               <Pressable style={styles.cancelButton} onPress={cancelQueue}>
-                <Text style={styles.cancelButtonText}>LEAVE QUEUE</Text>
+                <Text style={styles.cancelButtonText}>CANCEL</Text>
               </Pressable>
             </View>
           )}
 
-          {/* LoL Match Ready Popup Modal */}
+          {/* Match Ready Popup Modal */}
           <Modal
             visible={queueState === 'found' || queueState === 'accepted'}
             transparent={true}
@@ -527,20 +527,20 @@ export default function MatchSearchScreen() {
             <View style={styles.modalOverlay}>
               <View style={styles.lolModalCard}>
                 <View style={styles.lolGlowHeader} />
-                
-                <Ionicons 
-                  name={queueState === 'accepted' ? 'sparkles' : 'trophy-outline'} 
-                  size={42} 
-                  color={theme.primary} 
-                  style={{ alignSelf: 'center', marginBottom: 12 }} 
+
+                <Ionicons
+                  name={queueState === 'accepted' ? 'checkmark-circle' : 'tennisball-outline'}
+                  size={42}
+                  color={theme.primary}
+                  style={{ alignSelf: 'center', marginBottom: 12 }}
                 />
-                
+
                 <Text style={styles.lolTitle}>
-                  {queueState === 'accepted' ? 'MATCH ACCEPTED' : 'MATCH FOUND!'}
+                  {queueState === 'accepted' ? "You're in" : 'Match found'}
                 </Text>
-                
+
                 <Text style={styles.lolSubtitle}>
-                  {foundMatch ? foundMatch.location.toUpperCase() : 'MULTIPLAYER LOBBY'}
+                  {foundMatch ? foundMatch.location : 'Court details'}
                 </Text>
 
                 <View style={styles.lolDivider} />
@@ -549,12 +549,12 @@ export default function MatchSearchScreen() {
                 <View style={styles.lolMetaRow}>
                   <View style={styles.lolBadge}>
                     <Text style={styles.lolBadgeText}>
-                      {foundMatch ? LEVEL_LABELS[foundMatch.level].toUpperCase() : 'ALL LEVEL'}
+                      {foundMatch ? LEVEL_LABELS[foundMatch.level].toUpperCase() : 'ALL LEVELS'}
                     </Text>
                   </View>
                   <View style={[styles.lolBadge, { borderColor: theme.secondary }]}>
                     <Text style={[styles.lolBadgeText, { color: theme.secondary }]}>
-                      {foundMatch?.mode === 'pair' ? '2V2 DOUBLES' : '1V1 SINGLES'}
+                      {foundMatch?.mode === 'pair' ? 'DOUBLES' : 'SINGLES'}
                     </Text>
                   </View>
                 </View>
@@ -563,20 +563,20 @@ export default function MatchSearchScreen() {
                 <View style={styles.acceptGrid}>
                   {acceptedPlayers.map((accepted, idx) => (
                     <View key={idx} style={styles.playerSlotContainer}>
-                      <View 
+                      <View
                         style={[
-                          styles.playerSlotCircle, 
+                          styles.playerSlotCircle,
                           accepted ? styles.playerSlotCircleAccepted : styles.playerSlotCirclePending
                         ]}
                       >
-                        <Ionicons 
-                          name={accepted ? "checkmark" : "person"} 
-                          size={14} 
-                          color={accepted ? "#FFF" : theme.textMuted} 
+                        <Ionicons
+                          name={accepted ? "checkmark" : "person"}
+                          size={14}
+                          color={accepted ? "#FFF" : theme.textMuted}
                         />
                       </View>
                       <Text style={styles.playerSlotLabel}>
-                        {idx === 0 ? 'YOU' : `PLAYER 0${idx + 1}`}
+                        {idx === 0 ? 'YOU' : `Player ${idx + 1}`}
                       </Text>
                     </View>
                   ))}
@@ -585,13 +585,13 @@ export default function MatchSearchScreen() {
                 {/* Countdown Time Text */}
                 {queueState === 'found' && (
                   <Text style={styles.countdownText}>
-                    DECIDE IN <Text style={{ color: theme.primary, fontWeight: '900' }}>{countdownTime}S</Text>
+                    Respond within <Text style={{ color: theme.primary, fontWeight: '900' }}>{countdownTime}s</Text>
                   </Text>
                 )}
 
                 {queueState === 'accepted' && (
                   <Text style={styles.waitingText}>
-                    WAITING FOR OTHERS TO ACCEPT...
+                    Waiting for the other players to confirm...
                   </Text>
                 )}
 
@@ -600,16 +600,16 @@ export default function MatchSearchScreen() {
                   {queueState === 'found' ? (
                     <>
                       <Pressable style={styles.lolAcceptButton} onPress={acceptMatch}>
-                        <Text style={styles.lolAcceptButtonText}>ACCEPT</Text>
+                        <Text style={styles.lolAcceptButtonText}>JOIN</Text>
                       </Pressable>
                       <Pressable style={styles.lolDeclineButton} onPress={declineMatch}>
-                        <Text style={styles.lolDeclineButtonText}>DECLINE</Text>
+                        <Text style={styles.lolDeclineButtonText}>NOT NOW</Text>
                       </Pressable>
                     </>
                   ) : (
                     <View style={styles.lolAcceptedBadge}>
                       <ActivityIndicator size="small" color="#FFF" style={{ marginRight: 8 }} />
-                      <Text style={styles.lolAcceptedBadgeText}>LOBBY READYING...</Text>
+                      <Text style={styles.lolAcceptedBadgeText}>Confirming match...</Text>
                     </View>
                   )}
                 </View>

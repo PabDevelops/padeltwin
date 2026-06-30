@@ -468,7 +468,7 @@ export default function ProfileScreen() {
           />
 
           <Pressable style={styles.duoQueueLink} onPress={() => router.push('/pairs' as any)}>
-            <Text style={styles.duoQueueLinkText}>👥 DUO QUEUE — Manage your fixed pair</Text>
+            <Text style={styles.duoQueueLinkText}>👥 MY PAIR — Manage your fixed partner</Text>
             <Text style={styles.duoQueueLinkArrow}>{'>'}</Text>
           </Pressable>
 
