@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Link, useRouter } from 'expo-router';
+import { AntDesign } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
+import { signInWithGoogle } from '@/lib/googleAuth';
 import { theme, buttonRadius } from '@/constants/theme';
 
 export default function RegisterScreen() {
@@ -10,8 +12,17 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [focusedInput, setFocusedInput] = useState<'name' | 'email' | 'password' | null>(null);
+
+  async function handleGoogleRegister() {
+    setError(null);
+    setGoogleLoading(true);
+    const { error } = await signInWithGoogle();
+    setGoogleLoading(false);
+    if (error) setError(error);
+  }
 
   async function handleRegister() {
     setError(null);
@@ -98,6 +109,27 @@ export default function RegisterScreen() {
           </Pressable>
         </View>
 
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>OR</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <Pressable
+          style={({ pressed }) => [styles.googleButton, pressed && { opacity: 0.85 }, googleLoading && { opacity: 0.6 }]}
+          onPress={handleGoogleRegister}
+          disabled={googleLoading || loading}
+        >
+          {googleLoading ? (
+            <ActivityIndicator color={theme.text} />
+          ) : (
+            <>
+              <AntDesign name="google" size={18} color="#EA4335" />
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </>
+          )}
+        </Pressable>
+
         <Link href="/(auth)/login" style={styles.link}>
           Already have an account? <Text style={styles.linkHighlight}>Log in</Text>
         </Link>
@@ -151,6 +183,16 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: theme.onAccent, fontSize: 14,  textTransform: 'uppercase', letterSpacing: 0.8},
   error: { color: theme.danger,  fontSize: 12, textAlign: 'center', textTransform: 'uppercase'},
-  link: { textAlign: 'center', marginTop: 28, color: theme.textMuted, fontSize: 13, fontWeight: '700' },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 20 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: theme.border },
+  dividerText: { color: theme.textMuted, fontSize: 11, fontWeight: '700', letterSpacing: 1 },
+  googleButton: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    borderWidth: 1, borderColor: theme.border, borderRadius: buttonRadius,
+    padding: 14, backgroundColor: theme.card,
+  },
+
+  googleButtonText: { color: theme.text, fontSize: 14, fontWeight: '700' },
+  link: { textAlign: 'center', marginTop: 24, color: theme.textMuted, fontSize: 13, fontWeight: '700' },
   linkHighlight: { color: theme.primary, fontWeight: '900' },
 });

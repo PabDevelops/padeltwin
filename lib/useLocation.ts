@@ -3,6 +3,26 @@ import * as Location from 'expo-location';
 
 export type DetectedLocation = { city: string | null; country: string | null };
 
+const SCOTLAND_PREFIXES = new Set(['AB','DD','DG','EH','FK','G','HS','IV','KA','KW','KY','ML','PA','PH','TD','ZE']);
+const WALES_PREFIXES    = new Set(['CF','LD','LL','NP','SA']);
+
+function ukNationFromPostcode(postcode: string | null | undefined): string {
+  const prefix = (postcode ?? '').toUpperCase().match(/^([A-Z]{1,2})/)?.[1] ?? '';
+  if (prefix === 'BT') return 'Northern Ireland';
+  if (SCOTLAND_PREFIXES.has(prefix)) return 'Scotland';
+  if (WALES_PREFIXES.has(prefix)) return 'Wales';
+  return 'England';
+}
+
+function resolveCountry(place: Location.LocationGeocodedAddress): string | null {
+  const raw = place.country ?? null;
+  if (!raw) return null;
+  if (place.isoCountryCode === 'GB' || raw === 'United Kingdom') {
+    return ukNationFromPostcode(place.postalCode);
+  }
+  return raw;
+}
+
 export function useDetectCity() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +44,7 @@ export function useDetectCity() {
       });
 
       const city = place?.city ?? place?.subregion ?? place?.region ?? null;
-      const country = place?.country ?? null;
+      const country = place ? resolveCountry(place) : null;
 
       if (!city || !country) {
         setError('Could not determine your city. Make sure GPS is on and try again.');
@@ -68,7 +88,7 @@ export function useDetectCity() {
       });
 
       const city = place?.city ?? place?.subregion ?? place?.region ?? null;
-      const country = place?.country ?? null;
+      const country = place ? resolveCountry(place) : null;
 
       if (!city || !country) {
         setError('Could not match that to a city. Try a different name.');

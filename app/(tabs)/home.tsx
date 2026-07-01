@@ -1,7 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View, Image, Dimensions } from 'react-native';
+import { useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import * as d3 from 'd3-shape';
 import { useSession } from '@/lib/useSession';
@@ -9,757 +19,385 @@ import {
   useProfile,
   useMyStats,
   useRecentResults,
-  useLeaderboard,
   useMyUpcomingMatches,
   usePartnerRequests,
   useActivityFeed,
-  useFollowing,
-  useFollowPlayer,
-  useCompatiblePlayers,
-  useToggleVib,
-  useDeletePost,
   useScrimIndex,
   scrimIndexLabel,
+  useToggleVib,
+  useDeletePost,
   type FeedItem,
 } from '@/lib/queries';
-import { ACHIEVEMENT_LABELS, ACHIEVEMENT_ICONS } from '@/constants/achievements';
-import type { MatchResultWithProfiles, Profile } from '@/types/database';
 import { theme, cardRadius } from '@/constants/theme';
 import { ELO_PROVISIONAL_MATCHES } from '@/constants/elo';
-import { ProBadge } from '@/components/ProBadge';
-import { CoachBadge } from '@/components/CoachBadge';
-import { Card } from '@/components/Card';
 import { MatchCard } from '@/components/MatchCard';
 import { PostDetailModal } from '@/components/PostDetailModal';
 import { PostRadialMenu } from '@/components/PostRadialMenu';
 import type { PostCardData } from '@/lib/queries';
-import { AppButton } from '@/components/AppButton';
+import type { MatchResultWithProfiles } from '@/types/database';
+import { ACHIEVEMENT_LABELS, ACHIEVEMENT_ICONS } from '@/constants/achievements';
 
-function didWin(result: MatchResultWithProfiles, userId: string) {
-  const inTeamA = result.team_a_player1 === userId || result.team_a_player2 === userId;
-  return (inTeamA && result.winner === 'a') || (!inTeamA && result.winner === 'b');
+const { width: SW } = Dimensions.get('window');
+
+function didWin(r: MatchResultWithProfiles, uid: string) {
+  const inA = r.team_a_player1 === uid || r.team_a_player2 === uid;
+  return (inA && r.winner === 'a') || (!inA && r.winner === 'b');
 }
 
-function opponents(result: MatchResultWithProfiles, userId: string) {
-  const inTeamA = result.team_a_player1 === userId || result.team_a_player2 === userId;
-  const rivals = inTeamA
-    ? [result.team_b_player1_profile, result.team_b_player2_profile]
-    : [result.team_a_player1_profile, result.team_a_player2_profile];
-  return rivals.map((p) => p?.full_name ?? 'Player').join(' / ');
+function scoreStr(r: MatchResultWithProfiles) {
+  return r.sets.map((s) => `${s.a}-${s.b}`).join('  ');
 }
 
-function teamLabel(p1: MatchResultWithProfiles['team_a_player1_profile'], p2: typeof p1) {
+function oppName(r: MatchResultWithProfiles, uid: string) {
+  const inA = r.team_a_player1 === uid || r.team_a_player2 === uid;
+  const rivals = inA
+    ? [r.team_b_player1_profile, r.team_b_player2_profile]
+    : [r.team_a_player1_profile, r.team_a_player2_profile];
+  return rivals.map((p) => p?.full_name?.split(' ')[0] ?? 'Player').join(' & ');
+}
+
+function teamLabel(
+  p1: MatchResultWithProfiles['team_a_player1_profile'],
+  p2: typeof p1
+) {
   return [p1?.full_name, p2?.full_name].filter(Boolean).join(' & ') || 'Players';
 }
 
-function scoreline(result: MatchResultWithProfiles) {
-  return result.sets.map((s) => `${s.a}-${s.b}`).join(', ');
-}
-
-function formatRelativeTime(dateString: string) {
-  const now = new Date();
-  const past = new Date(dateString);
-  const diffMs = now.getTime() - past.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
+function timeAgo(d: string) {
+  const diff = (Date.now() - new Date(d).getTime()) / 1000;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+  return `${Math.floor(diff / 86400)}d`;
 }
 
 export default function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { session } = useSession();
-  const userId = session?.user.id;
-  const { data: profile } = useProfile(userId);
-  const { data: scrimIndex } = useScrimIndex(userId);
-  const [scrimInfoOpen, setScrimInfoOpen] = useState(false);
+  const uid = session?.user.id;
+
+  const { data: profile } = useProfile(uid);
+  const { data: stats } = useMyStats(uid);
+  const { data: results, isLoading: resultsLoading } = useRecentResults(uid, 20);
+  const { data: upcoming } = useMyUpcomingMatches(uid);
+  const { data: requests } = usePartnerRequests(uid);
+  const { data: feed, isLoading: feedLoading } = useActivityFeed(uid, 20);
+  const { data: scrimIndex } = useScrimIndex(uid);
+  const toggleVib = useToggleVib();
+  const deletePost = useDeletePost();
+
   const [viewingPost, setViewingPost] = useState<PostCardData | null>(null);
   const [radialPost, setRadialPost] = useState<PostCardData | null>(null);
-  const deletePost = useDeletePost();
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const { data: stats, isLoading: statsLoading } = useMyStats(userId);
-  const { data: realRecentResults } = useRecentResults(userId, 100);
-  const { data: leaderboard, isLoading: leaderboardLoading } = useLeaderboard(profile?.zone);
-  const { data: upcomingMatches, isLoading: upcomingLoading } = useMyUpcomingMatches(userId);
-  const { data: partnerRequests } = usePartnerRequests(userId);
-  const { data: realActivityFeed, isLoading: feedLoading } = useActivityFeed(userId, 5);
 
-  const displayResults = realRecentResults ?? [];
-  const activityFeed = realActivityFeed ?? [];
-  const { data: following } = useFollowing(userId);
-  const { data: compatiblePlayers } = useCompatiblePlayers(userId, profile);
-  const followPlayer = useFollowPlayer();
-  const toggleVib = useToggleVib();
-  const pendingRequestsCount = (partnerRequests ?? []).filter((r) => r.status === 'pending' && r.to_id === userId).length;
+  const pendingRequests = (requests ?? []).filter(
+    (r) => r.status === 'pending' && r.to_id === uid
+  ).length;
 
-  const actualElo = profile?.elo ?? 1200;
-  const actualScrim = scrimIndex;
+  const recentResults = results ?? [];
+  const nextMatch = upcoming?.[0] ?? null;
+  const activityFeed = feed ?? [];
 
-  const suggestedFollows: Profile[] = (compatiblePlayers ?? [])
-    .filter((p) => !following?.has(p.id))
-    .sort((a, b) => b.elo - a.elo)
-    .slice(0, 6);
-
-  function handleToggleVib(item: FeedItem) {
-    if (!userId) return;
-    toggleVib.mutate({ profileId: userId, itemType: item.kind, itemId: item.id, currentlyVibbed: item.vibbedByMe });
-  }
-
-  function handleQuickFollow(followedId: string) {
-    if (!userId) return;
-    followPlayer.mutate({ followerId: userId, followedId });
-  }
-
-
-  const currentElo = actualElo;
-  const historyPoints: number[] = [currentElo];
-  if (userId && displayResults) {
-    let tempElo = currentElo;
-    const delta = 15; // standard Elo step per match
-    for (let i = 0; i < displayResults.length; i++) {
-      const res = displayResults[i];
-      const won = didWin(res, userId);
-      if (won) {
-        tempElo -= delta;
-      } else {
-        tempElo += delta;
-      }
-      historyPoints.push(tempElo);
-    }
-  }
-
-  // Reverse so historyPoints flows chronologically (oldest to newest)
-  historyPoints.reverse();
-
-  // Pad to ensure we have exactly 10 elements for the chart bars
-  while (historyPoints.length < 10) {
-    const first = historyPoints[0] ?? 1200;
-    historyPoints.unshift(first);
-  }
-
-  const last10Points = historyPoints.slice(-10);
-  const minElo = Math.min(...last10Points);
-  const maxElo = Math.max(...last10Points);
-  const eloRange = maxElo - minElo || 1;
-
-  const screenWidth = Dimensions.get('window').width;
-  const chartWidth = screenWidth - 180;
-  const chartHeight = 40;
-  
-  const linePath = d3.line<number>()
-    .x((d, i) => (i / (last10Points.length - 1)) * chartWidth)
-    .y((d) => chartHeight - ((d - minElo) / eloRange) * (chartHeight - 4) - 2)
-    .curve(d3.curveMonotoneX)(last10Points);
-
-  const areaPath = d3.area<number>()
-    .x((d, i) => (i / (last10Points.length - 1)) * chartWidth)
-    .y0(chartHeight)
-    .y1((d) => chartHeight - ((d - minElo) / eloRange) * (chartHeight - 4) - 2)
-    .curve(d3.curveMonotoneX)(last10Points);
-
-  const eloDiff = last10Points[last10Points.length - 1] - last10Points[0];
-  const isPositiveTrend = eloDiff >= 0;
-  const trendColor = isPositiveTrend ? theme.accent : '#FF3B30'; // theme.accent for up, standard red for down
-
-  // Calculate Streak
+  // ── Streak ──
   let streak = 0;
-  let streakType: 'W' | 'L' | null = null;
-  if (userId && displayResults && displayResults.length > 0) {
-    for (let i = 0; i < displayResults.length; i++) {
-      const won = didWin(displayResults[i], userId);
-      if (i === 0) {
-        streakType = won ? 'W' : 'L';
-        streak = 1;
-      } else {
-        const currentType = won ? 'W' : 'L';
-        if (currentType === streakType) {
-          streak++;
-        } else {
-          break;
-        }
-      }
+  let streakWin = true;
+  for (let i = 0; i < recentResults.length; i++) {
+    const w = didWin(recentResults[i], uid!);
+    if (i === 0) { streakWin = w; streak = 1; }
+    else if (w === streakWin) streak++;
+    else break;
+  }
+
+  // ── Trend line (last 10 ELO points reconstructed) ──
+  const elo = profile?.elo ?? 1200;
+  const pts: number[] = [elo];
+  if (uid) {
+    for (const r of recentResults.slice(0, 9)) {
+      pts.push(pts[pts.length - 1] + (didWin(r, uid) ? -15 : 15));
     }
   }
+  pts.reverse();
+  const hasChart = pts.length > 1;
+  const minP = Math.min(...pts), maxP = Math.max(...pts), range = maxP - minP || 1;
+  const CW = SW - 180, CH = 44;
+  const n = pts.length - 1 || 1; // guard against /0
+  const line = hasChart ? d3.line<number>()
+    .x((_, i) => (i / n) * CW)
+    .y((d) => CH - ((d - minP) / range) * (CH - 4) - 2)
+    .curve(d3.curveMonotoneX)(pts) : null;
+  const area = hasChart ? d3.area<number>()
+    .x((_, i) => (i / n) * CW)
+    .y0(CH).y1((d) => CH - ((d - minP) / range) * (CH - 4) - 2)
+    .curve(d3.curveMonotoneX)(pts) : null;
+  const diff = hasChart ? pts[pts.length - 1] - pts[0] : 0;
+  const trendUp = diff >= 0;
+  const trendColor = trendUp ? theme.accent : theme.danger;
 
-  // Longest win streak within the loaded match history
-  let bestWinStreak = 0;
-  if (userId && displayResults && displayResults.length > 0) {
-    let run = 0;
-    for (let i = 0; i < displayResults.length; i++) {
-      if (didWin(displayResults[i], userId)) {
-        run++;
-        bestWinStreak = Math.max(bestWinStreak, run);
-      } else {
-        run = 0;
-      }
-    }
-  }
-
-  // Find next upcoming match
-  const nextMatch = upcomingMatches && upcomingMatches.length > 0 ? upcomingMatches[0] : null;
-  
-  // Calculate win probability for the next match
-  let winProb = 50;
-  if (profile && nextMatch) {
-    const nextMatchPlayers = nextMatch.match_players ?? [];
-    const otherElos = nextMatchPlayers
-      .map((p: any) => p.profiles?.elo)
-      .filter((e: any) => typeof e === 'number' && e > 0);
-    if (otherElos.length > 0) {
-      const avgOtherElo = otherElos.reduce((a: number, b: number) => a + b, 0) / otherElos.length;
-      const diff = (profile.elo ?? 1200) - avgOtherElo;
-      winProb = Math.max(20, Math.min(80, Math.round(50 + diff / 8)));
-    }
-  }
-
-  const playedCount = stats?.played ?? 0;
-  const isCalibrating = playedCount < ELO_PROVISIONAL_MATCHES;
-
-  // Rank Label (used by the trophy badge in the PS Score hero)
-  let rankLabel = leaderboardLoading ? '—' : 'UNRANKED';
-  if (isCalibrating) {
-    rankLabel = "UNRANKED";
-  } else if (leaderboard && profile) {
-    const userIdx = leaderboard.findIndex((p) => p.id === userId);
-    if (userIdx !== -1) {
-      rankLabel = `#${userIdx + 1} REG`;
-    } else {
-      const topElo = leaderboard[0]?.elo ?? 1500;
-      const userElo = profile.elo ?? 1200;
-      const ratio = userElo / topElo;
-      if (ratio >= 0.95) rankLabel = "TOP 5%";
-      else if (ratio >= 0.90) rankLabel = "TOP 10%";
-      else if (ratio >= 0.80) rankLabel = "TOP 15%";
-      else rankLabel = "TOP 50%";
-    }
-  }
-
-  // Weekly activity bars (last 8 weeks, oldest → newest)
-  const weeklyBars = Array.from({ length: 8 }, () => ({ wins: 0, losses: 0 }));
-  if (userId && displayResults) {
-    const now = Date.now();
-    const weekMs = 7 * 24 * 60 * 60 * 1000;
-    for (const r of displayResults) {
-      const weeksAgo = Math.floor((now - new Date(r.created_at).getTime()) / weekMs);
-      if (weeksAgo < 8) {
-        const idx = 7 - weeksAgo;
-        if (didWin(r, userId)) weeklyBars[idx].wins++;
-        else weeklyBars[idx].losses++;
-      }
-    }
-  }
-  const maxWeekTotal = Math.max(...weeklyBars.map(w => w.wins + w.losses), 1);
-
-  // This month vs last month
-  const nowDate = new Date();
-  let thisMonthMatches = 0, thisMonthWins = 0, lastMonthMatches = 0;
-  if (userId && displayResults) {
-    const m = nowDate.getMonth(), y = nowDate.getFullYear();
-    const lm = m === 0 ? 11 : m - 1;
-    const ly = m === 0 ? y - 1 : y;
-    for (const r of displayResults) {
-      const d = new Date(r.created_at);
-      if (d.getMonth() === m && d.getFullYear() === y) {
-        thisMonthMatches++;
-        if (didWin(r, userId)) thisMonthWins++;
-      } else if (d.getMonth() === lm && d.getFullYear() === ly) {
-        lastMonthMatches++;
-      }
-    }
-  }
-  const monthDelta = thisMonthMatches - lastMonthMatches;
-
-  // Most active day of week
-  const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const dayCounts = [0, 0, 0, 0, 0, 0, 0];
-  if (userId && displayResults) {
-    for (const r of displayResults) dayCounts[new Date(r.created_at).getDay()]++;
-  }
-  const mostActiveDay = dayCounts.every(c => c === 0) ? '—' : DAY_NAMES[dayCounts.indexOf(Math.max(...dayCounts))];
+  const firstName = profile?.full_name?.split(' ')[0] ?? 'Player';
+  const played = stats?.played ?? 0;
+  const isCalibrating = played < ELO_PROVISIONAL_MATCHES;
 
   return (
-    <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.container}>
+    <ScrollView
+      style={styles.root}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}
+      showsVerticalScrollIndicator={false}
+    >
 
-      {/* Partner Requests Alert Notification */}
-      {pendingRequestsCount > 0 && (
-        <Pressable onPress={() => router.push('/profile')}>
-          {({ pressed }) => (
-            <Card style={[styles.partnerAlertBanner, pressed && { opacity: 0.95 }]} contentStyle={styles.partnerAlertContent}>
-              <View style={styles.partnerAlertLeft}>
-                <Ionicons name="people" size={18} color={theme.secondary} />
-                <Text style={styles.partnerAlertText}>
-                  ⚡ {pendingRequestsCount} PENDING PARTNER REQUEST{pendingRequestsCount > 1 ? 'S' : ''}
+      {/* ── HEADER ── */}
+      <View style={styles.header}>
+        <Pressable style={styles.headerLeft} onPress={() => router.push('/(tabs)/profile')}>
+          {profile?.avatar_url ? (
+            <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Ionicons name="person" size={18} color={theme.textMuted} />
+            </View>
+          )}
+          <View>
+            <Text style={styles.greeting}>Hey,</Text>
+            <Text style={styles.name}>{firstName}</Text>
+          </View>
+        </Pressable>
+
+        <Pressable style={styles.bellBtn} onPress={() => router.push('/profile')}>
+          <Ionicons name="notifications-outline" size={22} color={theme.text} />
+          {pendingRequests > 0 && <View style={styles.bellDot} />}
+        </Pressable>
+      </View>
+
+      {/* ── PS SCORE CARD ── */}
+      <View style={styles.scoreCard}>
+        <View style={styles.scoreLeft}>
+          <Text style={styles.scoreLabel}>PS SCORE</Text>
+          <Text style={styles.scoreValue}>{elo}</Text>
+          <View style={styles.scoreFooter}>
+            {streak > 0 && (
+              <View style={[styles.streakPill, { backgroundColor: streakWin ? `${theme.accent}22` : `${theme.danger}22`, borderColor: streakWin ? theme.accent : theme.danger }]}>
+                <Text style={[styles.streakText, { color: streakWin ? theme.accent : theme.danger }]}>
+                  {streak}{streakWin ? 'W' : 'L'} streak
                 </Text>
               </View>
-              <View style={styles.partnerAlertRight}>
-                <Text style={styles.partnerAlertActionText}>REVIEW</Text>
-                <Ionicons name="chevron-forward" size={14} color={theme.secondary} style={{ marginLeft: 2 }} />
-              </View>
-            </Card>
+            )}
+            {isCalibrating ? (
+              <Text style={styles.calibratingText}>{played}/{ELO_PROVISIONAL_MATCHES} calibrating</Text>
+            ) : (
+              <Text style={styles.winRateText}>{stats?.winRate ?? 0}% win rate</Text>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.scoreRight}>
+          {line && area && (
+            <Svg width={CW} height={CH} viewBox={`0 0 ${CW} ${CH}`}>
+              <Defs>
+                <LinearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0%" stopColor={trendColor} stopOpacity={0.35} />
+                  <Stop offset="100%" stopColor={trendColor} stopOpacity={0} />
+                </LinearGradient>
+              </Defs>
+              <Path d={area} fill="url(#grad)" />
+              <Path d={line} stroke={trendColor} strokeWidth={2} fill="none" />
+            </Svg>
           )}
+          <Text style={[styles.trendLabel, { color: trendColor }]}>
+            {trendUp ? '+' : ''}{diff} PS
+          </Text>
+          {scrimIndex != null && (
+            <View style={styles.scrimRow}>
+              <Text style={styles.scrimLabel}>FORM</Text>
+              <Text style={[styles.scrimValue, { color: scrimIndex >= 7 ? theme.success : scrimIndex >= 5 ? theme.accent : theme.danger }]}>
+                {scrimIndex.toFixed(1)}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* ── ACCIONES RÁPIDAS ── */}
+      <View style={styles.quickActions}>
+        <Pressable style={({ pressed }) => [styles.qaBtn, pressed && { opacity: 0.8 }]} onPress={() => router.push('/create-match' as any)}>
+          <Ionicons name="add-circle-outline" size={20} color={theme.accent} />
+          <Text style={styles.qaBtnText}>New match</Text>
+        </Pressable>
+        <Pressable style={({ pressed }) => [styles.qaBtn, pressed && { opacity: 0.8 }]} onPress={() => router.push('/(tabs)/partners' as any)}>
+          <Ionicons name="people-outline" size={20} color={theme.accent} />
+          <Text style={styles.qaBtnText}>Find partner</Text>
+        </Pressable>
+        <Pressable style={({ pressed }) => [styles.qaBtn, pressed && { opacity: 0.8 }]} onPress={() => router.push('/coaches' as any)}>
+          <Ionicons name="school-outline" size={20} color={theme.accent} />
+          <Text style={styles.qaBtnText}>Coaches</Text>
+        </Pressable>
+      </View>
+
+      {/* ── PRÓXIMO PARTIDO ── */}
+      {nextMatch && (
+        <Pressable
+          style={({ pressed }) => [styles.nextMatchCard, pressed && { opacity: 0.85 }]}
+          onPress={() => router.push(`/match/${nextMatch.id}` as any)}
+        >
+          <View style={styles.nextMatchTop}>
+            <View style={styles.nextMatchBadge}>
+              <Text style={styles.nextMatchBadgeText}>NEXT MATCH</Text>
+            </View>
+            <Text style={styles.nextMatchDate}>
+              {new Date(nextMatch.date_time).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase()}
+              {' · '}
+              {new Date(nextMatch.date_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </View>
+          <Text style={styles.nextMatchLocation}>{nextMatch.location}</Text>
+          <View style={styles.nextMatchFooter}>
+            <Ionicons name="people-outline" size={13} color={theme.textMuted} />
+            <Text style={styles.nextMatchPlayers}>
+              {nextMatch.match_players?.length ?? 0}/{nextMatch.max_players ?? 4} players
+            </Text>
+          </View>
         </Pressable>
       )}
 
-      {/* Next Match Deployment Widget */}
-      {upcomingLoading ? (
-        <ActivityIndicator color={theme.primary} style={{ marginVertical: 10 }} />
-      ) : nextMatch ? (
-        <Pressable onPress={() => router.push(`/match/${nextMatch.id}`)}>
-          {({ pressed }) => (
-            <Card style={[styles.nextMatchCard, pressed && { opacity: 0.9 }]}>
-              <View style={styles.nextMatchHeader}>
-                <Text style={styles.nextMatchTag}>⚡ NEXT MATCH</Text>
-                <View style={[styles.gridBadge, { backgroundColor: 'rgba(198, 255, 51, 0.15)', marginTop: 0 }]}>
-                  <Text style={[styles.gridBadgeText, { color: theme.primary }]}>CONFIRMED</Text>
-                </View>
-              </View>
-              <Text style={styles.nextMatchLocation}>{nextMatch.location}</Text>
-              <Text style={styles.nextMatchTime}>
-                📅 {new Date(nextMatch.date_time).toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short' }).toUpperCase()} • {new Date(nextMatch.date_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-              </Text>
-              <View style={styles.nextMatchFooter}>
-                <Text style={styles.nextMatchProbability}>
-                  WIN PROBABILITY: <Text style={{ color: '#fff', fontWeight: '900' }}>{winProb}%</Text>
-                </Text>
-                <Text style={styles.nextMatchRosterText}>
-                  PLAYERS: <Text style={{ color: '#fff', fontWeight: '900' }}>{(nextMatch.match_players?.length ?? 0)}/{(nextMatch.max_players ?? 4)} SIGNED UP</Text>
-                </Text>
-              </View>
-            </Card>
-          )}
-        </Pressable>
-      ) : null}
-
-      {/* PS Score Hero Carousel */}
-      <View style={{ marginBottom: 8, height: 200, position: 'relative' }}>
-        <Animated.ScrollView 
-          horizontal 
-          pagingEnabled 
-          showsHorizontalScrollIndicator={false} 
-          decelerationRate="fast"
-          snapToInterval={screenWidth}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-            { useNativeDriver: false }
-          )}
-          scrollEventThrottle={16}
-        >
-          {/* Slide 1: Score & Trend Chart */}
-          <Animated.View style={{ 
-            width: screenWidth, 
-            height: '100%',
-            opacity: scrollX.interpolate({
-              inputRange: [-screenWidth, 0, screenWidth],
-              outputRange: [0.5, 1, 0.5],
-              extrapolate: 'clamp'
-            }),
-            transform: [{
-              scale: scrollX.interpolate({
-                inputRange: [-screenWidth, 0, screenWidth],
-                outputRange: [0.9, 1, 0.9],
-                extrapolate: 'clamp'
-              })
-            }]
-          }}>
-            <Card style={[styles.heroCard, { borderLeftWidth: 4, borderLeftColor: theme.primary, flex: 1 }]}>
-              <View style={styles.heroHeader}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.heroLabel}>PS SCORE (LONG TERM)</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                    <Text style={styles.eloScore}>{actualElo}</Text>
-                    
-                    {linePath && areaPath && (
-                      <View style={{ marginLeft: 16, flex: 1, height: chartHeight }}>
-                        <Svg width="100%" height={chartHeight} preserveAspectRatio="none" viewBox={`0 0 ${chartWidth} ${chartHeight}`}>
-                          <Defs>
-                            <LinearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
-                              <Stop offset="0%" stopColor={trendColor} stopOpacity={0.4} />
-                              <Stop offset="100%" stopColor={trendColor} stopOpacity={0} />
-                            </LinearGradient>
-                          </Defs>
-                          <Path d={areaPath} fill="url(#fade)" />
-                          <Path d={linePath} stroke={trendColor} strokeWidth={2} fill="none" />
-                        </Svg>
-                        <Text style={{ position: 'absolute', right: 0, bottom: -16, color: trendColor, fontSize: 10, fontWeight: '700' }}>
-                          {isPositiveTrend ? '+' : ''}{eloDiff} PS
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </View>
-
-              <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <View style={styles.rankBadge}>
-                  <Ionicons name="trophy-outline" size={12} color={theme.accent} />
-                  <Text style={styles.rankBadgeText}>{rankLabel}</Text>
-                </View>
-                <Text style={{ color: theme.textMuted, fontSize: 10, fontWeight: '600', letterSpacing: 0.5 }}>
-                  {stats?.played ?? 0} MATCHES
-                </Text>
-              </View>
-            </Card>
-          </Animated.View>
-
-          {/* Slide 2: Claude Code Style Dashboard */}
-          <Animated.View style={{ 
-            width: screenWidth, 
-            height: '100%',
-            opacity: scrollX.interpolate({
-              inputRange: [0, screenWidth, screenWidth * 2],
-              outputRange: [0.5, 1, 0.5],
-              extrapolate: 'clamp'
-            }),
-            transform: [{
-              scale: scrollX.interpolate({
-                inputRange: [0, screenWidth, screenWidth * 2],
-                outputRange: [0.9, 1, 0.9],
-                extrapolate: 'clamp'
-              })
-            }]
-          }}>
-            <Card style={[styles.heroCard, { flex: 1 }]}>
-              {/* Month summary */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <View>
-                  <Text style={styles.heroLabel}>THIS MONTH</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 2 }}>
-                    <Text style={[styles.eloScore, { fontSize: 24 }]}>{thisMonthMatches}</Text>
-                    <Text style={{ color: theme.textMuted, fontSize: 13, fontWeight: '600' }}>matches</Text>
-                  </View>
-                  <Text style={{ color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 2, letterSpacing: 0.5 }}>
-                    {thisMonthWins}W · {thisMonthMatches - thisMonthWins}L{thisMonthMatches > 0 ? ` · ${Math.round((thisMonthWins / thisMonthMatches) * 100)}%` : ''}
-                  </Text>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.heroLabel}>VS LAST MONTH</Text>
-                  <Text style={{ fontSize: 22, fontFamily: 'Anton_400Regular', color: monthDelta >= 0 ? theme.accent : '#FF3B30', marginTop: 2 }}>
-                    {monthDelta > 0 ? '+' : ''}{monthDelta}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Weekly activity bars */}
-              <View style={[styles.weeklyBarsContainer, { marginTop: 8 }]}>
-                {weeklyBars.map((week, i) => {
-                  const total = week.wins + week.losses;
-                  const barH = total > 0 ? Math.max(5, Math.round((total / maxWeekTotal) * 32)) : 0;
-                  const winH = total > 0 ? Math.round((week.wins / total) * barH) : 0;
-                  const lossH = barH - winH;
-                  return (
-                    <View key={i} style={styles.weeklyBarCol}>
-                      <View style={{ height: 32, justifyContent: 'flex-end' }}>
-                        {total > 0 ? (
-                          <View style={{ height: barH, borderRadius: 3, overflow: 'hidden' }}>
-                            <View style={{ height: winH, backgroundColor: theme.accent }} />
-                            <View style={{ height: lossH, backgroundColor: '#2A2A2E' }} />
-                          </View>
-                        ) : (
-                          <View style={{ height: 2, borderRadius: 1, backgroundColor: '#1C1C1F' }} />
-                        )}
-                      </View>
-                      <Text style={[styles.weeklyBarLabel, i === 7 ? { color: theme.accent } : {}]}>
-                        {i === 7 ? 'NOW' : i === 0 ? '-7W' : ''}
-                      </Text>
-                    </View>
-                  );
-                })}
-              </View>
-
-              <View style={[styles.divider, { marginVertical: 6, backgroundColor: '#222' }]} />
-
-              {/* Personal records */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <View style={styles.prItem}>
-                  <Text style={styles.prLabel}>PEAK PS</Text>
-                  <Text style={styles.prValue}>{maxElo}</Text>
-                </View>
-                <View style={[styles.prItem, { alignItems: 'center' }]}>
-                  <Text style={styles.prLabel}>BEST STREAK</Text>
-                  <Text style={styles.prValue}>{bestWinStreak > 0 ? `${bestWinStreak}W` : '—'}</Text>
-                </View>
-                <View style={[styles.prItem, { alignItems: 'flex-end' }]}>
-                  <Text style={styles.prLabel}>MOST ACTIVE DAY</Text>
-                  <Text style={styles.prValue}>{mostActiveDay}</Text>
-                </View>
-              </View>
-            </Card>
-          </Animated.View>
-        </Animated.ScrollView>
-        
-        {/* Pagination Dots — overlaid inside the carousel card, not below it */}
-        <View style={styles.paginationDots} pointerEvents="none">
-          <View style={styles.paginationDotsPill}>
-            <Animated.View
-              style={[
-                styles.dot,
-                {
-                  width: scrollX.interpolate({
-                    inputRange: [-screenWidth, 0, screenWidth],
-                    outputRange: [6, 16, 6],
-                    extrapolate: 'clamp'
-                  }),
-                  backgroundColor: scrollX.interpolate({
-                    inputRange: [-screenWidth, 0, screenWidth],
-                    outputRange: [theme.border, theme.primary, theme.border],
-                    extrapolate: 'clamp'
-                  })
-                }
-              ]}
-            />
-            <Animated.View
-              style={[
-                styles.dot,
-                {
-                  width: scrollX.interpolate({
-                    inputRange: [0, screenWidth, screenWidth * 2],
-                    outputRange: [6, 16, 6],
-                    extrapolate: 'clamp'
-                  }),
-                  backgroundColor: scrollX.interpolate({
-                    inputRange: [0, screenWidth, screenWidth * 2],
-                    outputRange: [theme.border, theme.primary, theme.border],
-                    extrapolate: 'clamp'
-                  })
-                }
-              ]}
-            />
-          </View>
-        </View>
-      </View>
-
-      {/* Scrim Index */}
-      <Card style={{ borderLeftWidth: 3, borderLeftColor: theme.accent }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={styles.heroLabel}>SCRIM INDEX (CURRENT FORM)</Text>
-              <Pressable onPress={() => setScrimInfoOpen((v) => !v)}>
-                <Ionicons name="information-circle-outline" size={12} color={theme.textMuted} />
-              </Pressable>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12, marginTop: 4 }}>
-              <Text style={[styles.eloScore, { fontSize: 32 }]}>{actualScrim == null ? '—' : actualScrim.toFixed(1)}</Text>
-              {userId && displayResults && (
-                <View style={{ flexDirection: 'row', gap: 4, marginBottom: 8 }}>
-                  {displayResults.slice(0, 5).reverse().map((m: any, i: number) => (
-                    <View key={m.id || i} style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: didWin(m, userId) ? theme.primary : '#22242E' }} />
-                  ))}
-                </View>
-              )}
-            </View>
-          </View>
-          <View style={[styles.gridBadge, { backgroundColor: 'rgba(198, 255, 51, 0.12)', marginTop: 0 }]}>
-            <Text style={[styles.gridBadgeText, { color: theme.accent, fontSize: 10 }]}>
-              {actualScrim == null ? 'NO FORM YET' : scrimIndexLabel(actualScrim)}
-            </Text>
-          </View>
-        </View>
-        {scrimInfoOpen && (
-          <Text style={[styles.scrimInfoText, { marginTop: 10 }]}>
-            Your Scrim Index is your form RIGHT NOW (1.0–10.0), based on your last 5 confirmed matches.
-          </Text>
-        )}
-      </Card>
-
-
-      <View style={styles.feedSectionHeader}>
-        <Text style={[styles.sectionTitle, { marginBottom: 0, paddingHorizontal: 0 }]}>ACTIVITY FEED</Text>
-        <Pressable style={styles.newPostBtn} onPress={() => router.push('/post/new' as any)}>
-          <Ionicons name="add" size={14} color={theme.onAccent} />
-          <Text style={styles.newPostBtnText}>POST</Text>
-        </Pressable>
-      </View>
-      {feedLoading ? (
-        <ActivityIndicator color={theme.primary} style={{ marginTop: 12 }} />
-      ) : activityFeed && activityFeed.length > 0 ? (
-        <Card style={styles.feedContainer} contentStyle={{ paddingVertical: 4 }}>
-          {activityFeed.map((item) => {
-            if (item.kind === 'post') {
+      {/* ── ÚLTIMOS PARTIDOS ── */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>RECENT MATCHES</Text>
+        {resultsLoading ? (
+          <ActivityIndicator color={theme.accent} style={{ marginTop: 8 }} />
+        ) : recentResults.length > 0 ? (
+          <View style={styles.resultsList}>
+            {recentResults.slice(0, 5).map((r) => {
+              const win = didWin(r, uid!);
               return (
-                <View key={`post-${item.id}`} style={styles.postRow}>
-                  <View style={styles.feedRow}>
-                    <View style={styles.feedAvatar}>
+                <Pressable
+                  key={r.id}
+                  style={({ pressed }) => [styles.resultRow, pressed && { opacity: 0.75 }]}
+                  onPress={() => router.push(`/match/${r.match_id || r.id}` as any)}
+                >
+                  <View style={[styles.resultDot, { backgroundColor: win ? theme.success : theme.danger }]} />
+                  <Text style={[styles.resultBadge, { color: win ? theme.success : theme.danger }]}>
+                    {win ? 'WIN' : 'LOSS'}
+                  </Text>
+                  <Text style={styles.resultOpp} numberOfLines={1}>{oppName(r, uid!)}</Text>
+                  <Text style={styles.resultScore}>{scoreStr(r)}</Text>
+                  <Text style={styles.resultDate}>
+                    {new Date(r.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : (
+          <Pressable
+            style={({ pressed }) => [styles.emptyCard, pressed && { opacity: 0.8 }]}
+            onPress={() => router.push('/create-match' as any)}
+          >
+            <Ionicons name="tennisball-outline" size={24} color={theme.textMuted} />
+            <Text style={styles.emptyText}>No matches recorded yet</Text>
+            <Text style={styles.emptyAction}>Create your first match →</Text>
+          </Pressable>
+        )}
+      </View>
+
+      {/* ── ACTIVITY FEED ── */}
+      {!feedLoading && activityFeed.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>ACTIVITY</Text>
+          <View style={styles.feedList}>
+            {activityFeed.map((item) => {
+              if (item.kind === 'post') {
+                return (
+                  <View key={`post-${item.id}`} style={styles.feedPostWrap}>
+                    <View style={styles.feedPostHeader}>
                       {item.profiles?.avatar_url ? (
-                        <Image source={{ uri: item.profiles.avatar_url }} style={styles.feedAvatarImg} />
+                        <Image source={{ uri: item.profiles.avatar_url }} style={styles.feedAvatar} />
                       ) : (
-                        <View style={styles.feedAvatarPlaceholder}>
-                          <Image source={require('@/assets/images/icon.png')} style={styles.feedAvatarPlaceholderLogo} resizeMode="contain" />
+                        <View style={[styles.feedAvatar, styles.feedAvatarPlaceholder]}>
+                          <Ionicons name="person" size={12} color={theme.textMuted} />
                         </View>
                       )}
+                      <Text style={styles.feedPostName}>{item.profiles?.full_name ?? 'Player'}</Text>
+                      <Text style={styles.feedTime}>{timeAgo(item.created_at)}</Text>
                     </View>
-                    <View style={styles.feedInfo}>
-                      <Text style={styles.feedPlayerName}>{item.profiles?.full_name ?? 'Player'}</Text>
-                      <Text style={styles.feedTime}>{formatRelativeTime(item.created_at)}</Text>
-                    </View>
-                  </View>
-                  <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
                     <MatchCard
                       post={item}
                       posterId={item.profile_id}
-                      width={screenWidth - 64}
-                      height={260}
+                      width={SW - 32}
+                      height={240}
                       vibCount={item.vibCount}
                       vibbedByMe={item.vibbedByMe}
-                      onToggleVib={() => handleToggleVib(item)}
+                      onToggleVib={() => uid && toggleVib.mutate({ profileId: uid, itemType: 'post', itemId: item.id, currentlyVibbed: item.vibbedByMe })}
                       onPress={() => setViewingPost(item)}
                       onLongPress={() => setRadialPost(item)}
                     />
                   </View>
+                );
+              }
+
+              if (item.kind === 'achievement') {
+                const icon = ACHIEVEMENT_ICONS[item.type] || 'trophy';
+                return (
+                  <View key={`ach-${item.id}`} style={styles.feedRow}>
+                    <View style={[styles.feedIconCircle, { backgroundColor: `${theme.accent}18`, borderColor: `${theme.accent}33` }]}>
+                      <Ionicons name={icon as any} size={14} color={theme.accent} />
+                    </View>
+                    {item.profiles?.avatar_url ? (
+                      <Image source={{ uri: item.profiles.avatar_url }} style={styles.feedAvatar} />
+                    ) : (
+                      <View style={[styles.feedAvatar, styles.feedAvatarPlaceholder]}>
+                        <Ionicons name="person" size={12} color={theme.textMuted} />
+                      </View>
+                    )}
+                    <View style={styles.feedInfo}>
+                      <Text style={styles.feedName}>{item.profiles?.full_name ?? 'Player'}</Text>
+                      <Text style={styles.feedSub}>{ACHIEVEMENT_LABELS[item.type] || 'New achievement'}</Text>
+                    </View>
+                    <Text style={styles.feedTime}>{timeAgo(item.created_at)}</Text>
+                  </View>
+                );
+              }
+
+              // match_result
+              const winTeam = item.winner === 'a'
+                ? { p1: item.team_a_player1_profile, p2: item.team_a_player2_profile }
+                : { p1: item.team_b_player1_profile, p2: item.team_b_player2_profile };
+              return (
+                <View key={`mr-${item.id}`} style={styles.feedRow}>
+                  <View style={[styles.feedIconCircle, { backgroundColor: `${theme.success}18`, borderColor: `${theme.success}33` }]}>
+                    <Ionicons name="tennisball" size={14} color={theme.success} />
+                  </View>
+                  {winTeam.p1?.avatar_url ? (
+                    <Image source={{ uri: winTeam.p1.avatar_url }} style={styles.feedAvatar} />
+                  ) : (
+                    <View style={[styles.feedAvatar, styles.feedAvatarPlaceholder]}>
+                      <Ionicons name="person" size={12} color={theme.textMuted} />
+                    </View>
+                  )}
+                  <View style={styles.feedInfo}>
+                    <Text style={styles.feedName}>{teamLabel(winTeam.p1, winTeam.p2)}</Text>
+                    <Text style={styles.feedSub}>
+                      won · {item.sets.map((s) => `${s.a}-${s.b}`).join(' ')}
+                    </Text>
+                  </View>
+                  <Text style={styles.feedTime}>{timeAgo(item.created_at)}</Text>
                 </View>
               );
-            }
-
-            let iconName: string;
-            let avatarProfile: Profile | null | undefined;
-            let primaryText: string;
-            let secondaryText: string;
-
-            if (item.kind === 'achievement') {
-              iconName = ACHIEVEMENT_ICONS[item.type] || 'trophy';
-              avatarProfile = item.profiles;
-              primaryText = item.profiles?.full_name ?? 'Player';
-              secondaryText = ACHIEVEMENT_LABELS[item.type] || 'New Achievement';
-            } else {
-              iconName = 'medal';
-              avatarProfile = item.winner === 'a' ? item.team_a_player1_profile : item.team_b_player1_profile;
-              primaryText =
-                item.winner === 'a'
-                  ? teamLabel(item.team_a_player1_profile, item.team_a_player2_profile)
-                  : teamLabel(item.team_b_player1_profile, item.team_b_player2_profile);
-              secondaryText = `beat ${
-                item.winner === 'a'
-                  ? teamLabel(item.team_b_player1_profile, item.team_b_player2_profile)
-                  : teamLabel(item.team_a_player1_profile, item.team_a_player2_profile)
-              } ${scoreline(item)}`;
-            }
-            const playerName = avatarProfile?.full_name ?? 'Player';
-
-            return (
-              <View key={`${item.kind}-${item.id}`} style={styles.feedRow}>
-                <View style={styles.feedAvatar}>
-                  {avatarProfile?.avatar_url ? (
-                    <Image source={{ uri: avatarProfile.avatar_url }} style={styles.feedAvatarImg} />
-                  ) : (
-                    <View style={styles.feedAvatarPlaceholder}>
-                      <Image source={require('@/assets/images/icon.png')} style={styles.feedAvatarPlaceholderLogo} resizeMode="contain" />
-                    </View>
-                  )}
-                </View>
-                <View style={styles.feedInfo}>
-                  <Text style={styles.feedText} numberOfLines={1}>
-                    <Text style={styles.feedPlayerName}>{primaryText}</Text>
-                    <Text style={styles.feedLabelSeparator}> • </Text>
-                    <Text style={styles.feedAchievementText}>{secondaryText}</Text>
-                  </Text>
-                  <Text style={styles.feedTime}>{formatRelativeTime(item.created_at)}</Text>
-                </View>
-                <View style={styles.feedTrailing}>
-                  <View style={styles.feedIconContainer}>
-                    <Ionicons name={iconName as any} size={14} color={theme.primary} />
-                  </View>
-                  <Pressable
-                    style={({ pressed }) => [styles.vibButton, item.vibbedByMe && styles.vibButtonActive, pressed && { opacity: 0.8 }]}
-                    onPress={() => handleToggleVib(item)}
-                  >
-                    <Ionicons name={item.vibbedByMe ? 'heart' : 'heart-outline'} size={14} color={item.vibbedByMe ? theme.primary : theme.textMuted} />
-                    {item.vibCount > 0 && <Text style={[styles.vibCount, item.vibbedByMe && styles.vibCountActive]}>{item.vibCount}</Text>}
-                  </Pressable>
-                </View>
-              </View>
-            );
-          })}
-        </Card>
-      ) : suggestedFollows.length > 0 ? (
-        <View style={{ marginBottom: 20 }}>
-          <Text style={styles.emptyFeedSubtitle}>
-            Follow other players to see their achievements and match results here.
-          </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestedScroll}>
-            {suggestedFollows.map((p) => (
-              <Card key={p.id} style={styles.suggestedCard} contentStyle={{ padding: 10, alignItems: 'center' }}>
-                <Pressable onPress={() => router.push(`/player/${p.id}` as any)}>
-                  {p.avatar_url ? (
-                    <Image source={{ uri: p.avatar_url }} style={styles.suggestedAvatarImg} />
-                  ) : (
-                    <View style={styles.suggestedAvatarPlaceholder}>
-                      <Image source={require('@/assets/images/icon.png')} style={styles.suggestedAvatarPlaceholderLogo} resizeMode="contain" />
-                    </View>
-                  )}
-                </Pressable>
-                <Text style={styles.suggestedName} numberOfLines={1}>{p.full_name ?? 'Player'}</Text>
-                <Text style={styles.suggestedMeta}>{p.elo} PS</Text>
-                <Pressable
-                  style={({ pressed }) => [styles.suggestedFollowButton, pressed && { opacity: 0.8 }]}
-                  onPress={() => handleQuickFollow(p.id)}
-                >
-                  <Text style={styles.suggestedFollowButtonText}>FOLLOW</Text>
-                </Pressable>
-              </Card>
-            ))}
-          </ScrollView>
+            })}
+          </View>
         </View>
-      ) : (
-        <Card style={styles.emptyFeedContainer} contentStyle={{ padding: 20, alignItems: 'center', justifyContent: 'center' }}>
-          <Ionicons name="people-outline" size={32} color={theme.textMuted} style={{ marginBottom: 8 }} />
-          <Text style={styles.emptyFeedTitle}>FOLLOW OTHER PLAYERS</Text>
-          <Text style={styles.emptyFeedSubtitle}>
-            Follow other padel players to see their live achievements and match milestones in your home feed.
-          </Text>
-          <Pressable
-            style={({ pressed }) => [
-              styles.emptyFeedButton,
-              pressed && { opacity: 0.8 }
-            ]}
-            onPress={() => router.push('/partners')}
-          >
-            <Text style={styles.emptyFeedButtonText}>FIND PLAYERS</Text>
-          </Pressable>
-        </Card>
       )}
 
-
-      <View style={styles.leaguesSectionHeader}>
-        <Text style={[styles.sectionTitle, { marginBottom: 0, fontSize: 18 }]}>LEARNING</Text>
-      </View>
-
-      <Pressable onPress={() => router.push('/coaches' as any)}>
-        {({ pressed }) => (
-          <Card style={[styles.coachBanner, pressed && { opacity: 0.9 }]} contentStyle={styles.coachBannerContent}>
-            <View style={styles.coachBannerIcon}>
-              <Ionicons name="school" size={20} color={theme.accent} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.coachBannerTitle}>FIND A PADEL COACH</Text>
-              <Text style={styles.coachBannerSubtitle}>Book a lesson with a coach near you</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
-          </Card>
-        )}
-      </Pressable>
-
-      <PostDetailModal
-        post={viewingPost}
-        userId={userId}
-        onClose={() => setViewingPost(null)}
-      />
+      <PostDetailModal post={viewingPost} userId={uid} onClose={() => setViewingPost(null)} />
       <PostRadialMenu
         post={radialPost}
-        isOwner={radialPost?.profile_id === userId}
-        vibbedByMe={(activityFeed?.find((i) => i.id === radialPost?.id) as any)?.vibbedByMe ?? false}
+        isOwner={radialPost?.profile_id === uid}
+        vibbedByMe={(activityFeed.find((i) => i.id === radialPost?.id) as any)?.vibbedByMe ?? false}
         onClose={() => setRadialPost(null)}
         onVib={() => {
-          const feedItem = activityFeed?.find((i) => i.id === radialPost?.id);
-          if (feedItem && feedItem.kind === 'post') handleToggleVib(feedItem);
+          const item = activityFeed.find((i) => i.id === radialPost?.id);
+          if (item && item.kind === 'post' && uid)
+            toggleVib.mutate({ profileId: uid, itemType: 'post', itemId: item.id, currentlyVibbed: item.vibbedByMe });
           setRadialPost(null);
         }}
         onPin={() => setRadialPost(null)}
         onDelete={() => {
-          if (!radialPost) return;
-          deletePost.mutate({ postId: radialPost.id, photoUrl: radialPost.photo_url });
+          if (radialPost) deletePost.mutate({ postId: radialPost.id, photoUrl: radialPost.photo_url });
           setRadialPost(null);
         }}
       />
@@ -768,468 +406,135 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: { flex: 1 },
-  leagueTilesRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 16 },
-  leagueTile: { minHeight: 110, flex: 1 },
-  leagueTileContent: { padding: 16, gap: 8 },
-  leagueTileRankBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(198, 255, 51, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  root: { flex: 1, backgroundColor: theme.background },
+  content: { paddingHorizontal: 16, paddingBottom: 110, gap: 16 },
+
+  // Header
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  avatar: { width: 42, height: 42, borderRadius: 21, borderWidth: 2, borderColor: theme.accent },
+  avatarPlaceholder: {
+    width: 42, height: 42, borderRadius: 21, borderWidth: 2, borderColor: theme.accent,
+    backgroundColor: theme.card, alignItems: 'center', justifyContent: 'center',
   },
-  leagueTileRankBadgeText: { fontFamily: 'Anton_400Regular', color: theme.accent, fontSize: 18 },
-  kopTileHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  proTag: { backgroundColor: 'rgba(255, 215, 0, 0.15)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3 },
-  proTagText: { color: '#FFD700', fontWeight: '900', fontSize: 9, letterSpacing: 0.5 },
-  leagueTileTitle: { fontFamily: 'Anton_400Regular', color: theme.text, fontSize: 18, marginTop: 4 , textTransform: 'uppercase' },
-  leagueTileSub: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
-  container: { paddingBottom: 110, gap: 8, backgroundColor: theme.background },
-
-  heroCard: { position: 'relative' },
-  heroHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  heroLabel: { fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: '600', letterSpacing: 1 },
-  eloScore: { fontFamily: 'Anton_400Regular', fontSize: 42, color: theme.text, marginTop: 2, letterSpacing: -1 },
-  rankBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(198, 255, 51, 0.15)',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(198, 255, 51, 0.25)',
+  greeting: { fontSize: 12, color: theme.textMuted, fontWeight: '600' },
+  name: { fontSize: 18, fontFamily: 'Anton_400Regular', color: theme.text, letterSpacing: -0.3 },
+  bellBtn: { padding: 4 },
+  bellDot: {
+    position: 'absolute', top: 4, right: 4,
+    width: 8, height: 8, borderRadius: 4,
+    backgroundColor: theme.danger, borderWidth: 1.5, borderColor: theme.background,
   },
-  rankBadgeText: { color: theme.accent, fontSize: 12, fontWeight: '800' },
-  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 18 },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 10 },
-  statItem: { alignItems: 'center' },
-  statVal: { fontFamily: 'Anton_400Regular', fontSize: 18, color: theme.text, marginTop: 4 },
-  statLabel: { fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 2, fontWeight: '500' },
-  chartContainer: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: 60, paddingHorizontal: 10, marginTop: 10 },
-  chartBarWrapper: { alignItems: 'center', width: 24 },
-  chartBar: { width: 12, borderRadius: 4 },
-  chartPeakDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: theme.primary, marginBottom: 4, shadowColor: theme.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 4, elevation: 4 },
 
-  claudeStatsGrid: { gap: 6, paddingHorizontal: 4 },
-  claudeStatBox: { backgroundColor: '#1C1C1F', padding: 8, borderRadius: 6, borderWidth: 1, borderColor: '#2A2A2E' },
-  claudeStatLabel: { fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: '600', marginBottom: 4 },
-  claudeStatValue: { fontSize: 16, color: '#FFF', fontWeight: '800', fontFamily: 'Anton_400Regular' },
-  
-  weeklyBarsContainer: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, marginTop: 14, paddingHorizontal: 2 },
-  weeklyBarCol: { flex: 1, alignItems: 'center', gap: 4 },
-  weeklyBarLabel: { fontSize: 8, color: theme.textMuted, fontWeight: '700', letterSpacing: 0.3 },
-  prItem: { gap: 3 },
-  prLabel: { fontSize: 9, color: theme.textMuted, fontWeight: '700', letterSpacing: 0.8 },
-  prValue: { fontSize: 18, fontFamily: 'Anton_400Regular', color: theme.text, letterSpacing: -0.5 },
-
-  gridCard: { flex: 1 },
-  gridCardContent: { padding: 16, alignItems: 'flex-start' },
-  zoneCardContent: { padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  scrimIndexLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 },
-  scrimInfoText: { color: theme.textMuted, fontSize: 12, lineHeight: 18 },
-  gridCardLabel: { fontSize: 9, fontWeight: '900', color: theme.textMuted, letterSpacing: 1, marginBottom: 8 },
-  gridCardValue: { fontSize: 24, fontWeight: '900', color: theme.text, letterSpacing: -0.5 },
-  gridBadge: { marginTop: 8, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  gridBadgeText: { fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
-  sectionTitle: { fontSize: 11,  marginTop: 16, paddingHorizontal: 16, color: theme.textMuted, letterSpacing: 1.5 , textTransform: 'uppercase', marginBottom: 8 },
-  leaguesSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, paddingHorizontal: 16, marginBottom: 8 },
-  leaguesSeeAll: { fontSize: 10, fontWeight: '800', color: theme.secondary, letterSpacing: 0.5 },
-  leagueCard: {
+  // Score card
+  scoreCard: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+    alignItems: 'flex-start',
     backgroundColor: theme.card,
     borderRadius: cardRadius,
     borderWidth: 1,
     borderColor: theme.border,
-    padding: 14,
-    marginTop: 8,
+    padding: 20,
+    gap: 16,
   },
-  leagueCardIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: 'rgba(198, 255, 51, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  leagueCardName: { flex: 1, color: theme.text,  fontSize: 13, letterSpacing: 0.2 , textTransform: 'uppercase'},
-  coachBanner: { marginTop: 16 },
-  coachBannerContent: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
-  coachBannerIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: 'rgba(198, 255, 51, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  coachBannerTitle: { color: theme.text,  fontSize: 12, letterSpacing: 0.5 , textTransform: 'uppercase'},
-  coachBannerSubtitle: { color: theme.textMuted, fontSize: 11, marginTop: 2 },
-  resultCard: { 
-    borderRadius: cardRadius, 
-  },
-  resultRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  opponentWrapper: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 12 },
-  vsTag: { fontSize: 9, fontWeight: '900', color: theme.primary, backgroundColor: 'rgba(198, 255, 51, 0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginRight: 8 },
-  resultOpponent: { fontSize: 14, fontWeight: '800', color: theme.text, letterSpacing: 0.2 },
-  resultBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  winBadge: { backgroundColor: 'rgba(0, 230, 118, 0.1)', borderWidth: 1, borderColor: theme.success },
-  lossBadge: { backgroundColor: 'rgba(110, 112, 126, 0.1)', borderWidth: 1, borderColor: theme.border },
-  resultBadgeText: { fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
-  winText: { color: theme.success },
-  lossText: { color: theme.textMuted },
-  resultCardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 10 },
-  setScoresRow: { flexDirection: 'row', gap: 6 },
-  scoreBox: { backgroundColor: '#1E1E28', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: theme.border },
-  scoreBoxWin: { backgroundColor: 'rgba(0, 230, 118, 0.1)', borderColor: theme.success },
-  scoreText: { fontSize: 12, fontWeight: '800', color: theme.textMuted },
-  scoreTextWin: { color: theme.success },
-  matchTypeTag: { fontSize: 9, fontWeight: '900', color: theme.textMuted, letterSpacing: 0.5 },
-  matchDateTag: { fontSize: 9, fontWeight: '700', color: theme.textMuted, letterSpacing: 0.3 },
-  empty: { color: theme.textMuted, textAlign: 'center', marginTop: 8, fontSize: 13 },
-  leaderboardContainer: {
+  scoreLeft: { flex: 1 },
+  scoreLabel: { fontSize: 10, color: theme.textMuted, fontWeight: '700', letterSpacing: 1.2 },
+  scoreValue: { fontFamily: 'Anton_400Regular', fontSize: 56, color: theme.text, letterSpacing: -2, lineHeight: 60, marginTop: 2 },
+  scoreFooter: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  streakPill: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
+  streakText: { fontSize: 11, fontWeight: '800' },
+  calibratingText: { fontSize: 11, color: theme.textMuted, fontWeight: '600' },
+  winRateText: { fontSize: 11, color: theme.textMuted, fontWeight: '600' },
+  scoreRight: { alignItems: 'flex-end', gap: 6, paddingTop: 4 },
+  trendLabel: { fontSize: 12, fontWeight: '800', alignSelf: 'flex-end' },
+  scrimRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 },
+  scrimLabel: { fontSize: 9, color: theme.textMuted, fontWeight: '700', letterSpacing: 0.8 },
+  scrimValue: { fontSize: 16, fontFamily: 'Anton_400Regular', letterSpacing: -0.5 },
+
+  // Next match
+  nextMatchCard: {
+    backgroundColor: theme.card,
     borderRadius: cardRadius,
+    borderWidth: 1,
+    borderColor: theme.border,
+    borderLeftWidth: 3,
+    borderLeftColor: theme.accent,
+    padding: 16,
+    gap: 6,
+  },
+  nextMatchTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  nextMatchBadge: { backgroundColor: `${theme.accent}22`, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  nextMatchBadgeText: { color: theme.accent, fontSize: 9, fontWeight: '900', letterSpacing: 0.8 },
+  nextMatchDate: { color: theme.textMuted, fontSize: 11, fontWeight: '700' },
+  nextMatchLocation: { color: theme.text, fontSize: 15, fontWeight: '700' },
+  nextMatchFooter: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
+  nextMatchPlayers: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
+
+  // Quick actions
+  quickActions: { flexDirection: 'row', gap: 8 },
+  qaBtn: {
+    flex: 1, alignItems: 'center', gap: 6, paddingVertical: 14,
+    backgroundColor: theme.card, borderRadius: cardRadius,
+    borderWidth: 1, borderColor: theme.border,
+  },
+  qaBtnText: { color: theme.text, fontSize: 11, fontWeight: '700', textAlign: 'center' },
+
+  // Section
+  section: { gap: 10 },
+  sectionTitle: { fontSize: 10, color: theme.textMuted, fontWeight: '800', letterSpacing: 1.5 },
+
+  // Empty state
+  emptyCard: {
+    backgroundColor: theme.card, borderRadius: cardRadius,
+    borderWidth: 1, borderColor: theme.border,
+    borderStyle: 'dashed', paddingVertical: 28,
+    alignItems: 'center', gap: 6,
+  },
+  emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
+  emptyAction: { color: theme.accent, fontSize: 12, fontWeight: '700' },
+
+  // Results
+  resultsList: {
+    backgroundColor: theme.card,
+    borderRadius: cardRadius,
+    borderWidth: 1,
+    borderColor: theme.border,
     overflow: 'hidden',
   },
-  leaderboardRow: {
+  resultRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    gap: 10,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
+    paddingVertical: 13,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: theme.border,
   },
-  rankText: { fontSize: 13, fontWeight: '900', color: theme.textMuted, width: 24, marginRight: 8 },
-  rankTextTop: { color: theme.primary },
-  playerAvatarPlaceholder: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#22242E', alignItems: 'center', justifyContent: 'center', marginRight: 12, borderWidth: 1, borderColor: theme.border },
-  avatarLetterLogo: { width: 16, height: 16, opacity: 0.5 },
-  leaderboardName: { flex: 1, color: theme.text,  fontSize: 13, letterSpacing: 0.2 , textTransform: 'uppercase'},
-  leaderboardElo: { color: theme.text, fontWeight: '900', fontSize: 13 },
-  nextMatchCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: theme.primary,
-    marginBottom: 4,
-  },
-  nextMatchHeader: {
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 8 
-  },
-  nextMatchTag: { 
-    fontSize: 10, 
-    fontWeight: '900', 
-    color: theme.primary, 
-    letterSpacing: 2 
-  },
-  nextMatchLocation: {
-    fontSize: 15, 
-     
-    color: theme.text, 
-    textTransform: 'uppercase',
-    letterSpacing: 0.2},
-  nextMatchTime: { 
-    fontSize: 12, 
-    fontWeight: '700', 
-    color: theme.textMuted, 
-    marginTop: 4 
-  },
-  nextMatchFooter: {
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginTop: 12, 
-    borderTopWidth: 1, 
-    borderTopColor: theme.border, 
-    paddingTop: 10 
-  },
-  nextMatchProbability: { 
-    fontSize: 9, 
-    fontWeight: '900', 
-    color: theme.secondary, 
-    letterSpacing: 0.5 
-  },
-  nextMatchRosterText: { 
-    fontSize: 9, 
-    fontWeight: '900', 
-    color: theme.textMuted, 
-    letterSpacing: 0.5 
-  },
-  chartLockOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15, 16, 22, 0.85)',
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#22242E',
-  },
-  chartLockText: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: theme.primary,
-    letterSpacing: 1.2,
-  },
-  partnerAlertBanner: { borderColor: 'rgba(46, 157, 255, 0.25)', marginBottom: 16 },
-  partnerAlertContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  partnerAlertLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  partnerAlertText: {
-    color: theme.secondary,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  partnerAlertRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  partnerAlertActionText: {
-    color: theme.secondary,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  suggestedAvatarPlaceholderLogo: { width: 18, height: 18, opacity: 0.5 },
-  paginationDots: {
-    position: 'absolute',
-    bottom: 10,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  paginationDotsPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
-  },
-  dot: {
-    height: 6,
-    borderRadius: 3,
-  },
-  feedSectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  newPostBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: theme.primary,
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  newPostBtnText: { color: theme.onAccent, fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
-  postRow: { borderBottomWidth: 1, borderBottomColor: theme.border, paddingBottom: 8 },
-  feedContainer: {
-    paddingVertical: 8,
-    borderRadius: cardRadius,
-  },
+  resultDot: { width: 7, height: 7, borderRadius: 4 },
+  resultBadge: { fontSize: 10, fontWeight: '900', letterSpacing: 0.5, width: 32 },
+  resultOpp: { flex: 1, color: theme.text, fontSize: 13, fontWeight: '700' },
+  resultScore: { color: theme.textMuted, fontSize: 12, fontWeight: '700', fontFamily: 'Anton_400Regular' },
+  resultDate: { color: theme.textMuted, fontSize: 10, fontWeight: '600', width: 44, textAlign: 'right' },
+
+  // Feed
+  feedList: { gap: 1, backgroundColor: theme.card, borderRadius: cardRadius, borderWidth: 1, borderColor: theme.border, overflow: 'hidden' },
+  feedPostWrap: { padding: 14, gap: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border },
+  feedPostHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  feedPostName: { flex: 1, color: theme.text, fontSize: 13, fontWeight: '700' },
   feedRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: theme.border,
   },
-  feedAvatar: {
-    marginRight: 12,
-  },
-  feedAvatarImg: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-  },
-  feedAvatarPlaceholder: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#1E1E28',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
-  feedAvatarPlaceholderLogo: {
-    width: 16,
-    height: 16,
-    opacity: 0.5,
-  },
-  feedInfo: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  feedText: {
-    fontSize: 12,
-    color: theme.textMuted,
-  },
-  feedPlayerName: {
-    color: theme.text,
-    fontWeight: '800',
-  },
-  feedLabelSeparator: {
-    color: theme.borderActive,
-    fontWeight: '900',
-  },
-  feedAchievementText: {
-    color: theme.text,
-    fontWeight: '700',
-  },
-  feedTime: {
-    fontSize: 10,
-    color: theme.textMuted,
-    marginTop: 2,
-    fontWeight: '600',
-  },
-  feedTrailing: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  vibButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
-  vibButtonActive: {
-    borderColor: theme.primary,
-    backgroundColor: 'rgba(198, 255, 51, 0.08)',
-  },
-  vibCount: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: theme.textMuted,
-  },
-  vibCountActive: {
-    color: theme.primary,
-  },
-  suggestedScroll: {
-    gap: 10,
-    paddingVertical: 4,
-  },
-  suggestedCard: {
-    width: 96,
-    borderRadius: cardRadius,
-  },
-  suggestedAvatarImg: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginBottom: 6,
-  },
-  suggestedAvatarPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1E1E28',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.border,
-    marginBottom: 6,
-  },
-  suggestedName: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: theme.text,
-    marginBottom: 2,
-    textAlign: 'center',
-  },
-  suggestedMeta: {
-    fontSize: 9,
-    color: theme.textMuted,
-    marginBottom: 8,
-  },
-  suggestedFollowButton: {
-    backgroundColor: 'rgba(198, 255, 51, 0.1)',
-    borderWidth: 1,
-    borderColor: theme.primary,
-    borderRadius: 6,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-  },
-  suggestedFollowButtonText: {
-    color: theme.primary,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0.3,
-  },
-  leaderboardRowMe: {
-    backgroundColor: 'rgba(198, 255, 51, 0.06)',
-  },
-  feedIconContainer: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(198, 255, 51, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(198, 255, 51, 0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyFeedContainer: {
-    borderRadius: cardRadius,
-    marginBottom: 20,
-  },
-  emptyFeedTitle: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: theme.text,
-    letterSpacing: 1,
-    marginBottom: 6,
-  },
-  emptyFeedSubtitle: {
-    fontSize: 10,
-    color: theme.textMuted,
-    textAlign: 'center',
-    lineHeight: 15,
-    marginBottom: 14,
-    paddingHorizontal: 10,
-  },
-  emptyFeedButton: {
-    backgroundColor: 'rgba(198, 255, 51, 0.1)',
-    borderWidth: 1,
-    borderColor: theme.primary,
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  emptyFeedButtonText: {
-    color: theme.primary,
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
+  feedIconCircle: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  feedAvatar: { width: 32, height: 32, borderRadius: 16 },
+  feedAvatarPlaceholder: { backgroundColor: theme.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.border },
+  feedInfo: { flex: 1 },
+  feedName: { color: theme.text, fontSize: 13, fontWeight: '700' },
+  feedSub: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 1 },
+  feedTime: { color: theme.textMuted, fontSize: 10, fontWeight: '600' },
 });

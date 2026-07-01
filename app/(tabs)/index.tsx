@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMatches, useRecentResults, MatchDateRange } from '@/lib/queries';
 import { useSession } from '@/lib/useSession';
 import type { MatchWithPlayers, MatchResultWithProfiles, PlayerLevel } from '@/types/database';
@@ -29,6 +30,7 @@ const DATE_RANGE_OPTIONS: { value: MatchDateRange; label: string }[] = [
 
 export default function MatchSearchScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { session } = useSession();
   const userId = session?.user.id;
   const [zone, setZone] = useState('');
@@ -111,7 +113,7 @@ export default function MatchSearchScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
       <View style={[styles.headerContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }]}>
         <View>
           <Text style={styles.tagline}>FIND A GAME</Text>

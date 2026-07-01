@@ -1584,7 +1584,11 @@ export function useCountryLeagueBoard(country: string | null | undefined) {
         .order("elo", { ascending: false });
       if (error) throw error;
       const pairs = (data ?? []) as unknown as PairWithProfiles[];
-      return pairs.filter((p) => p.player_a?.country?.toLowerCase() === country?.toLowerCase());
+      const c = country?.toLowerCase();
+      return pairs.filter((p) =>
+        p.player_a?.country?.toLowerCase() === c ||
+        p.player_b?.country?.toLowerCase() === c
+      );
     },
     enabled: !!country,
   });

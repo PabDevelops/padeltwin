@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '@/lib/useSession';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -20,6 +21,7 @@ function requestWith(requests: PartnerRequestWithProfiles[], userId: string, oth
 
 export default function PartnersScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { session } = useSession();
   const userId = session?.user.id;
   
@@ -166,7 +168,7 @@ export default function PartnersScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 24 }]}>
       <View style={styles.headerContainer}>
         <Text style={styles.tagline}>PARTNER DISCOVERY</Text>
         <Text style={styles.title}>PARTNERS</Text>
